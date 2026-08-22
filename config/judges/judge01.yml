@@ -1,0 +1,4 @@
+id: local-judge-01
+name: Local Judge 01
+enabled: true
+sandbox_dir: data/sandbox/judge-01

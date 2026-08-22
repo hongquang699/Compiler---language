@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Local Judge</title>
+    <link rel="stylesheet" href="judge.css">
+</head>
+<body>
+    <main class="judge-shell">
+        <header><a href="index.html">Local CP</a><span>ClueOJ Judge</span></header>
+        <section class="judge-layout">
+            <article class="panel">
+                <label>Problem / test cases JSON</label>
+                <textarea id="tests" spellcheck="false">[{"input":"1 2\n","expected":"3\n"},{"input":"100 200\n","expected":"300\n"}]</textarea>
+                <div class="toolbar"><select id="language"><option value="cpp">C++17</option><option value="c">C11</option><option value="python">Python 3</option><option value="java">Java 17</option><option value="rust">Rust</option><option value="go">Go</option></select><button id="judge">Chấm bài</button></div>
+                <textarea id="source" spellcheck="false" placeholder="Dán source code vào đây..."></textarea>
+            </article>
+            <aside class="panel result-panel"><h1>Submission</h1><div id="summary">Chưa có submission</div><div id="results"></div></aside>
+        </section>
+    </main>
+    <script type="module" src="judge/main.js"></script>
+</body>
+</html>

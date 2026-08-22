@@ -1,0 +1,7 @@
+body.usaco-theme { display: block; min-height: 100vh; height: auto; overflow: auto; }
+.contest-page-shell { width: 100%; min-height: 100vh; max-width: 1180px; margin: 0 auto; padding: 22px; overflow: auto; position: relative; z-index: 1; }
+.contest-page-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.contest-brand { color: var(--text-bright); font: 800 1.1rem var(--font-display); text-decoration: none; }
+.contest-brand i { color: var(--accent-cyan); margin-right: 8px; }
+.contest-page-shell .competition-layout { min-height: calc(100vh - 100px); }
+@media (max-width: 600px) { .contest-page-shell { padding: 12px; } }

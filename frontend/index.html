@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local CP IDE — Competitive Programming Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=4.4">
+</head>
+
+<body class="usaco-theme">
+    <div class="app-ambient" aria-hidden="true">
+        <div class="orb orb-cyan"></div>
+        <div class="orb orb-violet"></div>
+        <div class="orb orb-emerald"></div>
+        <div class="mesh-grid"></div>
+    </div>
+
+    <header class="app-header">
+        <div class="header-left">
+            <div class="logo-badge">
+                <i class="fa-solid fa-code"></i>
+            </div>
+            <div class="header-title-box">
+                <span class="ide-brand">LOCAL CP</span>
+                <span class="ide-sub">Algorithm Studio</span>
+            </div>
+        </div>
+
+        <nav class="nav-tabs">
+            <a class="nav-tab active" href="index.html#playground-tab" data-tab="playground-tab"><i class="fa-solid fa-laptop-code"></i> <span>Code IDE</span></a>
+            <a class="nav-tab" href="index.html#agent-tab" data-tab="agent-tab"><i class="fa-solid fa-wand-magic-sparkles"></i> <span>AI Agent</span></a>
+            <a class="nav-tab" href="index.html#chat-tab" data-tab="chat-tab"><i class="fa-solid fa-comments"></i> <span>Assistant</span></a>
+            <a class="nav-tab" href="index.html#rag-tab" data-tab="rag-tab"><i class="fa-solid fa-book-bookmark"></i> <span>Templates</span></a>
+            <a class="nav-tab" href="index.html#vault-tab" data-tab="vault-tab"><i class="fa-solid fa-trophy"></i> <span>Vault</span></a>
+            <a class="nav-tab" href="contest.html"><i class="fa-solid fa-flag-checkered"></i> <span>Cuộc thi</span></a>
+            <a class="nav-tab hidden" id="admin-nav-btn" href="admin.html"><i class="fa-solid fa-shield-halved"></i> <span>Admin</span></a>
+        </nav>
+
+        <div class="header-right">
+            <div class="lang-picker-wrapper">
+                <i class="fa-solid fa-terminal"></i>
+                <select id="global-lang-selector" class="header-select">
+                    <option value="cpp">C++17 (g++)</option>
+                    <option value="python">Python 3.12</option>
+                    <option value="java">Java 17 (OpenJDK)</option>
+                    <option value="c">C11 (gcc)</option>
+                    <option value="rust">Rust 2021</option>
+                    <option value="go">Go 1.21</option>
+                </select>
+            </div>
+
+            <div class="status-indicator-badge" id="compiler-status-badge">
+                <span class="status-dot green"></span>
+                <span>System Ready</span>
+            </div>
+
+            <div class="model-picker-wrapper hidden" id="header-model-picker">
+                <i class="fa-solid fa-microchip"></i>
+                <select id="model-selector" class="header-select">
+                    <option value="gemma4:latest">gemma4:latest</option>
+                    <option value="deepseek-v4-flash:cloud">deepseek-v4-flash:cloud</option>
+                </select>
+            </div>
+
+            <div class="theme-picker-wrapper" title="Chọn giao diện">
+                <i class="fa-solid fa-circle-half-stroke"></i>
+                <select id="theme-selector" class="header-select" aria-label="Giao diện">
+                    <option value="light">Sáng</option>
+                    <option value="dark">Tối</option>
+                    <option value="system">Theo hệ thống</option>
+                </select>
+            </div>
+
+            <div class="account-area">
+                <button class="btn-ide btn-ide-secondary btn-xs" id="auth-open-btn"><i class="fa-solid fa-user"></i> Đăng nhập</button>
+                <span class="account-name hidden" id="account-name"></span>
+                <button class="btn-mini hidden" id="auth-logout-btn" title="Đăng xuất"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+
+        <section id="playground-tab" class="tab-content active">
+            <div class="usaco-ide-layout">
+                <div class="ide-editor-container glass-panel">
+                    <div class="ide-tab-bar">
+                        <div class="ide-file-tab active">
+                            <i class="fa-solid fa-file-code" id="pg-tab-icon"></i>
+                            <span id="pg-tab-filename">main.cpp</span>
+                            <span class="tab-dot"></span>
+                        </div>
+                        <div class="ide-tab-empty"></div>
+                        <div class="ide-quick-actions">
+                            <select id="playground-lang-selector" class="ide-select-sm">
+                                <option value="cpp">C++17</option>
+                                <option value="python">Python 3</option>
+                                <option value="java">Java 17</option>
+                                <option value="c">C11</option>
+                                <option value="rust">Rust</option>
+                                <option value="go">Go</option>
+                            </select>
+                            <button class="btn-ide btn-ide-secondary" id="gen-edge-cases-btn" title="Sinh các test case góc biên"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh Test Biên</button>
+                            <button class="btn-ide btn-ide-run" id="run-sandbox-btn" title="Chạy kiểm thử trên tất cả test case (Ctrl+Enter)"><i class="fa-solid fa-play"></i> <span>Chạy Code</span> <kbd>Ctrl+↵</kbd></button>
+                            <button class="btn-ide btn-ide-secondary" id="save-playground-btn" title="Lưu code vào tài khoản"><i class="fa-solid fa-cloud-arrow-up"></i> Lưu code</button>
+                        </div>
+                    </div>
+
+                    <div class="ide-breadcrumbs">
+                        <span><i class="fa-solid fa-folder-tree"></i> src</span>
+                        <i class="fa-solid fa-chevron-right sep"></i>
+                        <span id="pg-breadcrumb-file">main.cpp</span>
+                    </div>
+
+                    <div id="monaco-playground-editor" class="monaco-editor-host"></div>
+
+                    <div class="ide-status-bar">
+                        <div class="status-left">
+                            <span class="status-item accent"><i class="fa-solid fa-code-branch"></i> main</span>
+                            <span class="status-item" id="pg-status-lang">C++17</span>
+                            <span class="status-item" id="pg-status-cursor">Ln 1, Col 1</span>
+                        </div>
+                        <div class="status-right">
+                            <span class="status-item">UTF-8</span>
+                            <span class="status-item">Spaces: 4</span>
+                            <span class="status-item"><i class="fa-solid fa-shield-halved"></i> Process Sandbox</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ide-tests-container glass-panel">
+                    <div class="tests-header-bar">
+                        <div class="pane-title"><i class="fa-solid fa-vial"></i> Test Suite</div>
+                        <div class="test-case-nav" id="test-case-tabs">
+                            <button class="case-tab active" data-case="0">Case 1</button>
+                        </div>
+                        <button class="btn-ide btn-ide-ghost" id="pg-add-test-btn" title="Thêm test case mới"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+
+                    <div class="test-case-body">
+                        <div class="case-section">
+                            <div class="case-section-header">
+                                <label><i class="fa-solid fa-arrow-right-to-bracket"></i> Standard Input</label>
+                                <button class="btn-mini" id="copy-case-input" title="Sao chép input"><i class="fa-solid fa-copy"></i></button>
+                            </div>
+                            <textarea id="current-case-input" class="case-textarea" placeholder="Nhập input vào đây..." spellcheck="false">5&#10;10 20 30 40 50</textarea>
+                        </div>
+
+                        <div class="case-section">
+                            <div class="case-section-header">
+                                <label><i class="fa-solid fa-bullseye"></i> Expected Output <span class="optional-tag">tùy chọn</span></label>
+                            </div>
+                            <textarea id="current-case-expected" class="case-textarea" placeholder="Nhập output mong đợi để tự chấm AC/WA..." spellcheck="false">150</textarea>
+                        </div>
+
+                        <div class="case-section actual-section">
+                            <div class="case-section-header">
+                                <label><i class="fa-solid fa-terminal"></i> Actual Output / Verdict</label>
+                                <span class="verdict-pill-badge hidden" id="current-case-verdict">AC (0ms)</span>
+                            </div>
+                            <pre class="case-output-pre" id="current-case-actual"><span class="placeholder-text">Nhấn Chạy Code hoặc Ctrl+Enter để thực thi.</span></pre>
+                        </div>
+
+                        <div class="compiler-log-box hidden" id="compiler-log-panel">
+                            <div class="compiler-log-header"><i class="fa-solid fa-triangle-exclamation"></i> Compiler / Runtime Diagnostics</div>
+                            <pre id="compiler-log-content"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="agent-tab" class="tab-content">
+            <div class="usaco-agent-layout">
+                <div class="agent-problem-pane glass-panel">
+                    <div class="panel-header-clean">
+                        <h2><i class="fa-solid fa-file-lines"></i> Đề bài thuật toán</h2>
+                        <div class="header-tools">
+                            <select id="agent-lang-selector" class="ide-select-sm">
+                                <option value="cpp">C++17</option>
+                                <option value="python">Python 3</option>
+                                <option value="java">Java</option>
+                                <option value="c">C</option>
+                                <option value="rust">Rust</option>
+                                <option value="go">Go</option>
+                            </select>
+                            <button class="btn-ide btn-ide-secondary btn-xs" id="load-sample-problem-btn"><i class="fa-solid fa-cloud-arrow-down"></i> Nạp đề mẫu</button>
+                            <label class="btn-ide btn-ide-secondary btn-xs" for="problem-image-input" title="Nạp ảnh đề bài">
+                                <i class="fa-solid fa-image"></i> Nạp hình ảnh
+                            </label>
+                            <input id="problem-image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+                        </div>
+                    </div>
+
+                    <textarea id="problem-statement-input" class="problem-textarea-modern" placeholder="Dán đề bài vào đây: Input, Output, Constraints..."></textarea>
+
+                    <div class="section-subtitle-clean">
+                        <span><i class="fa-solid fa-vial"></i> Sample tests (AI tự sửa theo kết quả)</span>
+                        <button class="btn-ide btn-ide-ghost btn-xs" id="add-testcase-btn"><i class="fa-solid fa-plus"></i> Thêm test</button>
+                    </div>
+
+                    <div id="testcases-container" class="agent-testcases-box">
+                        <div class="agent-tc-card" data-index="0">
+                            <div class="tc-header-mini"><span>Test #1</span></div>
+                            <div class="tc-inputs-grid">
+                                <div>
+                                    <label>Input</label>
+                                    <textarea class="tc-input" rows="2">6&#10;1 2 5 3 4 7</textarea>
+                                </div>
+                                <div>
+                                    <label>Expected</label>
+                                    <textarea class="tc-expected" rows="2">5</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="agent-action-bar">
+                        <div class="retry-box">
+                            <span>Thử sửa tối đa</span>
+                            <input type="number" id="max-retries-input" value="2" min="0" max="5">
+                        </div>
+                        <button class="btn-ide btn-ide-run btn-lg" id="start-agent-btn">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Giải toán &amp; tự chấm</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="agent-solution-pane glass-panel">
+                    <div class="usaco-pipeline-tracker">
+                        <div class="pipe-step" id="step-rag"><i class="fa-solid fa-magnifying-glass"></i> RAG</div>
+                        <div class="pipe-step" id="step-plan"><i class="fa-solid fa-brain"></i> Plan</div>
+                        <div class="pipe-step" id="step-code"><i class="fa-solid fa-code"></i> <span id="step-code-label">Sinh code</span></div>
+                        <div class="pipe-step" id="step-test"><i class="fa-solid fa-vial-circle-check"></i> Sandbox</div>
+                        <div class="pipe-step" id="step-fix"><i class="fa-solid fa-screwdriver-wrench"></i> Auto-fix</div>
+                        <div class="pipe-verdict-tag hidden" id="agent-verdict-tag">AC</div>
+                    </div>
+
+                    <div class="usaco-pipeline-logs" id="pipeline-logs">
+                        <span class="placeholder-text">Nhấn “Giải toán &amp; tự chấm” để bắt đầu pipeline.</span>
+                    </div>
+
+                    <div class="agent-solution-viewer">
+                        <div class="solution-header-tabs">
+                            <div class="sol-tab-nav">
+                                <button class="sol-tab active" data-target="sol-code" id="sol-code-tab-btn"><i class="fa-solid fa-code"></i> <span id="sol-code-tab-label">Mã nguồn (C++)</span></button>
+                                <button class="sol-tab" data-target="sol-plan"><i class="fa-solid fa-clipboard-list"></i> Kế hoạch</button>
+                                <button class="sol-tab" data-target="sol-tests"><i class="fa-solid fa-list-check"></i> Tests</button>
+                            </div>
+
+                            <div class="sol-convert-tools">
+                                <label for="sol-lang-selector" class="sol-convert-label"><i class="fa-solid fa-code-compare"></i></label>
+                                <select id="sol-lang-selector" class="ide-select-sm">
+                                    <option value="cpp">C++17</option>
+                                    <option value="python">Python 3</option>
+                                    <option value="java">Java 17</option>
+                                    <option value="c">C11</option>
+                                    <option value="rust">Rust</option>
+                                    <option value="go">Go</option>
+                                </select>
+                                <button class="btn-ide btn-ide-secondary btn-xs" id="convert-lang-btn" title="Chuyển đổi giải pháp sang ngôn ngữ này"><i class="fa-solid fa-repeat"></i> Chuyển</button>
+                                <button class="btn-ide btn-ide-secondary btn-xs" id="copy-code-btn"><i class="fa-solid fa-copy"></i> Copy</button>
+                                <button class="btn-ide btn-ide-secondary btn-xs" id="send-to-sandbox-btn"><i class="fa-solid fa-arrow-right"></i> Sandbox</button>
+                                <button class="btn-ide btn-ide-success btn-xs" id="save-to-vault-btn"><i class="fa-solid fa-bookmark"></i> Vault</button>
+                            </div>
+                        </div>
+
+                        <div id="sol-code" class="sol-content active">
+                            <div id="monaco-solution-editor" class="monaco-editor-host"></div>
+                        </div>
+
+                        <div id="sol-plan" class="sol-content">
+                            <div class="markdown-body" id="agent-plan-text">Chưa có dữ liệu phân tích.</div>
+                        </div>
+
+                        <div id="sol-tests" class="sol-content">
+                            <div id="agent-tests-detail" class="tests-summary-list">Chưa có kết quả chạy test.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="chat-tab" class="tab-content">
+            <div class="chat-layout">
+                <div class="chat-sidebar glass-panel">
+                    <button class="btn-ide btn-ide-run btn-block" id="new-chat-btn"><i class="fa-solid fa-plus"></i> Hội thoại mới</button>
+                    <p class="sidebar-label">Lịch sử</p>
+                    <div class="chat-history" id="chat-history-list"></div>
+                </div>
+                <div class="chat-main glass-panel">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-welcome">
+                            <div class="welcome-icon"><i class="fa-solid fa-robot"></i></div>
+                            <h3>CP Grandmaster AI</h3>
+                            <p>Trợ lý lập trình thi đấu: C++, Python, Java, Rust, Go — cấu trúc dữ liệu, độ phức tạp và debug.</p>
+                        </div>
+                        <div class="chat-bubble assistant">
+                            <div class="bubble-header"><i class="fa-solid fa-robot"></i> CP Grandmaster AI</div>
+                            <div class="bubble-content">
+                                Xin chào! Hãy hỏi về bài toán, thuật toán hoặc dán đoạn code cần phân tích.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-wrapper">
+                        <textarea id="chat-input" placeholder="Hỏi thuật toán, debug mã nguồn..." rows="2"></textarea>
+                        <button class="btn-ide btn-ide-run" id="chat-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                    <div class="composer-hint">Enter gửi · Shift+Enter xuống dòng</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="rag-tab" class="tab-content">
+            <div class="rag-layout glass-panel">
+                <div class="panel-header-clean">
+                    <div>
+                        <h2><i class="fa-solid fa-book-bookmark"></i> Kho kiến thức RAG</h2>
+                        <p class="panel-subtitle">Templates thuật toán để AI tra cứu khi giải bài</p>
+                    </div>
+                    <div class="header-tools">
+                        <div class="rag-search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="search" id="rag-search-input" placeholder="Tìm DSU, Dijkstra, Fast I/O..." autocomplete="off">
+                        </div>
+                        <label class="btn-ide btn-ide-secondary btn-sm">
+                            <i class="fa-solid fa-upload"></i> Nạp template
+                            <input type="file" id="rag-upload-input" accept=".cpp,.py,.java,.md,.txt,.hpp,.h,.rs,.go,.c" style="display: none;">
+                        </label>
+                    </div>
+                </div>
+                <div class="rag-workspace">
+                    <div class="rag-grid" id="rag-docs-grid"></div>
+                    <div class="rag-viewer" id="rag-viewer">
+                        <div class="rag-viewer-empty">
+                            <i class="fa-solid fa-book-open"></i>
+                            <p>Chọn một tài liệu bên trái để đọc nội dung.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="vault-tab" class="tab-content">
+            <div class="vault-layout glass-panel">
+                <div class="panel-header-clean">
+                    <div>
+                        <h2><i class="fa-solid fa-trophy"></i> Solved Vault</h2>
+                        <p class="panel-subtitle">Bài đã giải và lưu từ AI Agent</p>
+                    </div>
+                </div>
+                <div class="vault-grid" id="vault-grid"></div>
+            </div>
+        </section>
+
+        <section id="admin-tab" class="tab-content">
+            <div class="vault-layout glass-panel">
+                <div class="panel-header-clean">
+                    <div>
+                        <h2><i class="fa-solid fa-shield-halved"></i> Trang quản trị</h2>
+                        <p class="panel-subtitle">Quản lý thành viên, AI model và hệ thống</p>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <button class="btn-ide btn-ide-secondary btn-sm" id="admin-export-btn"><i class="fa-solid fa-download"></i> Tải dữ liệu member</button>
+                        <button class="btn-ide btn-ide-danger btn-sm" id="admin-reset-btn"><i class="fa-solid fa-rotate-right"></i> Reset máy chủ</button>
+                    </div>
+                </div>
+
+                <div class="admin-summary-strip" style="display:grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 1rem; margin: 1rem 0;">
+                    <div class="glass-panel" style="padding: 1rem; border-radius: 14px;">
+                        <div class="panel-subtitle">Thành viên</div>
+                        <h3 id="admin-total-members">0</h3>
+                    </div>
+                    <div class="glass-panel" style="padding: 1rem; border-radius: 14px;">
+                        <div class="panel-subtitle">Admin</div>
+                        <h3 id="admin-total-admins">0</h3>
+                    </div>
+                    <div class="glass-panel" style="padding: 1rem; border-radius: 14px;">
+                        <div class="panel-subtitle">Phiên</div>
+                        <h3 id="admin-total-sessions">0</h3>
+                    </div>
+                    <div class="glass-panel" style="padding: 1rem; border-radius: 14px;">
+                        <div class="panel-subtitle">Saved</div>
+                        <h3 id="admin-total-saved">0</h3>
+                    </div>
+                </div>
+
+                <div class="admin-actions" style="display:flex; gap: 1rem; align-items:center; margin-bottom: 1.25rem; flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:0.5rem; font-weight:600;">AI model
+                        <select id="admin-model-selector" class="header-select">
+                            <option value="gemma4:latest">gemma4:latest</option>
+                            <option value="deepseek-v4-flash:cloud">deepseek-v4-flash:cloud</option>
+                            <option value="qwen2.5-coder:7b">qwen2.5-coder:7b</option>
+                            <option value="deepseek-coder-v2">deepseek-coder-v2</option>
+                            <option value="llama3.1:8b">llama3.1:8b</option>
+                        </select>
+                    </label>
+                    <button id="admin-apply-model-btn" class="btn-ide btn-ide-run btn-sm"><i class="fa-solid fa-wand-sparkles"></i> Cập nhật model</button>
+                </div>
+
+                <div class="competition-admin-panel">
+                    <div class="panel-header-clean">
+                        <h3><i class="fa-solid fa-flag-checkered"></i> Quản lý cuộc thi</h3>
+                        <button id="competition-new-btn" class="btn-ide btn-ide-secondary btn-sm"><i class="fa-solid fa-plus"></i> Cuộc thi mới</button>
+                    </div>
+                    <form id="competition-form" class="competition-form">
+                        <input type="hidden" id="competition-edit-id">
+                        <input id="competition-title" placeholder="Tên cuộc thi" required>
+                        <select id="competition-status"><option value="draft">Nháp</option><option value="published">Đã mở</option><option value="closed">Đã đóng</option></select>
+                        <div class="competition-dates">
+                            <label>Bắt đầu <input id="competition-starts-at" type="datetime-local"></label>
+                            <label>Kết thúc <input id="competition-ends-at" type="datetime-local"></label>
+                        </div>
+                        <textarea id="competition-statement" placeholder="Đề bài cuộc thi" required></textarea>
+                        <textarea id="competition-tests" placeholder='Test JSON: [{"input":"...","expected":"..."}]'></textarea>
+                        <textarea id="competition-problems" placeholder='Problems JSON theo ClueOJ: [{"code":"A","title":"A+B","statement":"...","points":100,"time_limit":2,"memory_limit":256,"tests":[{"input":"1 2","expected":"3","points":50}]}]'></textarea>
+                        <div class="competition-import-row"><input id="competition-clueoj-path" placeholder="Đường dẫn thư mục ClueOJ, ví dụ: C:\\clueoj-main\\problems\\aplusb"><input id="competition-clueoj-statement" placeholder="Đề bài cho problem vừa nạp"><button type="button" id="competition-import-clueoj" class="btn-ide btn-ide-secondary btn-sm"><i class="fa-solid fa-file-import"></i> Nạp problem ClueOJ</button></div>
+                        <div class="competition-form-actions">
+                            <button type="button" id="competition-generate-tests" class="btn-ide btn-ide-secondary btn-sm"><i class="fa-solid fa-wand-magic-sparkles"></i> AI tạo test</button>
+                            <button type="submit" class="btn-ide btn-ide-run btn-sm"><i class="fa-solid fa-floppy-disk"></i> Lưu cuộc thi</button>
+                        </div>
+                        <p id="competition-admin-message" class="panel-subtitle"></p>
+                    </form>
+                    <div id="admin-competition-list" class="admin-competition-list"></div>
+                </div>
+
+                <div class="panel-header-clean" style="margin-top: 1rem;">
+                    <h3><i class="fa-solid fa-users"></i> Danh sách thành viên</h3>
+                    <div class="admin-member-search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input id="admin-member-search" type="search" placeholder="Tìm tên, email hoặc IP..." autocomplete="off">
+                    </div>
+                </div>
+                <div class="table-wrap" style="overflow:auto;">
+                    <table style="width:100%; border-collapse: collapse; color: var(--text-primary);">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left; padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Tên</th>
+                                <th style="text-align:left; padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Vai trò</th>
+                                <th style="text-align:left; padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">IP gần nhất</th>
+                                <th style="text-align:left; padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Session</th>
+                                <th style="text-align:left; padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Saved</th>
+                                <th style="text-align:left; padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Ngày tạo</th>
+                                <th style="text-align:left; padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Chi tiết</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-members-table-body"></tbody>
+                    </table>
+                </div>
+
+                <div id="admin-member-detail" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(148,163,184,.2);"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <div class="auth-modal hidden" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+        <div class="auth-card">
+            <aside class="auth-showcase" aria-hidden="true">
+                <div class="auth-showcase-glow"></div>
+                <div class="auth-showcase-brand"><span class="auth-showcase-mark"><i class="fa-solid fa-code"></i></span> LOCAL CP</div>
+                <div class="auth-showcase-copy">
+                    <span class="auth-kicker">YOUR ALGORITHM WORKSPACE</span>
+                    <h2>Code better.<br><em>Think deeper.</em></h2>
+                    <p>Một không gian riêng để giải bài, lưu code và tiếp tục những ý tưởng đang dang dở.</p>
+                </div>
+                <div class="auth-perks">
+                    <span><i class="fa-solid fa-shield-halved"></i> Phiên làm việc riêng tư</span>
+                    <span><i class="fa-solid fa-cloud-arrow-up"></i> Đồng bộ code đã lưu</span>
+                    <span><i class="fa-solid fa-bolt"></i> Truy cập AI Assistant</span>
+                </div>
+            </aside>
+            <div class="auth-form-area">
+                <button class="auth-close" id="auth-close-btn" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
+                <div class="auth-heading"><span class="auth-heading-icon"><i class="fa-solid fa-key"></i></span><div><h2 id="auth-title">Đăng nhập</h2><p>Chào mừng bạn trở lại với Local CP.</p></div></div>
+                <div class="auth-tabs"><button class="auth-tab active" data-auth-mode="login">Đăng nhập</button><button class="auth-tab" data-auth-mode="register">Tạo tài khoản</button></div>
+                <form id="auth-form">
+                    <div class="auth-field"><label for="auth-username">Tên tài khoản</label><div class="auth-input-wrap"><i class="fa-regular fa-user"></i><input id="auth-username" type="text" minlength="3" maxlength="64" autocomplete="username" placeholder="Nhập tên tài khoản" required></div></div>
+                    <div id="auth-email-field" class="auth-field hidden"><label for="auth-email">Email</label><div class="auth-input-wrap"><i class="fa-regular fa-envelope"></i><input id="auth-email" type="email" maxlength="120" autocomplete="email" placeholder="you@example.com"></div></div>
+                    <div class="auth-field"><label for="auth-password">Mật khẩu</label><div class="password-field auth-input-wrap"><i class="fa-solid fa-lock"></i><input id="auth-password" type="password" minlength="6" autocomplete="current-password" placeholder="Tối thiểu 6 ký tự" required><button type="button" class="btn-mini password-toggle" id="auth-password-toggle" title="Hiện mật khẩu"><i class="fa-solid fa-eye"></i></button></div></div>
+                    <label class="auth-remember-row"><input id="auth-remember" type="checkbox"> <span>Duy trì đăng nhập trong 1 tháng</span></label>
+                    <p class="auth-error hidden" id="auth-error"></p>
+                    <button class="btn-ide btn-ide-run btn-block" type="submit" id="auth-submit-btn"><span>Đăng nhập</span><i class="fa-solid fa-arrow-right"></i></button>
+                </form>
+                <p class="auth-footnote"><i class="fa-solid fa-circle-info"></i> Không lưu trữ mật khẩu trên trình duyệt của bạn.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=4.9"></script>
+</body>
+</html>
