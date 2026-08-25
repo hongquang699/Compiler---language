@@ -15,11 +15,11 @@ compiler:
 llm:
   endpoint: http://127.0.0.1:11434
   max_tokens: 4096
-  model: deepseek-v4-flash:cloud
-  vision_model: qwen2.5vl:7b
+  model: qwen2.5-coder:7b
   provider: ollama
   temperature: 0.2
   timeout_seconds: 120
+  vision_model: qwen2.5vl:7b
 memory:
   db_path: data/memory.db
   max_history_turns: 10

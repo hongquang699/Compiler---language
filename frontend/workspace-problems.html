@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Workspace - Danh sách Bài tập | LOCAL CP Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/workspace.css?v=5.0">
+</head>
+<body class="ws-body">
+<div class="ws-shell">
+    <!-- Top Workspace Navbar -->
+    <header class="ws-topbar">
+        <div class="ws-brand-col">
+            <span class="ws-label">WORKSPACE</span>
+            <h1 class="ws-title" id="ws-title">Đang tải cuộc thi...</h1>
+        </div>
+        <nav class="ws-tabs">
+            <a href="#" class="ws-tab" onclick="goPage('workspace.html')"><i class="fa-solid fa-circle-info"></i> Thông tin</a>
+            <a href="#" class="ws-tab active"><i class="fa-solid fa-list-check"></i> Bài tập</a>
+            <a href="#" class="ws-tab" onclick="goPage('workspace-scoreboard.html')"><i class="fa-solid fa-ranking-star"></i> Bảng xếp hạng</a>
+            <a href="#" class="ws-tab" onclick="goPage('workspace-submissions.html')"><i class="fa-solid fa-clock-rotate-left"></i> Bài nộp</a>
+            <a href="#" class="ws-tab" onclick="alert('Bạn đã tham gia cuộc thi này!')"><i class="fa-solid fa-user-group"></i> Tham gia</a>
+        </nav>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-theme-toggle" onclick="toggleTheme(event)" title="Chuyển chế độ Sáng / Tối">
+                <i class="fa-solid fa-moon"></i> <span class="theme-label" style="font-size: 0.8rem; font-weight: 600;">Tối</span>
+            </button>
+            <a href="contest.html" class="ws-btn-leave" onclick="return confirm('Bạn có chắc muốn rời khỏi cuộc thi?')">
+                <i class="fa-solid fa-right-from-bracket"></i> Rời khỏi cuộc thi
+            </a>
+        </div>
+    </header>
+
+    <main class="ws-content">
+        <!-- Header Banner (Matching Screenshot 1) -->
+        <div class="ws-header-banner">
+            <div class="ws-header-icon"><i class="fa-solid fa-list-check"></i></div>
+            <div>
+                <div class="ws-header-sub">KHÔNG GIAN CUỘC THI</div>
+                <div class="ws-header-title">Bài tập <span class="ws-count-badge" id="prob-count-badge">0</span></div>
+            </div>
+        </div>
+
+        <!-- Problems Table (Matching Screenshot 1) -->
+        <div class="ws-table-container">
+            <table class="ws-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;" class="center">#</th>
+                        <th>ĐỀ BÀI</th>
+                        <th>GIỚI HẠN THỜI GIAN:</th>
+                        <th>GIỚI HẠN BỘ NHỚ:</th>
+                        <th class="center">ĐIỂM</th>
+                        <th class="center">THÀNH VIÊN</th>
+                        <th class="center"></th>
+                    </tr>
+                </thead>
+                <tbody id="ws-problems-tbody">
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:40px; color:var(--ws-text-sub);">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách bài tập...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const contestId = params.get('id') || '3';
+
+function goPage(page) {
+    window.location.href = page + '?id=' + contestId;
+}
+
+function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+async function loadProblems() {
+    const token = localStorage.getItem('local_cp_token');
+    const headers = token ? { Authorization: 'Bearer ' + token } : {};
+    try {
+        const res = await fetch('/api/competitions/' + contestId, { headers });
+        if (!res.ok) {
+            document.getElementById('ws-title').textContent = 'Không tìm thấy cuộc thi';
+            return;
+        }
+        const data = await res.json();
+        document.title = (data.title || 'Cuộc thi') + ' — Bài tập | LOCAL CP Studio';
+        document.getElementById('ws-title').textContent = data.title || 'Cuộc thi ClueOJ';
+        
+        let problems = data.problems || [];
+        if (!problems.length && data.statement) {
+            problems = [{
+                id: 1,
+                code: 'A',
+                title: data.title || 'Bài tập A',
+                statement: data.statement,
+                time_limit: 1.0,
+                memory_limit: 256,
+                points: 100,
+                tests: []
+            }];
+        }
+
+        document.getElementById('prob-count-badge').textContent = problems.length;
+        const tbody = document.getElementById('ws-problems-tbody');
+
+        if (!problems.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--ws-text-sub);">Chưa có bài tập nào được thêm vào cuộc thi này.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = problems.map((p, i) => {
+            const probNum = i + 1;
+            const code = p.code || ('Problem ' + probNum);
+            const title = p.title ? `${code}. ${p.title}` : `Problem ${probNum}`;
+            const timeLimit = p.time_limit != null ? (p.time_limit + 's') : '1.0s';
+            const memLimit = p.memory_limit != null ? (p.memory_limit + ' MB') : '256 MB';
+            const pts = p.points != null ? p.points : 100;
+            const participants = p.tests ? p.tests.length : (i % 5 + 1);
+
+            const delay = i * 0.04;
+            return `
+                <tr class="ws-animate-in" style="animation-delay: ${delay}s;">
+                    <td class="center">
+                        <div class="ws-num-col" style="justify-content:center;">
+                            <span class="ws-minus-icon"><i class="fa-solid fa-minus"></i></span>
+                            <div class="ws-num-circle">${probNum}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <a href="workspace-problem.html?id=${contestId}&prob=${i}" class="ws-prob-link">${escapeHtml(title)}</a>
+                    </td>
+                    <td>
+                        <div class="ws-limit-cell"><i class="fa-regular fa-clock"></i> ${timeLimit}</div>
+                    </td>
+                    <td>
+                        <div class="ws-limit-cell"><i class="fa-solid fa-hard-drive"></i> ${memLimit}</div>
+                    </td>
+                    <td class="center">
+                        <span class="ws-pts-pill">${pts} p</span>
+                    </td>
+                    <td class="center" style="font-weight: 700; color: var(--ws-text-muted);">
+                        ${participants}
+                    </td>
+                    <td class="center">
+                        <a href="workspace-problem.html?id=${contestId}&prob=${i}" class="ws-btn-nopbai">
+                            <i class="fa-solid fa-paper-plane"></i> Nộp bài
+                        </a>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+loadProblems();
+</script>
+</body>
+</html>

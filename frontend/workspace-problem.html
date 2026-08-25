@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Workspace - Chi tiết Đề bài | LOCAL CP Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/auth-nav.js"></script>
+    <link rel="stylesheet" href="css/workspace.css?v=10.0">
+</head>
+<body class="ws-body">
+<div class="ws-shell">
+    <!-- Top Workspace Navbar -->
+    <header class="ws-topbar">
+        <div class="ws-brand-col">
+            <span class="ws-label">WORKSPACE</span>
+            <div class="ws-title" id="ws-title">Đang tải cuộc thi...</div>
+        </div>
+        <nav class="ws-tabs">
+            <a href="#" class="ws-tab" onclick="goPage('workspace.html')"><i class="fa-solid fa-circle-info"></i> Thông tin</a>
+            <a href="#" class="ws-tab active" onclick="goPage('workspace-problems.html')"><i class="fa-solid fa-list-check"></i> Bài tập</a>
+            <a href="#" class="ws-tab" onclick="goPage('workspace-scoreboard.html')"><i class="fa-solid fa-ranking-star"></i> Bảng xếp hạng</a>
+            <a href="#" class="ws-tab" onclick="goPage('workspace-submissions.html')"><i class="fa-solid fa-clock-rotate-left"></i> Bài nộp</a>
+            <a href="#" class="ws-tab" onclick="alert('Bạn đã tham gia cuộc thi này!')"><i class="fa-solid fa-user-group"></i> Tham gia</a>
+        </nav>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="user-auth-area"></div>
+            <button class="btn-theme-toggle" onclick="toggleTheme(event)" title="Chuyển chế độ Sáng / Tối">
+                <i class="fa-solid fa-moon"></i> <span class="theme-label" style="font-size: 0.8rem; font-weight: 600;">Tối</span>
+            </button>
+            <a href="contest.html" class="ws-btn-leave" onclick="return confirm('Bạn có chắc muốn rời khỏi cuộc thi?')">
+                <i class="fa-solid fa-right-from-bracket"></i> Rời khỏi cuộc thi
+            </a>
+        </div>
+    </header>
+
+    <main class="ws-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+            <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--ws-text-main); margin:0;" id="prob-page-title">Đang tải bài tập...</h2>
+            <div style="display:flex; gap:8px;">
+                <button id="btn-prev-prob" class="ws-sidebar-btn-outline" style="width:auto; margin:0; padding:6px 14px; font-size:0.8rem; cursor:pointer;" onclick="prevProb()"><i class="fa-solid fa-arrow-left"></i> Bài trước</button>
+                <button id="btn-next-prob" class="ws-sidebar-btn-outline" style="width:auto; margin:0; padding:6px 14px; font-size:0.8rem; cursor:pointer;" onclick="nextProb()">Bài tiếp theo <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <div class="ws-detail-grid">
+            <!-- Left Main Statement Panel (Matching ClueOJ Reference) -->
+            <div>
+                <div class="ws-detail-main">
+                    <div class="ws-detail-tag">TRẠNG THÁI</div>
+
+                    <div class="ws-detail-sec">
+                        <div class="ws-detail-sec-title">Yêu cầu</div>
+                        <div id="prob-statement-text" class="ws-prose">Đang tải yêu cầu đề bài...</div>
+                    </div>
+
+                    <div class="ws-detail-sec">
+                        <div class="ws-detail-sec-title">Dữ liệu vào Specification</div>
+                        <ul>
+                            <li id="prob-input-spec">Một dòng ghi hai số nguyên a và b (&minus;10<sup>16</sup> &le; a &le; b &le; 10<sup>16</sup>).</li>
+                        </ul>
+                    </div>
+
+                    <div class="ws-detail-sec">
+                        <div class="ws-detail-sec-title">Dữ liệu ra Specification</div>
+                        <ul>
+                            <li id="prob-output-spec">Ghi ra kết quả tương ứng theo yêu cầu bài toán.</li>
+                        </ul>
+                    </div>
+
+                    <div class="ws-detail-sec">
+                        <div class="ws-detail-sec-title">Sample Input</div>
+                        <div class="ws-sample-container">
+                            <div class="ws-sample-body">
+                                <span id="sample-in-val">1 5</span>
+                                <button class="ws-btn-copy" onclick="copyVal('sample-in-val', this)">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ws-detail-sec">
+                        <div class="ws-detail-sec-title">Sample Output</div>
+                        <div class="ws-sample-container">
+                            <div class="ws-sample-body">
+                                <span id="sample-out-val">6</span>
+                                <button class="ws-btn-copy" onclick="copyVal('sample-out-val', this)">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clarification section (Matching ClueOJ Reference) -->
+                <div class="ws-clarif-card">
+                    <div class="ws-clarif-head">LÀM RÕ</div>
+                    <div class="ws-clarif-title">Giải đáp thắc mắc trong cuộc thi</div>
+                    <div class="ws-clarif-empty">Chưa có lời làm rõ nào được đưa ra ở thời điểm này.</div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar Panel (Matching ClueOJ Reference) -->
+            <aside>
+                <div class="ws-sidebar-card">
+                    <div class="ws-sidebar-tag">THÔNG TIN</div>
+                    <div class="ws-sidebar-title">Thông tin bài tập</div>
+
+                    <button class="ws-btn-gui" onclick="document.getElementById('code-editor-card').scrollIntoView({behavior:'smooth'})">
+                        Gửi bài giải
+                    </button>
+
+                    <div class="ws-info-2x2">
+                        <div class="ws-info-box">
+                            <div class="ws-info-box-lbl">ĐIỂM</div>
+                            <div class="ws-info-box-val" id="sb-pts-val">100</div>
+                        </div>
+                        <div class="ws-info-box">
+                            <div class="ws-info-box-lbl">GIỚI HẠN THỜI GIAN:</div>
+                            <div class="ws-info-box-val" id="sb-time-val">0.1s</div>
+                        </div>
+                        <div class="ws-info-box">
+                            <div class="ws-info-box-lbl">GIỚI HẠN BỘ NHỚ:</div>
+                            <div class="ws-info-box-val" id="sb-mem-val">64 MB</div>
+                        </div>
+                        <div class="ws-info-box">
+                            <div class="ws-info-box-lbl">I / O</div>
+                            <div class="ws-info-box-val" style="font-size:0.84rem;">stdin &rarr; stdout</div>
+                        </div>
+                    </div>
+
+                    <!-- Author Card -->
+                    <div style="background:var(--ws-box-bg); border:1px solid var(--ws-border); border-radius:12px; padding:12px 14px; margin-bottom:10px;">
+                        <div class="ws-info-box-lbl">TÁC GIẢ</div>
+                        <div style="font-size:0.9rem; font-weight:800; color:var(--ws-text-main); display:flex; align-items:center; gap:6px;">
+                            <span>Local CP Studio</span>
+                            <i class="fa-solid fa-circle-check" style="color:#2563eb; font-size:0.88rem;"></i>
+                        </div>
+                    </div>
+
+                    <!-- Category Card -->
+                    <div style="background:var(--ws-box-bg); border:1px solid var(--ws-border); border-radius:12px; padding:12px 14px; margin-bottom:10px;">
+                        <div class="ws-info-box-lbl">LOẠI ĐỀ BÀI</div>
+                        <div style="font-size:0.84rem; font-weight:700; color:var(--ws-text-main); line-height:1.4;">
+                            A01 - Nhập môn: Biến, hằng và phép toán
+                        </div>
+                    </div>
+
+                    <!-- Allowed Languages Card -->
+                    <div style="background:var(--ws-box-bg); border:1px solid var(--ws-border); border-radius:12px; padding:12px 14px; margin-bottom:10px;">
+                        <div class="ws-info-box-lbl">NGÔN NGỮ CHO PHÉP</div>
+                        <div style="font-size:0.84rem; font-weight:700; color:var(--ws-text-main);">
+                            C, C++, Java, Pascal, Python, Text
+                        </div>
+                    </div>
+
+                    <!-- My Solutions Button -->
+                    <a href="#" onclick="goPage('workspace-submissions.html')" class="ws-sidebar-btn-outline" style="font-weight:700; padding:11px 14px; border-radius:10px; background:var(--ws-card);">
+                        Lời giải của tôi
+                    </a>
+                </div>
+
+                <!-- Code Submission Box -->
+                <div class="ws-sidebar-card" id="code-editor-card">
+                    <div class="ws-sidebar-tag">NỘP CODE</div>
+                    <div class="ws-sidebar-title">Nộp bài giải của bạn</div>
+
+                    <select id="sub-lang" style="width:100%; padding:9px; border-radius:8px; border:1px solid var(--ws-border); font-family:'IBM Plex Sans',sans-serif; font-size:0.85rem; font-weight:600; margin-bottom:10px; background:var(--ws-card); color:var(--ws-text-main);">
+                        <option value="cpp">C++17 (g++)</option>
+                        <option value="python">Python 3</option>
+                        <option value="java">Java 17</option>
+                        <option value="c">C (gcc)</option>
+                    </select>
+
+                    <textarea id="sub-source" placeholder="// Viết code giải bài toán tại đây..." style="width:100%; min-height:180px; border-radius:8px; border:1px solid var(--ws-border); padding:12px; font-family:'JetBrains Mono',monospace; font-size:0.82rem; resize:vertical; outline:none; background:#0f172a; color:#f8fafc;"></textarea>
+
+                    <button class="ws-btn-gui" style="margin-top:10px; margin-bottom:0;" onclick="submitSolution()">
+                        <i class="fa-solid fa-paper-plane"></i> Chấm bài ngay
+                    </button>
+
+                    <div id="sub-verdict-msg" style="margin-top:10px; font-size:0.85rem; font-weight:700;"></div>
+                </div>
+            </aside>
+        </div>
+    </main>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const contestId = params.get('id') || '3';
+let probIdx = parseInt(params.get('prob') || '0');
+let totalProblems = 1;
+let currentProblem = null;
+
+function goPage(page) {
+    window.location.href = page + '?id=' + contestId;
+}
+
+function prevProb() {
+    if (probIdx > 0) {
+        window.location.href = `workspace-problem.html?id=${contestId}&prob=${probIdx - 1}`;
+    }
+}
+
+function nextProb() {
+    if (probIdx < totalProblems - 1) {
+        window.location.href = `workspace-problem.html?id=${contestId}&prob=${probIdx + 1}`;
+    }
+}
+
+function copyVal(id, btn) {
+    const text = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'Đã copy!';
+        setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+}
+
+async function loadProblemDetail() {
+    const token = localStorage.getItem('local_cp_token');
+    const headers = token ? { Authorization: 'Bearer ' + token } : {};
+    try {
+        const res = await fetch('/api/competitions/' + contestId, { headers });
+        if (!res.ok) {
+            document.getElementById('prob-page-title').textContent = 'Không tìm thấy bài tập';
+            return;
+        }
+        const data = await res.json();
+        document.getElementById('ws-title').textContent = data.title || 'Cuộc thi ClueOJ';
+        
+        let problems = data.problems || [];
+        if (!problems.length && data.statement) {
+            problems = [{
+                id: 1,
+                code: 'A',
+                title: data.title,
+                statement: data.statement,
+                time_limit: 1.0,
+                memory_limit: 256,
+                points: 100,
+                tests: []
+            }];
+        }
+
+        totalProblems = problems.length;
+        if (probIdx >= totalProblems) probIdx = 0;
+
+        currentProblem = problems[probIdx] || problems[0] || null;
+
+        if (currentProblem) {
+            const code = currentProblem.code || String.fromCharCode(65 + probIdx);
+            const probTitle = currentProblem.title ? `${code}. ${currentProblem.title}` : `Problem ${probIdx + 1}`;
+            document.title = probTitle + ' | LOCAL CP Studio';
+            document.getElementById('prob-page-title').textContent = probTitle;
+            
+            const stmt = currentProblem.statement || 'Tính kết quả theo yêu cầu đề bài.';
+            document.getElementById('prob-statement-text').innerHTML = typeof marked !== 'undefined' ? marked.parse(stmt) : stmt.replace(/\n/g, '<br>');
+            
+            const timeLimit = currentProblem.time_limit != null ? (currentProblem.time_limit + 's') : '0.1s';
+            const memLimit = currentProblem.memory_limit != null ? (currentProblem.memory_limit + ' MB') : '64 MB';
+            const pts = currentProblem.points != null ? currentProblem.points : 100;
+
+            document.getElementById('sb-pts-val').textContent = pts;
+            document.getElementById('sb-time-val').textContent = timeLimit;
+            document.getElementById('sb-mem-val').textContent = memLimit;
+
+            if (currentProblem.tests && currentProblem.tests.length > 0) {
+                document.getElementById('sample-in-val').textContent = currentProblem.tests[0].input || '1 5';
+                document.getElementById('sample-out-val').textContent = currentProblem.tests[0].expected || '6';
+            }
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function submitSolution() {
+    const token = localStorage.getItem('local_cp_token');
+    const msgEl = document.getElementById('sub-verdict-msg');
+    if (!token) {
+        msgEl.style.color = '#ef4444';
+        msgEl.textContent = 'Vui lòng đăng nhập trước khi nộp bài.';
+        return;
+    }
+    const code = document.getElementById('sub-source').value.trim();
+    const lang = document.getElementById('sub-lang').value;
+    if (!code) {
+        msgEl.style.color = '#ef4444';
+        msgEl.textContent = 'Vui lòng nhập mã nguồn giải bài.';
+        return;
+    }
+    msgEl.style.color = '#2563eb';
+    msgEl.textContent = 'Đang biên dịch và chạy test cases...';
+
+    try {
+        const res = await fetch('/api/competitions/' + contestId + '/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+            body: JSON.stringify({ source_code: code, language: lang, problem_id: currentProblem?.id })
+        });
+        const resData = await res.json();
+        if (res.ok) {
+            msgEl.style.color = '#16a34a';
+            msgEl.textContent = 'ACCEPTED! Điểm: ' + (resData.score ?? 100);
+        } else {
+            msgEl.style.color = '#dc2626';
+            msgEl.textContent = resData.detail || 'Lỗi khi chấm bài.';
+        }
+    } catch (err) {
+        msgEl.style.color = '#dc2626';
+        msgEl.textContent = 'Lỗi kết nối máy chấm.';
+    }
+}
+
+loadProblemDetail();
+</script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Workspace - Bài nộp cuộc thi | LOCAL CP Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/workspace.css?v=5.0">
+</head>
+<body class="ws-body">
+<div class="ws-shell">
+    <!-- Top Workspace Navbar -->
+    <header class="ws-topbar">
+        <div class="ws-brand-col">
+            <span class="ws-label">WORKSPACE</span>
+            <h1 class="ws-title" id="ws-title">Đang tải cuộc thi...</h1>
+        </div>
+        <nav class="ws-tabs">
+            <a href="#" class="ws-tab" onclick="goPage('workspace.html')"><i class="fa-solid fa-circle-info"></i> Thông tin</a>
+            <a href="#" class="ws-tab" onclick="goPage('workspace-problems.html')"><i class="fa-solid fa-list-check"></i> Bài tập</a>
+            <a href="#" class="ws-tab" onclick="goPage('workspace-scoreboard.html')"><i class="fa-solid fa-ranking-star"></i> Bảng xếp hạng</a>
+            <a href="#" class="ws-tab active"><i class="fa-solid fa-clock-rotate-left"></i> Bài nộp</a>
+            <a href="#" class="ws-tab" onclick="alert('Bạn đã tham gia cuộc thi này!')"><i class="fa-solid fa-user-group"></i> Tham gia</a>
+        </nav>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-theme-toggle" onclick="toggleTheme(event)" title="Chuyển chế độ Sáng / Tối">
+                <i class="fa-solid fa-moon"></i> <span class="theme-label" style="font-size: 0.8rem; font-weight: 600;">Tối</span>
+            </button>
+            <a href="contest.html" class="ws-btn-leave" onclick="return confirm('Bạn có chắc muốn rời khỏi cuộc thi?')">
+                <i class="fa-solid fa-right-from-bracket"></i> Rời khỏi cuộc thi
+            </a>
+        </div>
+    </header>
+
+    <main class="ws-content">
+        <div class="ws-header-banner">
+            <div class="ws-header-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <div>
+                <div class="ws-header-sub">LỊCH SỬ THI ĐẤU REALTIME</div>
+                <div class="ws-header-title">Danh sách bài nộp</div>
+            </div>
+        </div>
+
+        <div class="ws-table-container">
+            <table class="ws-table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;" class="center">#ID</th>
+                        <th>THỜI GIAN</th>
+                        <th>THÍ SINH</th>
+                        <th>NGÔN NGỮ</th>
+                        <th class="center">KẾT QUẢ</th>
+                        <th class="center">ĐIỂM</th>
+                        <th class="center">THỜI GIAN CHẠY</th>
+                        <th class="center">BỘ NHỚ</th>
+                    </tr>
+                </thead>
+                <tbody id="ws-submissions-tbody">
+                    <tr>
+                        <td colspan="8" style="text-align:center; padding:40px; color:var(--ws-text-sub);">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách bài nộp...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const contestId = params.get('id') || '3';
+
+function goPage(page) {
+    window.location.href = page + '?id=' + contestId;
+}
+
+function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+async function loadSubmissions() {
+    const token = localStorage.getItem('local_cp_token');
+    const headers = token ? { Authorization: 'Bearer ' + token } : {};
+    try {
+        const res = await fetch('/api/competitions/' + contestId, { headers });
+        if (res.ok) {
+            const data = await res.json();
+            document.title = (data.title || 'Cuộc thi') + ' — Bài nộp | LOCAL CP Studio';
+            document.getElementById('ws-title').textContent = data.title || 'Cuộc thi ClueOJ';
+        }
+
+        const subRes = await fetch('/api/competitions/' + contestId + '/submissions', { headers });
+        const subData = subRes.ok ? await subRes.json() : { submissions: [] };
+        const submissions = subData.submissions || [];
+        const tbody = document.getElementById('ws-submissions-tbody');
+
+        if (!submissions.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--ws-text-sub);">Chưa có lượt nộp bài nào trong cuộc thi này.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = submissions.map(sub => {
+            const isAc = sub.verdict === 'ACCEPTED' || sub.verdict === 'AC';
+            const badgeClass = isAc ? 'ws-pts-pill' : 'ws-pts-pill';
+            const badgeBg = isAc ? 'background: #dcfce7; color: #15803d;' : 'background: #fee2e2; color: #dc2626;';
+            const timeStr = sub.created_at ? new Date(sub.created_at).toLocaleTimeString('vi-VN') : '--:--';
+
+            return `
+                <tr>
+                    <td class="center" style="font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--ws-text-muted);">
+                        #${sub.id}
+                    </td>
+                    <td style="color:var(--ws-text-muted); font-size:0.84rem;">
+                        ${timeStr}
+                    </td>
+                    <td>
+                        <strong style="color:var(--ws-text-main);">${escapeHtml(sub.username || 'Thí sinh')}</strong>
+                    </td>
+                    <td style="font-family:'JetBrains Mono',monospace; font-size:0.84rem; color:var(--ws-text-muted);">
+                        ${escapeHtml(sub.language || 'C++17')}
+                    </td>
+                    <td class="center">
+                        <span style="display:inline-block; padding:3px 10px; border-radius:12px; font-size:0.8rem; font-weight:800; ${badgeBg}">
+                            ${escapeHtml(sub.verdict || 'PENDING')}
+                        </span>
+                    </td>
+                    <td class="center" style="font-weight:800; color:var(--ws-text-main);">
+                        ${sub.score ?? 0}
+                    </td>
+                    <td class="center" style="font-family:'JetBrains Mono',monospace; font-size:0.84rem; color:var(--ws-text-muted);">
+                        ${sub.execution_time_ms ? sub.execution_time_ms + 'ms' : '15ms'}
+                    </td>
+                    <td class="center" style="font-family:'JetBrains Mono',monospace; font-size:0.84rem; color:var(--ws-text-muted);">
+                        ${sub.memory_kb ? Math.round(sub.memory_kb / 1024) + 'MB' : '2.1MB'}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+loadSubmissions();
+</script>
+</body>
+</html>

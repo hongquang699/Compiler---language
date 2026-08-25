@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kho Bài tập &amp; AI Testcases Studio | ClueOJ Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/style.css?v=7.0">
+    <link rel="stylesheet" href="css/admin.css?v=11.0">
+    <style>
+        .prob-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 28px;
+            background: linear-gradient(180deg, rgba(8, 16, 35, 0.98), rgba(4, 9, 20, 0.95));
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .prob-nav-tabs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .prob-nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .prob-nav-btn:hover {
+            color: var(--text-bright);
+            background: rgba(34, 211, 238, 0.08);
+            border-color: rgba(34, 211, 238, 0.2);
+        }
+        .prob-nav-btn.active {
+            color: #fff;
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(168, 85, 247, 0.18));
+            border-color: rgba(34, 211, 238, 0.4);
+            box-shadow: 0 4px 16px rgba(34, 211, 238, 0.12);
+        }
+    </style>
+</head>
+<body class="usaco-theme">
+    <!-- AUTH OVERLAY -->
+    <div id="admin-login-overlay" class="auth-overlay">
+        <div class="auth-card-modal">
+            <h2><i class="fa-solid fa-user-shield"></i> Xác thực Quản trị</h2>
+            <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:18px;">Vui lòng đăng nhập tài khoản Quản trị viên để tiếp tục.</p>
+            <form id="admin-login-form">
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">Tài khoản / Email</label>
+                    <input id="admin-login-user" type="text" placeholder="dev / admin" required style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px; color:var(--text-bright);">
+                </div>
+                <div style="margin-bottom:18px;">
+                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">Mật khẩu</label>
+                    <input id="admin-login-pass" type="password" placeholder="••••••••" required style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px; color:var(--text-bright);">
+                </div>
+                <button type="submit" class="admin-button primary" style="width:100%; padding:12px;"><i class="fa-solid fa-right-to-bracket"></i> Đăng nhập</button>
+            </form>
+            <div id="admin-login-msg" style="color:#f87171; font-size:0.82rem; margin-top:14px;" hidden></div>
+        </div>
+    </div>
+
+    <!-- HEADER NAVIGATION -->
+    <header class="prob-page-header">
+        <div style="display:flex; align-items:center; gap:16px;">
+            <a href="admin-console.html" class="admin-logo">
+                <i class="fa-solid fa-code"></i> LOCAL CP
+            </a>
+            <span style="height:20px; width:1px; background:var(--border-color);"></span>
+            <div class="prob-nav-tabs">
+                <a href="admin-console.html" class="prob-nav-btn"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                <a href="admin-console.html?view=contests" class="prob-nav-btn"><i class="fa-solid fa-flag-checkered"></i> Cuộc thi</a>
+                <a href="admin-problems.html" class="prob-nav-btn active"><i class="fa-solid fa-layer-group"></i> Kho Bài tập &amp; AI Studio</a>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <span id="user-display" class="admin-user"><i class="fa-solid fa-user-shield"></i> Admin Studio</span>
+            <a href="index.html" class="btn-icon" title="Quay về IDE"><i class="fa-solid fa-house"></i> IDE Studio</a>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="admin-content" style="padding-top: 24px;">
+        <div class="admin-toolbar" style="margin-bottom: 24px;">
+            <div>
+                <span class="admin-kicker">PROBLEM BANK &amp; AI TESTCASES STUDIO</span>
+                <h1 style="color:var(--text-bright); font-size:1.8rem; margin-top:4px;">Kho Bài tập &amp; Trình Tạo Test AI</h1>
+                <p style="color:var(--text-secondary); font-size:0.85rem; margin-top:4px;">Quản lý toàn bộ ngân hàng đề thi, cấu hình điểm, giới hạn thời gian/bộ nhớ và sinh bộ testcases chuẩn từ mã nguồn giải.</p>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <input id="problem-search" type="search" placeholder="Search mã bài, tên bài tập..." style="min-width:260px;">
+                <button id="btn-create-prob" class="admin-button primary"><i class="fa-solid fa-plus"></i> Tạo Bài tập mới</button>
+            </div>
+        </div>
+
+        <!-- PROBLEMS LIST TABLE -->
+        <div class="admin-card">
+            <div class="admin-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:70px;">Mã</th>
+                            <th>Tên Bài tập &amp; Trích yếu</th>
+                            <th>Gán Cuộc thi</th>
+                            <th style="text-align:center;">Điểm</th>
+                            <th style="text-align:center;">Giới hạn (CPU/RAM)</th>
+                            <th style="text-align:center;">Testcases</th>
+                            <th style="text-align:right;">Thao tác Quản trị</th>
+                        </tr>
+                    </thead>
+                    <tbody id="problems-tbody">
+                        <tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- PROBLEM EDIT MODAL -->
+    <div id="problem-modal-overlay" class="detail-overlay">
+        <div class="detail-modal" style="width: min(740px, 95vw);">
+            <button class="detail-close" onclick="closeProblemModal()"><i class="fa-solid fa-xmark"></i></button>
+            <h3 id="problem-modal-title" style="color:var(--accent-cyan); margin-bottom:16px;">Chỉnh sửa Bài tập</h3>
+            <form id="problem-edit-form" class="admin-form">
+                <input type="hidden" id="edit-prob-id">
+                <div class="form-two">
+                    <label>Mã bài (Code)<input id="edit-prob-code" placeholder="VD: A, B, C..." required></label>
+                    <label>Tên bài tập (Title)<input id="edit-prob-title" placeholder="VD: Tính tổng hai số A+B" required></label>
+                </div>
+                <div class="form-two">
+                    <label>Điểm số (Points)<input id="edit-prob-points" type="number" value="100" required></label>
+                    <label>Giới hạn Thời gian (giây)<input id="edit-prob-tl" type="number" step="0.1" value="1.0" required></label>
+                </div>
+                <div class="form-two">
+                    <label>Giới hạn Bộ nhớ (MB)<input id="edit-prob-ml" type="number" value="256" required></label>
+                    <label>Cuộc thi gán vào
+                        <select id="edit-prob-contest"></select>
+                    </label>
+                </div>
+                <label>Đề bài chi tiết (Markdown / LaTeX)
+                    <textarea id="edit-prob-statement" placeholder="Nội dung đề bài, quy cách dữ liệu vào/ra, ví dụ..." style="min-height: 170px; font-family: var(--font-code); font-size: 0.85rem;"></textarea>
+                </label>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px;">
+                    <button type="button" class="admin-button" onclick="closeProblemModal()">Hủy</button>
+                    <button type="submit" class="admin-button primary"><i class="fa-solid fa-floppy-disk"></i> Lưu Bài tập</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TESTCASES MANAGER MODAL -->
+    <div id="test-modal-overlay" class="detail-overlay">
+        <div class="detail-modal" style="width: min(860px, 96vw); max-height: 90vh;">
+            <button class="detail-close" onclick="closeTestModal()"><i class="fa-solid fa-xmark"></i></button>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+                <h3 id="test-modal-title" style="color:var(--accent-cyan); margin:0;">Quản lý Bộ Testcases</h3>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" id="btn-open-ai-gen" class="admin-button" style="background:rgba(168,85,247,0.2); border-color:#a855f7; color:#c084fc;"><i class="fa-solid fa-wand-magic-sparkles"></i> ⚡ AI Sinh Test từ Code</button>
+                    <button type="button" id="btn-add-manual-test" class="admin-button"><i class="fa-solid fa-plus"></i> Thêm Test thủ công</button>
+                </div>
+            </div>
+            <input type="hidden" id="test-mgr-prob-id">
+            <div id="testcases-list-container" style="display:flex; flex-direction:column; gap:14px; max-height: 55vh; overflow-y:auto; padding-right:6px; margin-bottom:16px;"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px;">
+                <span id="test-count-badge" style="font-size:0.84rem; color:var(--text-secondary); font-family:var(--font-code);">0 test cases</span>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" class="admin-button" onclick="closeTestModal()">Đóng</button>
+                    <button type="button" id="btn-save-all-tests" class="admin-button primary"><i class="fa-solid fa-floppy-disk"></i> Lưu Toàn Bộ Tests</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI TEST GENERATOR STUDIO MODAL -->
+    <div id="ai-test-modal-overlay" class="detail-overlay" style="z-index: 1200;">
+        <div class="detail-modal" style="width: min(820px, 95vw); max-height: 90vh;">
+            <button class="detail-close" onclick="closeAITestModal()"><i class="fa-solid fa-xmark"></i></button>
+            <h3 style="color:#c084fc; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-microchip"></i> AI Sinh Test Tự Động từ Mã Nguồn Chuẩn
+            </h3>
+            <p style="color:var(--text-secondary); font-size:0.82rem; margin-bottom:14px; line-height:1.5;">
+                Dán Code giải bài tập &rarr; AI tự động suy luận sinh ra tập dữ liệu Input hiểm hóc &rarr; Sandbox biên dịch và thực thi lấy Output chính xác 100%.
+            </p>
+
+            <div class="form-two" style="margin-bottom:12px;">
+                <label>Ngôn ngữ Mã nguồn
+                    <select id="ai-test-lang">
+                        <option value="cpp">C++17 (g++)</option>
+                        <option value="python">Python 3</option>
+                        <option value="java">Java 17</option>
+                        <option value="c">C (gcc)</option>
+                    </select>
+                </label>
+                <label>Số lượng Testcases cần sinh
+                    <input id="ai-test-count" type="number" min="1" max="20" value="5">
+                </label>
+            </div>
+
+            <label style="margin-bottom:12px; display:block;">Mã nguồn Code giải mẫu (Solution Code)
+                <textarea id="ai-solution-code" placeholder="#include <bits/stdc++.h>&#10;using namespace std;&#10;int main() { ... }" style="min-height: 160px; font-family: var(--font-code); font-size: 0.82rem; background:#040814; color:#f1f5f9;"></textarea>
+            </label>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <button type="button" id="btn-run-ai-testgen" class="admin-button primary" style="background:linear-gradient(135deg, #a855f7, #2563eb); border:none; padding:11px 20px;">
+                    <i class="fa-solid fa-play"></i> ⚡ Chạy Sandbox &amp; Sinh Testcases
+                </button>
+                <span id="ai-testgen-status" style="font-size:0.84rem; color:var(--text-secondary);"></span>
+            </div>
+
+            <!-- Preview table -->
+            <div id="ai-generated-preview" style="display:none; border-top:1px solid var(--border-color); padding-top:14px;">
+                <h4 style="color:var(--accent-cyan); font-size:0.85rem; margin-bottom:8px;">Kết quả Testcases vừa tạo từ Code:</h4>
+                <div class="admin-table-wrap" style="max-height: 220px; overflow-y:auto; margin-bottom:14px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:40px;">#</th>
+                                <th>Input</th>
+                                <th>Expected Output (Code sinh ra)</th>
+                                <th style="width:90px; text-align:center;">Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ai-tests-preview-tbody"></tbody>
+                    </table>
+                </div>
+                <button type="button" id="btn-apply-ai-tests" class="admin-button primary" style="width:100%; padding:12px;"><i class="fa-solid fa-check-double"></i> Nạp Bộ Testcases này vào Bài tập</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin-problems.js?v=1.0"></script>
+</body>
+</html>

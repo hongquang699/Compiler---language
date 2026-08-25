@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bảng xếp hạng Người học | Local CP Studio</title>
+    <meta name="description" content="Bảng xếp hạng thi đua luyện tập thuật toán và giải đề thi thực tế tại Local CP Studio.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="js/theme.js"></script>
+    <script src="js/auth-nav.js"></script>
+    <link rel="stylesheet" href="css/arena.css?v=2.0">
+    <style>
+        .standing-row-current {
+            background: rgba(37, 99, 235, 0.08) !important;
+            border-left: 3px solid var(--arena-primary) !important;
+        }
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-avatar-sm {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2563eb, #06b6d4);
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        .role-tag {
+            font-size: 0.68rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 2px 7px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .role-tag.dev { background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .role-tag.admin { background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3); }
+        .role-tag.user { background: rgba(100, 116, 139, 0.12); color: var(--arena-text-muted); border: 1px solid var(--arena-border); }
+    </style>
+</head>
+<body>
+    <!-- Top Full-Width Header Bar -->
+    <header class="site-header">
+        <a class="brand" href="index.html">
+            <span class="brand-mark">&lt;/&gt;</span> LOCAL CP
+        </a>
+        <nav class="top-nav">
+            <a href="index.html">Trang chủ</a>
+            <a href="problems.html">Kho bài tập</a>
+            <a href="contest.html">Cuộc thi</a>
+            <a class="active" href="standings.html">Bảng xếp hạng</a>
+        </nav>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="user-auth-area"></div>
+            <button class="btn-theme-toggle" onclick="toggleTheme(event)" title="Chuyển chế độ Sáng / Tối">
+                <i class="fa-solid fa-moon"></i> <span class="theme-label" style="font-size: 0.8rem; font-weight: 600;">Tối</span>
+            </button>
+            <a href="index.html#playground-tab" class="btn-back-ide">
+                <i class="fa-solid fa-arrow-left"></i> Về IDE
+            </a>
+        </div>
+    </header>
+
+    <div class="arena">
+
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="index.html"><i class="fa-solid fa-house"></i> Trang chủ</a>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
+            <span>Bảng xếp hạng luyện tập</span>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div>
+                <h1>Bảng xếp hạng Người học</h1>
+                <p>Bảng xếp hạng thời gian thực kết nối trực tiếp với tài khoản người dùng, số bài giải đúng (AC) và tổng điểm tích lũy.</p>
+            </div>
+            <div class="hero-icon">
+                <i class="fa-solid fa-ranking-star"></i>
+            </div>
+        </section>
+
+        <!-- Leaderboard Table Card -->
+        <section class="card" style="padding: 24px;">
+            <div class="toolbar" style="padding: 0 0 18px; margin-bottom: 8px;">
+                <div class="filters">
+                    <button class="filter active" data-filter="all" onclick="filterStandings('all', this)">Tất cả thành viên</button>
+                    <button class="filter" data-filter="user" onclick="filterStandings('user', this)">Học viên</button>
+                    <button class="filter" data-filter="staff" onclick="filterStandings('staff', this)">Admin / Dev</button>
+                </div>
+                <div class="search" style="min-width: 250px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="standings-search" oninput="searchStandings(this.value)" placeholder="Tìm kiếm tên người học...">
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px; text-align: center;">HẠNG</th>
+                            <th>THÀNH VIÊN / NGƯỜI HỌC</th>
+                            <th style="text-align: center;">VAI TRÒ</th>
+                            <th style="text-align: center;">BÀI ĐÃ GIẢI</th>
+                            <th style="text-align: center;">TỔNG ĐIỂM</th>
+                            <th style="text-align: right;">NGÀY THAM GIA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="standings-tbody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: var(--arena-text-sub);">
+                                <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 8px; color: var(--arena-primary);"></i>
+                                <p>Đang tải dữ liệu bảng xếp hạng từ hệ thống...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <span>&copy; 2026 <strong>Local CP Studio</strong> — Nền tảng Competitive Programming và thi đấu thuật toán.</span>
+        </footer>
+    </div>
+
+    <script>
+        let allStandings = [];
+        let currentFilter = 'all';
+        let currentQuery = '';
+
+        async function loadStandings() {
+            try {
+                const res = await fetch('/api/standings');
+                if (!res.ok) throw new Error('Không thể tải bảng xếp hạng');
+                const data = await res.json();
+                allStandings = data.standings || [];
+                renderStandings();
+            } catch (err) {
+                document.getElementById('standings-tbody').innerHTML = `
+                    <tr><td colspan="6" style="text-align:center; padding:40px; color:#ef4444;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size:1.5rem; margin-bottom:8px;"></i>
+                        <p>${err.message}</p>
+                    </td></tr>
+                `;
+            }
+        }
+
+        function filterStandings(type, btn) {
+            document.querySelectorAll('.filters .filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = type;
+            renderStandings();
+        }
+
+        function searchStandings(val) {
+            currentQuery = (val || '').trim().toLowerCase();
+            renderStandings();
+        }
+
+        function renderStandings() {
+            const tbody = document.getElementById('standings-tbody');
+            const currentUser = window.currentUser;
+
+            let filtered = allStandings.filter(item => {
+                if (currentFilter === 'user' && (item.role === 'admin' || item.role === 'dev' || item.is_admin)) return false;
+                if (currentFilter === 'staff' && item.role !== 'admin' && item.role !== 'dev' && !item.is_admin) return false;
+                if (currentQuery && !item.username.toLowerCase().includes(currentQuery)) return false;
+                return true;
+            });
+
+            if (!filtered.length) {
+                tbody.innerHTML = `
+                    <tr><td colspan="6" style="text-align:center; padding:40px; color:var(--arena-text-muted);">
+                        Không tìm thấy thành viên nào phù hợp.
+                    </td></tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((item, index) => {
+                const rank = item.rank;
+                let rankClass = '';
+                if (rank === 1) rankClass = 'gold';
+                else if (rank === 2) rankClass = 'silver';
+                else if (rank === 3) rankClass = 'bronze';
+
+                const isCurrent = currentUser && currentUser.username === item.username;
+                const initials = (item.username || 'CP').slice(0, 2).toUpperCase();
+                const role = (item.role || (item.is_admin ? 'admin' : 'user')).toLowerCase();
+                const roleLabel = role === 'dev' ? 'DEV' : (role === 'admin' ? 'ADMIN' : 'USER');
+                const roleClass = role === 'dev' ? 'dev' : (role === 'admin' ? 'admin' : 'user');
+                const joinedDate = item.joined_at ? new Date(item.joined_at).toLocaleDateString('vi-VN') : 'Mới';
+
+                return `
+                    <tr class="${isCurrent ? 'standing-row-current' : ''}" style="animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) ${index * 0.04}s both;">
+                        <td style="text-align: center;">
+                            <span class="rank ${rankClass}">${rank}</span>
+                        </td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar-sm">${initials}</div>
+                                <div>
+                                    <strong style="color: var(--arena-text-main); font-size: 0.95rem;">${escapeHtml(item.username)}</strong>
+                                    ${isCurrent ? '<span style="font-size:0.72rem; color:var(--arena-primary); margin-left:6px; font-weight:700;">(Bạn)</span>' : ''}
+                                </div>
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="role-tag ${roleClass}">${roleLabel}</span>
+                        </td>
+                        <td style="text-align: center; font-weight: 700;">
+                            ${item.solved_count} bài
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="score">${Number(item.total_score).toLocaleString('vi-VN')}</span>
+                        </td>
+                        <td style="text-align: right; color: var(--arena-text-muted); font-size: 0.84rem;">
+                            ${joinedDate}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(s) {
+            return String(s || '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[c]);
+        }
+
+        loadStandings();
+    </script>
+</body>
+</html>

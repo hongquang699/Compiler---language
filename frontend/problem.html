@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tổng hai số (A + B Problem) | Local CP Studio</title>
+    <meta name="description" content="Đề bài luyện tập thuật toán: Tính tổng hai số nguyên với giới hạn thời gian và bộ nhớ chuẩn.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="js/theme.js"></script>
+    <script src="js/auth-nav.js"></script>
+    <link rel="stylesheet" href="css/arena.css?v=3.0">
+</head>
+<body>
+    <!-- Top Full-Width Header Bar -->
+    <header class="site-header">
+        <a class="brand" href="index.html">
+            <span class="brand-mark">&lt;/&gt;</span> LOCAL CP
+        </a>
+        <nav class="top-nav">
+            <a href="index.html">Trang chủ</a>
+            <a class="active" href="problems.html">Kho bài tập</a>
+            <a href="contest.html">Cuộc thi</a>
+            <a href="standings.html">Bảng xếp hạng</a>
+        </nav>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="user-auth-area"></div>
+            <button class="btn-theme-toggle" onclick="toggleTheme(event)" title="Chuyển chế độ Sáng / Tối">
+                <i class="fa-solid fa-moon"></i> <span class="theme-label" style="font-size: 0.8rem; font-weight: 600;">Tối</span>
+            </button>
+            <a href="index.html#playground-tab" class="btn-back-ide">
+                <i class="fa-solid fa-arrow-left"></i> Về IDE
+            </a>
+        </div>
+    </header>
+
+    <div class="arena">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="index.html"><i class="fa-solid fa-house"></i> Trang chủ</a>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
+            <a href="problems.html">Kho bài tập</a>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
+            <span>Bài 001 · Tổng hai số</span>
+        </nav>
+
+        <!-- Problem Details Layout (Matching Reference Image) -->
+        <main class="problem-layout-grid">
+            <!-- Left Main Problem Statement Card -->
+            <article class="problem-main-card">
+                <div class="problem-status-kicker">TRẠNG THÁI</div>
+
+                <div style="margin-bottom: 24px;">
+                    <div class="problem-heading-req">Yêu cầu:</div>
+                    <div class="problem-prose">
+                        Em hãy viết chương trình nhập vào hai số nguyên <code>a</code> và <code>b</code>, sau đó in ra tổng <code>a + b</code> lên màn hình máy tính.
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <div class="problem-heading-req" style="font-size: 1.05rem;">Dữ liệu vào (Input Specification):</div>
+                    <div class="problem-prose">
+                        Một dòng duy nhất chứa hai số nguyên <code>a</code> và <code>b</code>, cách nhau bởi một dấu cách (&minus;10<sup>9</sup> &le; a, b &le; 10<sup>9</sup>).
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <div class="problem-heading-req" style="font-size: 1.05rem;">Dữ liệu ra (Output Specification):</div>
+                    <div class="problem-prose">
+                        In ra một số nguyên duy nhất là giá trị tổng <code>a + b</code>.
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <div class="problem-heading-req" style="font-size: 1.05rem;">Ví dụ mẫu (Sample Tests):</div>
+                    
+                    <div style="border: 1px solid var(--arena-border); border-radius: 10px; overflow: hidden; margin-bottom: 12px;">
+                        <div style="padding: 8px 14px; background: var(--arena-thead-bg); border-bottom: 1px solid var(--arena-border); display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size: 0.75rem; font-weight: 800; color: var(--arena-text-sub); letter-spacing: 0.06em;">SAMPLE INPUT</span>
+                            <button onclick="navigator.clipboard.writeText('12 30'); alert('Đã sao chép input!');" style="background:none; border:none; color:var(--arena-primary); cursor:pointer; font-size:0.75rem; font-weight:700;">SAO CHÉP</button>
+                        </div>
+                        <pre style="padding: 12px 14px; margin: 0; background: var(--arena-tab-hover); font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; color: var(--arena-text-main);">12 30</pre>
+                    </div>
+
+                    <div style="border: 1px solid var(--arena-border); border-radius: 10px; overflow: hidden;">
+                        <div style="padding: 8px 14px; background: var(--arena-thead-bg); border-bottom: 1px solid var(--arena-border); display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size: 0.75rem; font-weight: 800; color: var(--arena-text-sub); letter-spacing: 0.06em;">SAMPLE OUTPUT</span>
+                            <button onclick="navigator.clipboard.writeText('42'); alert('Đã sao chép output!');" style="background:none; border:none; color:var(--arena-primary); cursor:pointer; font-size:0.75rem; font-weight:700;">SAO CHÉP</button>
+                        </div>
+                        <pre style="padding: 12px 14px; margin: 0; background: var(--arena-tab-hover); font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; color: var(--arena-text-main);">42</pre>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Right Problem Info Sidebar (Matching Reference Image) -->
+            <aside class="problem-sidebar-container">
+                <div class="sidebar-kicker">THÔNG TIN</div>
+                <div class="sidebar-title">Thông tin bài tập</div>
+
+                <a href="submission.html" class="btn-send-solution">
+                    Gửi bài giải
+                </a>
+
+                <!-- 2x2 Grid (Điểm, Thời gian, Bộ nhớ, I/O) -->
+                <div class="info-grid-2x2">
+                    <div class="info-card-cell">
+                        <div class="info-cell-lbl">ĐIỂM</div>
+                        <div class="info-cell-val">100</div>
+                    </div>
+                    <div class="info-card-cell">
+                        <div class="info-cell-lbl">GIỚI HẠN THỜI GIAN:</div>
+                        <div class="info-cell-val">1.0s</div>
+                    </div>
+                    <div class="info-card-cell">
+                        <div class="info-cell-lbl">GIỚI HẠN BỘ NHỚ:</div>
+                        <div class="info-cell-val">256 M</div>
+                    </div>
+                    <div class="info-card-cell">
+                        <div class="info-cell-lbl">I / O</div>
+                        <div class="info-cell-val" style="font-size: 0.84rem;">stdin &rarr; stdout</div>
+                    </div>
+                </div>
+
+                <!-- Vertical Detail Cards -->
+                <div class="info-card-full">
+                    <div class="info-cell-lbl">TÁC GIẢ</div>
+                    <div class="info-cell-val" style="font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+                        <span>Local CP Studio</span>
+                        <i class="fa-solid fa-circle-check" style="color: #2563eb; font-size: 0.88rem;"></i>
+                    </div>
+                </div>
+
+                <div class="info-card-full">
+                    <div class="info-cell-lbl">LOẠI ĐỀ BÀI</div>
+                    <div class="info-cell-val" style="font-size: 0.84rem; font-weight: 600; line-height: 1.4;">
+                        A01 - Nhập môn: Biến, hằng và phép toán
+                    </div>
+                </div>
+
+                <div class="info-card-full">
+                    <div class="info-cell-lbl">NGÔN NGỮ CHO PHÉP</div>
+                    <div class="info-cell-val" style="font-size: 0.84rem; font-weight: 600;">
+                        C, C++, Java, Python, Pascal
+                    </div>
+                </div>
+
+                <a href="submission.html" class="btn-my-solution">
+                    Lời giải của tôi
+                </a>
+            </aside>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <span>&copy; 2026 <strong>Local CP Studio</strong> — Nền tảng luyện tập thuật toán thi đấu.</span>
+        </footer>
+    </div>
+</body>
+</html>

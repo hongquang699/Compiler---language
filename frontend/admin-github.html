@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sao lưu GitHub &amp; Auto Push Studio | ClueOJ Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/style.css?v=7.0">
+    <link rel="stylesheet" href="css/admin.css?v=11.0">
+    <style>
+        .prob-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 28px;
+            background: linear-gradient(180deg, rgba(8, 16, 35, 0.98), rgba(4, 9, 20, 0.95));
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .prob-nav-tabs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .prob-nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .prob-nav-btn:hover {
+            color: var(--text-bright);
+            background: rgba(34, 211, 238, 0.08);
+            border-color: rgba(34, 211, 238, 0.2);
+        }
+        .prob-nav-btn.active {
+            color: #fff;
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(168, 85, 247, 0.18));
+            border-color: rgba(34, 211, 238, 0.4);
+            box-shadow: 0 4px 16px rgba(34, 211, 238, 0.12);
+        }
+        
+        .github-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 26px;
+            backdrop-filter: blur(14px);
+            box-shadow: var(--shadow-card);
+            margin-bottom: 24px;
+        }
+        
+        .github-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .github-card-header i {
+            font-size: 1.6rem;
+            color: var(--accent-cyan);
+        }
+        .github-card-header h2 {
+            margin: 0;
+            color: var(--text-bright);
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+        .github-card-desc {
+            color: var(--text-secondary);
+            font-size: 0.86rem;
+            line-height: 1.6;
+            margin-bottom: 22px;
+        }
+        
+        .toggle-switch-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-bright);
+            user-select: none;
+            margin-bottom: 20px;
+        }
+        .toggle-switch-label input[type="checkbox"] {
+            width: 44px;
+            height: 24px;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            position: relative;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .toggle-switch-label input[type="checkbox"]:checked {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+        .toggle-switch-label input[type="checkbox"]::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            transition: transform 0.2s ease;
+        }
+        .toggle-switch-label input[type="checkbox"]:checked::after {
+            transform: translateX(20px);
+        }
+
+        .remote-url-badge {
+            font-family: var(--font-code);
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+            margin: 18px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .remote-url-badge strong {
+            color: var(--accent-cyan);
+            word-break: break-all;
+        }
+        
+        .btn-push-now {
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            border: 1px solid rgba(52, 211, 153, 0.5) !important;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3) !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            padding: 11px 22px !important;
+        }
+        .btn-push-now:hover {
+            background: linear-gradient(135deg, #059669, #047857) !important;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4) !important;
+        }
+    </style>
+</head>
+<body class="usaco-theme">
+    <!-- AUTH OVERLAY -->
+    <div id="admin-login-overlay" class="auth-overlay">
+        <div class="auth-card-modal">
+            <h2><i class="fa-solid fa-user-shield"></i> Xác thực Quản trị</h2>
+            <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:18px;">Vui lòng đăng nhập tài khoản Quản trị viên để tiếp tục.</p>
+            <form id="admin-login-form">
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">Tài khoản / Email</label>
+                    <input id="admin-login-user" type="text" placeholder="dev / admin" required style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px; color:var(--text-bright);">
+                </div>
+                <div style="margin-bottom:18px;">
+                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">Mật khẩu</label>
+                    <input id="admin-login-pass" type="password" placeholder="••••••••" required style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px; color:var(--text-bright);">
+                </div>
+                <button type="submit" class="admin-button primary" style="width:100%; padding:12px;"><i class="fa-solid fa-right-to-bracket"></i> Đăng nhập</button>
+            </form>
+            <div id="admin-login-msg" style="color:#f87171; font-size:0.82rem; margin-top:14px;" hidden></div>
+        </div>
+    </div>
+
+    <!-- HEADER NAVIGATION -->
+    <header class="prob-page-header">
+        <div style="display:flex; align-items:center; gap:16px;">
+            <a href="admin-console.html" class="admin-logo">
+                <i class="fa-solid fa-code"></i> LOCAL CP
+            </a>
+            <span style="height:20px; width:1px; background:var(--border-color);"></span>
+            <div class="prob-nav-tabs">
+                <a href="admin-console.html" class="prob-nav-btn"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                <a href="admin-console.html?view=contests" class="prob-nav-btn"><i class="fa-solid fa-flag-checkered"></i> Cuộc thi</a>
+                <a href="admin-problems.html" class="prob-nav-btn"><i class="fa-solid fa-layer-group"></i> Kho Bài tập &amp; AI Studio</a>
+                <a href="admin-github.html" class="prob-nav-btn active"><i class="fa-brands fa-github"></i> Sao lưu GitHub</a>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <span id="user-display" class="admin-user"><i class="fa-solid fa-user-shield"></i> Admin Studio</span>
+            <a href="index.html" class="btn-icon" title="Quay về IDE"><i class="fa-solid fa-house"></i> IDE Studio</a>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="admin-content" style="padding-top: 24px; max-width: 1000px;">
+        <div class="admin-toolbar" style="margin-bottom: 20px;">
+            <div>
+                <span class="admin-kicker">GITHUB BACKUP &amp; AUTO PUSH STUDIO</span>
+                <h1 style="color:var(--text-bright); font-size:1.8rem; margin-top:4px;">Sao lưu GitHub &amp; Đồng bộ Tự động</h1>
+            </div>
+            <div>
+                <button type="button" id="btn-test-conn" class="admin-button"><i class="fa-solid fa-network-wired"></i> Kiểm tra Kết nối Remote</button>
+            </div>
+        </div>
+
+        <!-- STATUS CARDS GRID -->
+        <div class="stat-grid" style="margin-bottom: 24px;">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-brands fa-git-alt"></i></div>
+                <small>NHÁNH HIỆN TẠI</small>
+                <strong id="git-stat-branch" style="font-size:1.4rem;">main</strong>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-file-code"></i></div>
+                <small>THAY ĐỔI CHƯA COMMIT</small>
+                <strong id="git-stat-uncommitted" style="color:var(--accent-cyan);">0 files</strong>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+                <small>LẦN PUSH GẦN NHẤT</small>
+                <strong id="git-stat-lastpush" style="font-size:1.1rem; font-family:var(--font-ui);">Đang tải...</strong>
+            </div>
+        </div>
+
+        <!-- MAIN GITHUB BACKUP CONFIG CARD (MATCHING USER IMAGE) -->
+        <section class="github-card">
+            <div class="github-card-header">
+                <i class="fa-brands fa-github"></i>
+                <h2>Sao lưu GitHub</h2>
+            </div>
+            <p class="github-card-desc">
+                Push nhánh hiện tại lên remote origin. Xác thực dùng Git Credential Manager hoặc SSH, không lưu token trong hệ thống.
+            </p>
+
+            <form id="github-backup-form" class="admin-form">
+                <!-- AUTO PUSH TOGGLE -->
+                <label class="toggle-switch-label">
+                    <input type="checkbox" id="github-auto-push">
+                    <span>Bật sao lưu tự động (Auto Push)</span>
+                </label>
+
+                <!-- DB CHANGE TRIGGER -->
+                <label style="margin-bottom: 14px;">
+                    Push sau số thay đổi cơ sở dữ liệu
+                    <input type="number" id="github-push-trigger-count" min="0" value="0" placeholder="0 = Tắt đếm thay đổi">
+                </label>
+
+                <!-- 3 SCHEDULED BACKUP SLOTS -->
+                <div class="form-two" style="margin-bottom: 14px;">
+                    <label>Khung giờ 1
+                        <input type="time" id="backup-time-1" value="02:00">
+                    </label>
+                    <label>Khung giờ 2
+                        <input type="time" id="backup-time-2" value="14:00">
+                    </label>
+                </div>
+
+                <div class="form-two" style="margin-bottom: 14px;">
+                    <label>Khung giờ 3
+                        <input type="time" id="backup-time-3" value="20:00">
+                    </label>
+                    <label>Tiền tố Commit Message
+                        <input type="text" id="custom-commit-prefix" placeholder="Auto CP Studio Sync" value="Auto CP Studio Sync">
+                    </label>
+                </div>
+
+                <!-- REMOTE REPO URL DISPLAY -->
+                <div class="remote-url-badge">
+                    Remote: <strong id="github-repo-url">https://github.com/hongquang699/Compiler---language.git</strong>
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div style="display: flex; gap: 12px; align-items: center; margin-top: 18px; flex-wrap: wrap;">
+                    <button type="submit" class="admin-button" style="padding:11px 22px;"><i class="fa-solid fa-floppy-disk"></i> Lưu lịch</button>
+                    <button type="button" id="btn-push-now" class="admin-button btn-push-now"><i class="fa-solid fa-cloud-arrow-up"></i> Push ngay</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SYNC HISTORY & LOG TIMELINE -->
+        <section class="admin-card">
+            <div class="card-heading">
+                <h2>Lịch sử Sao lưu &amp; Push Log Timeline</h2>
+                <button type="button" id="btn-refresh-history" class="btn-icon"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+            </div>
+            <div class="admin-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:170px;">Thời gian</th>
+                            <th>Nội dung Commit Message</th>
+                            <th style="width:120px; text-align:center;">Trạng thái</th>
+                            <th>Chi tiết / Output</th>
+                        </tr>
+                    </thead>
+                    <tbody id="github-history-tbody">
+                        <tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải lịch sử...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/admin-github.js?v=1.0"></script>
+</body>
+</html>

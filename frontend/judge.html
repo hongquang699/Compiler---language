@@ -3,22 +3,85 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Local Judge</title>
-    <link rel="stylesheet" href="judge.css">
+    <title>Sandbox Judge Engine | Local CP Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="js/theme.js"></script>
+    <script src="js/auth-nav.js"></script>
+    <link rel="stylesheet" href="css/arena.css?v=2.0">
+    <link rel="stylesheet" href="css/judge.css?v=8.0">
 </head>
 <body>
-    <main class="judge-shell">
-        <header><a href="index.html">Local CP</a><span>ClueOJ Judge</span></header>
-        <section class="judge-layout">
-            <article class="panel">
-                <label>Problem / test cases JSON</label>
-                <textarea id="tests" spellcheck="false">[{"input":"1 2\n","expected":"3\n"},{"input":"100 200\n","expected":"300\n"}]</textarea>
-                <div class="toolbar"><select id="language"><option value="cpp">C++17</option><option value="c">C11</option><option value="python">Python 3</option><option value="java">Java 17</option><option value="rust">Rust</option><option value="go">Go</option></select><button id="judge">Chấm bài</button></div>
-                <textarea id="source" spellcheck="false" placeholder="Dán source code vào đây..."></textarea>
-            </article>
-            <aside class="panel result-panel"><h1>Submission</h1><div id="summary">Chưa có submission</div><div id="results"></div></aside>
-        </section>
-    </main>
-    <script type="module" src="judge/main.js"></script>
+    <!-- Top Full-Width Header Bar -->
+    <header class="site-header">
+        <a class="brand" href="index.html">
+            <span class="brand-mark">&lt;/&gt;</span> LOCAL CP
+        </a>
+        <nav class="top-nav">
+            <a href="index.html">Trang chủ</a>
+            <a href="problems.html">Kho bài tập</a>
+            <a href="contest.html">Cuộc thi</a>
+            <a href="standings.html">Bảng xếp hạng</a>
+        </nav>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="user-auth-area"></div>
+            <button class="btn-theme-toggle" onclick="toggleTheme(event)" title="Chuyển chế độ Sáng / Tối">
+                <i class="fa-solid fa-moon"></i> <span class="theme-label" style="font-size: 0.8rem; font-weight: 600;">Tối</span>
+            </button>
+            <a href="index.html#playground-tab" class="btn-back-ide">
+                <i class="fa-solid fa-arrow-left"></i> Về IDE
+            </a>
+        </div>
+    </header>
+
+    <div class="arena">
+
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="index.html"><i class="fa-solid fa-house"></i> Trang chủ</a>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
+            <span>Sandbox Máy chấm Local Judge</span>
+        </nav>
+
+        <main class="judge-shell" style="max-width: 100%; margin: 0; padding: 0;">
+            <section class="judge-layout">
+                <article class="panel editor-panel card" style="padding: 20px;">
+                    <div class="panel-head" style="margin-bottom: 14px;">
+                        <p class="eyebrow" style="font-size: 0.72rem; font-weight: 800; color: var(--arena-text-sub); text-transform: uppercase;">SANDBOX WORKSPACE</p>
+                        <h1 style="font-size: 1.3rem; font-weight: 800; color: var(--arena-text-main); margin: 2px 0 0;">Local Judge Engine</h1>
+                    </div>
+                    <label style="font-size: 0.82rem; font-weight: 700; color: var(--arena-text-sub); display: block; margin-bottom: 6px;">Test cases JSON cấu hình:</label>
+                    <textarea id="tests" spellcheck="false" style="width: 100%; min-height: 80px; padding: 10px; border-radius: 8px; border: 1px solid var(--arena-border); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; background: var(--arena-input-bg); color: var(--arena-text-main); margin-bottom: 12px;">[{"input":"1 2\n","expected":"3\n"},{"input":"100 200\n","expected":"300\n"}]</textarea>
+                    
+                    <div class="toolbar" style="padding: 0 0 12px; display: flex; gap: 10px;">
+                        <select id="language" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--arena-border); background: var(--arena-input-bg); color: var(--arena-text-main); font-weight: 600;">
+                            <option value="cpp">C++17 (g++)</option>
+                            <option value="c">C11 (gcc)</option>
+                            <option value="python">Python 3.12</option>
+                            <option value="java">Java 17</option>
+                            <option value="rust">Rust 2021</option>
+                            <option value="go">Go 1.21</option>
+                        </select>
+                        <button id="judge" class="solve" style="padding: 8px 20px; font-size: 0.85rem;"><i class="fa-solid fa-play"></i> Chấm bài ngay</button>
+                    </div>
+
+                    <textarea id="source" spellcheck="false" placeholder="Dán source code C++/Python/Java vào đây..." style="width: 100%; min-height: 220px; padding: 12px; border-radius: 8px; border: 1px solid var(--arena-border); background: #0f172a; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-size: 0.84rem; resize: vertical; outline: none;"></textarea>
+                </article>
+
+                <aside class="panel result-panel card" style="padding: 20px;">
+                    <h2 style="font-size: 1.1rem; font-weight: 800; color: var(--arena-text-main); margin: 0 0 12px;"><i class="fa-solid fa-square-poll-vertical"></i> Kết quả chấm</h2>
+                    <div id="summary" style="font-size: 0.88rem; color: var(--arena-text-muted); margin-bottom: 12px;">Chưa có lượt nộp bài nào.</div>
+                    <div id="results"></div>
+                </aside>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <span>&copy; 2026 <strong>Local CP Studio</strong> — Nền tảng chấm bài cục bộ tốc độ cao.</span>
+        </footer>
+    </div>
+
+    <script type="module" src="js/judge/main.js"></script>
 </body>
 </html>

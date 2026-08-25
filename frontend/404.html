@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Không tìm thấy trang | Local CP IDE</title>
+    <meta name="description" content="Trang bạn tìm kiếm không tồn tại hoặc đã được di chuyển trên Local CP IDE. Hãy quay lại IDE hoặc tham gia cuộc thi thuật toán.">
+    <meta name="robots" content="noindex, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="http://localhost:8000/404.html">
+    <meta property="og:title" content="404 - Không tìm thấy trang | Local CP IDE">
+    <meta property="og:description" content="Trang bạn tìm kiếm không tồn tại trên hệ thống Local CP IDE.">
+    <meta property="og:image" content="/assets/og-preview.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="404 - Không tìm thấy trang | Local CP IDE">
+    <meta property="twitter:description" content="Trang bạn tìm kiếm không tồn tại trên Local CP IDE.">
+    <meta property="twitter:image" content="/assets/og-preview.png">
+
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/style.css?v=7.0">
+    <style>
+        .error-page-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+            padding: 40px 20px;
+            z-index: 1;
+            position: relative;
+        }
+        .error-code-badge {
+            font-family: var(--font-display);
+            font-size: 6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+            margin-bottom: 12px;
+            text-shadow: 0 0 40px rgba(34, 211, 238, 0.3);
+        }
+        .error-card {
+            max-width: 580px;
+            padding: 36px 30px;
+            border-radius: var(--radius-lg);
+        }
+        .error-nav-links {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+        .breadcrumbs-bar {
+            margin-bottom: 20px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .breadcrumbs-bar a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body class="usaco-theme">
+    <div class="app-ambient" aria-hidden="true">
+        <div class="orb orb-cyan"></div>
+        <div class="orb orb-violet"></div>
+        <div class="mesh-grid"></div>
+    </div>
+
+    <header class="app-header">
+        <div class="header-left">
+            <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                <div class="logo-badge">
+                    <i class="fa-solid fa-code" aria-label="Logo Local CP"></i>
+                </div>
+                <div class="header-title-box">
+                    <span class="ide-brand">LOCAL CP</span>
+                    <span class="ide-sub">Algorithm Studio</span>
+                </div>
+            </a>
+        </div>
+        <nav class="nav-tabs">
+            <a class="nav-tab" href="index.html"><i class="fa-solid fa-laptop-code"></i> <span>Trang chủ IDE</span></a>
+            <a class="nav-tab" href="contest.html"><i class="fa-solid fa-flag-checkered"></i> <span>Cuộc thi</span></a>
+            <a class="nav-tab" href="privacy.html"><i class="fa-solid fa-shield-halved"></i> <span>Bảo mật</span></a>
+        </nav>
+    </header>
+
+    <main class="error-page-container">
+        <!-- Breadcrumbs (#5) -->
+        <div class="breadcrumbs-bar">
+            <a href="index.html"><i class="fa-solid fa-house"></i> Trang chủ</a>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
+            <span>Lỗi 404</span>
+        </div>
+
+        <div class="glass-panel error-card">
+            <div class="error-code-badge">404</div>
+            <h1 style="font-family: var(--font-display); font-size: 1.5rem; color: var(--text-bright); margin-bottom: 12px;">
+                Không tìm thấy trang yêu cầu
+            </h1>
+            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.9rem;">
+                Đường dẫn bạn vừa truy cập không tồn tại hoặc đã được chuyển sang địa chỉ mới trong hệ sinh thái Local CP Studio.
+            </p>
+
+            <div class="error-nav-links">
+                <a href="index.html" class="btn-ide btn-ide-run btn-lg">
+                    <i class="fa-solid fa-house"></i> <span>Quay lại Code IDE</span>
+                </a>
+                <a href="contest.html" class="btn-ide btn-ide-secondary btn-lg">
+                    <i class="fa-solid fa-flag-checkered"></i> <span>Tham gia Cuộc thi</span>
+                </a>
+            </div>
+
+            <!-- Internal Links (#3) -->
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); font-size: 0.8rem;">
+                <span style="color: var(--text-muted);">Các liên kết gợi ý:</span>
+                <div style="display: flex; gap: 14px; justify-content: center; margin-top: 10px; flex-wrap: wrap;">
+                    <a href="index.html#playground-tab" style="color: var(--accent-cyan); text-decoration: none;">Code Playground</a>
+                    <a href="index.html#agent-tab" style="color: var(--accent-cyan); text-decoration: none;">AI Agent</a>
+                    <a href="index.html#rag-tab" style="color: var(--accent-cyan); text-decoration: none;">Kho Templates RAG</a>
+                    <a href="privacy.html" style="color: var(--accent-cyan); text-decoration: none;">Chính sách bảo mật</a>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

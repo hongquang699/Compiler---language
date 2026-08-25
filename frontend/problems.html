@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kho bài tập Thuật toán | Local CP Studio</title>
+    <meta name="description" content="Kho bài tập luyện tập thuật toán thi đấu đa dạng cấp độ từ cơ bản đến nâng cao.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="js/theme.js"></script>
+    <script src="js/auth-nav.js"></script>
+    <link rel="stylesheet" href="css/arena.css?v=2.0">
+</head>
+<body>
+    <!-- Top Full-Width Header Bar -->
+    <header class="site-header">
+        <a class="brand" href="index.html">
+            <span class="brand-mark">&lt;/&gt;</span> LOCAL CP
+        </a>
+        <nav class="top-nav">
+            <a href="index.html">Trang chủ</a>
+            <a class="active" href="problems.html">Kho bài tập</a>
+            <a href="contest.html">Cuộc thi</a>
+            <a href="standings.html">Bảng xếp hạng</a>
+        </nav>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="user-auth-area"></div>
+            <button class="btn-theme-toggle" onclick="toggleTheme(event)" title="Chuyển chế độ Sáng / Tối">
+                <i class="fa-solid fa-moon"></i> <span class="theme-label" style="font-size: 0.8rem; font-weight: 600;">Tối</span>
+            </button>
+            <a href="index.html#playground-tab" class="btn-back-ide">
+                <i class="fa-solid fa-arrow-left"></i> Về IDE
+            </a>
+        </div>
+    </header>
+
+    <div class="arena">
+
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="index.html"><i class="fa-solid fa-house"></i> Trang chủ</a>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
+            <span>Kho bài tập thuật toán</span>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div>
+                <h1>Kho bài tập Thuật toán</h1>
+                <p>Luyện tập theo chủ đề, theo dõi tiến độ giải toán và chuẩn bị sẵn sàng cho các vòng thi đấu trực tuyến.</p>
+            </div>
+            <div class="hero-icon">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+        </section>
+
+        <!-- Main Problems Card with Filters and Search -->
+        <section class="card">
+            <div class="toolbar">
+                <div class="filters">
+                    <button class="filter active" data-filter="all">Tất cả</button>
+                    <button class="filter" data-filter="easy">Cơ bản</button>
+                    <button class="filter" data-filter="medium">Trung bình</button>
+                    <button class="filter" data-filter="hard">Nâng cao</button>
+                </div>
+                <label class="search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="problem-search" placeholder="Tìm tên bài hoặc chủ đề thuật toán...">
+                </label>
+            </div>
+
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">#</th>
+                            <th>TÊN BÀI TẬP</th>
+                            <th>CHỦ ĐỀ</th>
+                            <th>ĐỘ KHÓ</th>
+                            <th>TRẠNG THÁI</th>
+                            <th style="text-align: right;">HÀNH ĐỘNG</th>
+                        </tr>
+                    </thead>
+                    <tbody id="problem-rows">
+                        <tr data-level="easy">
+                            <td class="problem-index">001</td>
+                            <td><a href="problem.html">Tổng hai số (A + B Problem)</a></td>
+                            <td>Mảng · Nhập xuất chuẩn</td>
+                            <td><span class="tag easy">Cơ bản</span></td>
+                            <td><span class="status solved"><i class="fa-solid fa-circle-check"></i> Đã giải</span></td>
+                            <td style="text-align: right;"><a class="solve" href="problem.html">Làm bài</a></td>
+                        </tr>
+                        <tr data-level="easy">
+                            <td class="problem-index">002</td>
+                            <td><a href="problem.html">Chuỗi đối xứng (Palindrome)</a></td>
+                            <td>Xử lý chuỗi · Hai con trỏ</td>
+                            <td><span class="tag easy">Cơ bản</span></td>
+                            <td><span class="status"><i class="fa-regular fa-circle"></i> Chưa làm</span></td>
+                            <td style="text-align: right;"><a class="solve" href="problem.html">Làm bài</a></td>
+                        </tr>
+                        <tr data-level="medium">
+                            <td class="problem-index">003</td>
+                            <td><a href="problem.html">Đoạn con có tổng lớn nhất (Max Subarray)</a></td>
+                            <td>Quy hoạch động · Kadane</td>
+                            <td><span class="tag medium">Trung bình</span></td>
+                            <td><span class="status"><i class="fa-regular fa-circle"></i> Chưa làm</span></td>
+                            <td style="text-align: right;"><a class="solve" href="problem.html">Làm bài</a></td>
+                        </tr>
+                        <tr data-level="medium">
+                            <td class="problem-index">004</td>
+                            <td><a href="problem.html">Đường đi ngắn nhất (Shortest Path)</a></td>
+                            <td>Đồ thị · Dijkstra</td>
+                            <td><span class="tag medium">Trung bình</span></td>
+                            <td><span class="status"><i class="fa-regular fa-circle"></i> Chưa làm</span></td>
+                            <td style="text-align: right;"><a class="solve" href="problem.html">Làm bài</a></td>
+                        </tr>
+                        <tr data-level="hard">
+                            <td class="problem-index">005</td>
+                            <td><a href="problem.html">Truy vấn trên dãy (Range Query)</a></td>
+                            <td>Cấu trúc dữ liệu · Segment Tree</td>
+                            <td><span class="tag hard">Nâng cao</span></td>
+                            <td><span class="status"><i class="fa-regular fa-circle"></i> Chưa làm</span></td>
+                            <td style="text-align: right;"><a class="solve" href="problem.html">Làm bài</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination">
+                <span>Hiển thị 5 trong tổng số 24 bài tập</span>
+                <div class="pages">
+                    <a class="page active" href="#">1</a>
+                    <a class="page" href="#">2</a>
+                    <a class="page" href="#">3</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <span>&copy; 2026 <strong>Local CP Studio</strong> — Không gian luyện tập thuật toán thi đấu đỉnh cao.</span>
+        </footer>
+    </div>
+
+    <script src="js/arena.js"></script>
+</body>
+</html>

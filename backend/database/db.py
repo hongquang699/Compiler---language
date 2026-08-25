@@ -7,16 +7,39 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
+class TrackedConnection(sqlite3.Connection):
+    """SQLite connection that can report completed commits to its owner."""
+    change_callback = None
+
+    def commit(self):
+        super().commit()
+        if self.change_callback:
+            self.change_callback()
+
 class DatabaseManager:
+    PASSWORD_HASH_ALGORITHM = "sha512"
+    PASSWORD_HASH_ITERATIONS = 120000
+
     def __init__(self, db_path: str = "data/memory.db"):
         self.db_path = db_path
+        self._track_changes = False
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self._init_db()
+        self._track_changes = True
 
     def get_connection(self):
-        conn = sqlite3.connect(self.db_path, check_same_thread=False)
+        conn = sqlite3.connect(self.db_path, check_same_thread=False, factory=TrackedConnection)
         conn.row_factory = sqlite3.Row
+        if self._track_changes:
+            conn.change_callback = self._notify_change
         return conn
+
+    @staticmethod
+    def _notify_change():
+        # Import lazily to keep database initialization independent from the
+        # optional backup service and avoid a module import cycle.
+        from backend.services.github_service import increment_change_counter
+        increment_change_counter()
 
     def _init_db(self):
         with self.get_connection() as conn:
@@ -193,9 +216,65 @@ class DatabaseManager:
             self._add_column_if_missing(cursor, "auth_tokens", "expires_at", "TIMESTAMP")
             self._add_column_if_missing(cursor, "users", "role", "TEXT NOT NULL DEFAULT 'user'")
             self._add_column_if_missing(cursor, "users", "is_admin", "INTEGER NOT NULL DEFAULT 0")
+            self._add_column_if_missing(cursor, "users", "is_locked", "INTEGER NOT NULL DEFAULT 0")
+            self._add_column_if_missing(cursor, "users", "avatar_path", "TEXT DEFAULT ''")
             self._add_column_if_missing(cursor, "users", "email", "TEXT")
+            self._add_column_if_missing(cursor, "competitions", "key", "TEXT")
+            self._add_column_if_missing(cursor, "competitions", "format", "TEXT DEFAULT 'icpc'")
+            self._add_column_if_missing(cursor, "competitions", "is_rated", "INTEGER DEFAULT 1")
+            self._add_column_if_missing(cursor, "competitions", "access_code", "TEXT DEFAULT ''")
+            self._add_column_if_missing(cursor, "competitions", "scoreboard_visibility", "TEXT DEFAULT 'visible'")
             conn.commit()
             self._ensure_default_admin()
+            self._ensure_default_clueoj_contest()
+
+    def _ensure_default_clueoj_contest(self):
+        with self.get_connection() as conn:
+            row = conn.execute("SELECT COUNT(*) as count FROM competitions").fetchone()
+            if row and row["count"] > 0:
+                return
+
+            admin_row = conn.execute("SELECT id FROM users WHERE is_admin = 1").fetchone()
+            admin_id = admin_row["id"] if admin_row else 1
+
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO competitions (title, statement, status, starts_at, ends_at, created_by) VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    "ClueOJ Championship Round #1 - A+B Problem",
+                    "## ClueOJ Championship Round #1\n\nChào mừng các sĩ tử đến với cuộc thi ClueOJ! Bài tập yêu cầu tính tổng A + B cho hai số nguyên dương.\n\n### Input\n- Gồm 2 số nguyên A và B.\n\n### Output\n- In ra tổng A + B.",
+                    "published",
+                    None,
+                    None,
+                    admin_id,
+                ),
+            )
+            competition_id = cursor.lastrowid
+
+            cursor.execute(
+                "INSERT INTO competition_problems (competition_id, code, title, statement, points, time_limit, memory_limit, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    competition_id,
+                    "A",
+                    "A+B Problem",
+                    "Cho hai số nguyên A và B. Hãy tính tổng A + B.",
+                    100,
+                    2.0,
+                    256,
+                    0,
+                ),
+            )
+            problem_id = cursor.lastrowid
+
+            tests = [
+                {"input": "1 2\n", "expected": "3\n", "points": 50},
+                {"input": "100 200\n", "expected": "300\n", "points": 50},
+            ]
+            cursor.executemany(
+                "INSERT INTO problem_tests (problem_id, input, expected, points) VALUES (?, ?, ?, ?)",
+                [(problem_id, t["input"], t["expected"], t["points"]) for t in tests],
+            )
+            conn.commit()
 
     def _ensure_default_admin(self):
         admin_username = "admin"
@@ -214,18 +293,28 @@ class DatabaseManager:
                 return
 
             salt = secrets.token_bytes(16)
-            digest = hashlib.pbkdf2_hmac("sha256", admin_password.encode(), salt, 120000).hex()
+            digest = hashlib.pbkdf2_hmac(
+                self.PASSWORD_HASH_ALGORITHM,
+                admin_password.encode(),
+                salt,
+                self.PASSWORD_HASH_ITERATIONS,
+            ).hex()
             conn.execute(
                 "INSERT INTO users (username, email, password_hash, role, is_admin) VALUES (?, ?, ?, 'admin', 1)",
-                (admin_username, "admin@local.cp", f"{salt.hex()}${digest}"),
+                (admin_username, "admin@local.cp", f"{self.PASSWORD_HASH_ALGORITHM}${salt.hex()}${digest}"),
             )
             conn.commit()
 
     @staticmethod
     def hash_password(password: str, salt: Optional[bytes] = None) -> str:
         salt_bytes = salt or secrets.token_bytes(16)
-        digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt_bytes, 120000).hex()
-        return f"{salt_bytes.hex()}${digest}"
+        digest = hashlib.pbkdf2_hmac(
+            DatabaseManager.PASSWORD_HASH_ALGORITHM,
+            password.encode(),
+            salt_bytes,
+            DatabaseManager.PASSWORD_HASH_ITERATIONS,
+        ).hex()
+        return f"{DatabaseManager.PASSWORD_HASH_ALGORITHM}${salt_bytes.hex()}${digest}"
 
     @staticmethod
     def _add_column_if_missing(cursor, table: str, column: str, definition: str):
@@ -336,19 +425,45 @@ class MemoryStore:
 
     def authenticate_user(self, login: str, password: str) -> Optional[Dict[str, Any]]:
         with self.db.get_connection() as conn:
-            row = conn.execute("SELECT id, username, email, password_hash, role, is_admin FROM users WHERE username = ? OR email = ?", (login, login.lower())).fetchone()
+            row = conn.execute("SELECT id, username, email, password_hash, role, is_admin, is_locked, avatar_path FROM users WHERE username = ? OR email = ?", (login, login.lower())).fetchone()
         if not row:
             return None
-        salt, expected = row["password_hash"].split("$", 1)
-        actual = hashlib.pbkdf2_hmac("sha256", password.encode(), bytes.fromhex(salt), 120000).hex()
+        password_parts = row["password_hash"].split("$")
+        if len(password_parts) == 3:
+            algorithm, salt, expected = password_parts
+        elif len(password_parts) == 2:
+            algorithm = "sha256"
+            salt, expected = password_parts
+        else:
+            return None
+        if algorithm not in {"sha256", DatabaseManager.PASSWORD_HASH_ALGORITHM}:
+            return None
+        try:
+            actual = hashlib.pbkdf2_hmac(
+                algorithm,
+                password.encode(),
+                bytes.fromhex(salt),
+                DatabaseManager.PASSWORD_HASH_ITERATIONS,
+            ).hex()
+        except (ValueError, TypeError):
+            return None
         if not secrets.compare_digest(actual, expected):
             return None
+        if algorithm != DatabaseManager.PASSWORD_HASH_ALGORITHM:
+            with self.db.get_connection() as conn:
+                conn.execute(
+                    "UPDATE users SET password_hash = ? WHERE id = ?",
+                    (DatabaseManager.hash_password(password), row["id"]),
+                )
+                conn.commit()
         return {
             "id": row["id"],
             "username": row["username"],
             "email": row["email"],
             "role": row["role"] or ("admin" if row["is_admin"] else "user"),
             "is_admin": bool(row["is_admin"]),
+            "is_locked": bool(row["is_locked"]),
+            "avatar_path": row["avatar_path"] or "",
         }
 
     def create_auth_token(self, user_id: int, remember: bool = False) -> str:
@@ -364,7 +479,7 @@ class MemoryStore:
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         with self.db.get_connection() as conn:
             row = conn.execute(
-                "SELECT users.id, users.username, users.email, users.role, users.is_admin FROM auth_tokens JOIN users ON users.id = auth_tokens.user_id WHERE auth_tokens.token = ? AND (auth_tokens.expires_at IS NULL OR auth_tokens.expires_at > CURRENT_TIMESTAMP)",
+                "SELECT users.id, users.username, users.email, users.role, users.is_admin, users.is_locked, users.avatar_path FROM auth_tokens JOIN users ON users.id = auth_tokens.user_id WHERE auth_tokens.token = ? AND (auth_tokens.expires_at IS NULL OR auth_tokens.expires_at > CURRENT_TIMESTAMP)",
                 (token_hash,),
             ).fetchone()
         if not row:
@@ -375,6 +490,8 @@ class MemoryStore:
             "email": row["email"],
             "role": row["role"] or ("admin" if row["is_admin"] else "user"),
             "is_admin": bool(row["is_admin"]),
+            "is_locked": bool(row["is_locked"]),
+            "avatar_path": row["avatar_path"] or "",
         }
 
     def list_members(self) -> List[Dict[str, Any]]:
@@ -394,10 +511,40 @@ class MemoryStore:
             ).fetchall()
             return [dict(row) for row in rows]
 
+    def list_global_standings(self) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT users.id, users.username, users.role, users.is_admin, users.created_at,
+                       COUNT(DISTINCT solved_problems.id) AS solved_count,
+                       COALESCE(SUM(submissions.score), 0) + (COUNT(DISTINCT solved_problems.id) * 100) AS total_score
+                FROM users
+                LEFT JOIN solved_problems ON solved_problems.user_id = users.id
+                LEFT JOIN submissions ON submissions.user_id = users.id
+                WHERE users.is_locked = 0 OR users.is_locked IS NULL
+                GROUP BY users.id, users.username, users.role, users.is_admin, users.created_at
+                ORDER BY total_score DESC, solved_count DESC, users.created_at ASC
+                """
+            ).fetchall()
+            result = []
+            for index, row in enumerate(rows, start=1):
+                role = row["role"] or ("admin" if row["is_admin"] else "user")
+                result.append({
+                    "rank": index,
+                    "id": row["id"],
+                    "username": row["username"],
+                    "role": role,
+                    "is_admin": bool(row["is_admin"]),
+                    "solved_count": row["solved_count"] or 0,
+                    "total_score": row["total_score"] or 0,
+                    "joined_at": row["created_at"]
+                })
+            return result
+
     def get_member_detail(self, user_id: int) -> Optional[Dict[str, Any]]:
         with self.db.get_connection() as conn:
             user = conn.execute(
-                "SELECT id, username, role, is_admin, created_at FROM users WHERE id = ?",
+                "SELECT id, username, email, role, is_admin, is_locked, avatar_path, created_at FROM users WHERE id = ?",
                 (user_id,),
             ).fetchone()
             if not user:
@@ -410,18 +557,62 @@ class MemoryStore:
                 "SELECT id, title, category, verdict, created_at FROM solved_problems WHERE user_id = ? ORDER BY id DESC LIMIT 20",
                 (user_id,),
             ).fetchall()
+            submissions = conn.execute(
+                "SELECT id, competition_id, language, score, passed_tests, total_tests, created_at FROM submissions WHERE user_id = ? ORDER BY id DESC LIMIT 20",
+                (user_id,),
+            ).fetchall() if conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='submissions'").fetchone() else []
             return {
                 "user": {
                     "id": user["id"],
                     "username": user["username"],
+                    "email": user["email"] or "",
                     "role": user["role"] or ("admin" if user["is_admin"] else "user"),
                     "is_admin": bool(user["is_admin"]),
+                    "is_locked": bool(user["is_locked"]),
+                    "avatar_path": user["avatar_path"] or "",
                     "created_at": user["created_at"],
                 },
                 "sessions": [dict(r) for r in sessions],
                 "solved_problems": [dict(r) for r in solved],
+                "submissions": [dict(r) for r in submissions],
                 "ips": self.list_user_ips(user_id),
             }
+
+    def lock_user(self, user_id: int, locked: bool) -> bool:
+        with self.db.get_connection() as conn:
+            cursor = conn.execute(
+                "UPDATE users SET is_locked = ? WHERE id = ?",
+                (1 if locked else 0, user_id),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def delete_user(self, user_id: int) -> bool:
+        with self.db.get_connection() as conn:
+            cursor = conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def list_blocked_ips(self) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                "SELECT ip, reason, blocked_until, created_at FROM blocked_ips WHERE blocked_until > CURRENT_TIMESTAMP ORDER BY created_at DESC"
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def unblock_ip(self, ip: str) -> bool:
+        with self.db.get_connection() as conn:
+            cursor = conn.execute("DELETE FROM blocked_ips WHERE ip = ?", (ip,))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def get_security_events(self, limit: int = 100) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                "SELECT id, ip, method, path, user_agent, status_code, reason, created_at FROM security_events ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            return [dict(row) for row in rows]
 
     def record_user_ip(self, user_id: int, ip: str) -> None:
         if not ip or ip == "unknown":
@@ -449,17 +640,40 @@ class MemoryStore:
             exported.append(detail)
         return exported
 
+    def update_user_role(self, user_id: int, role: str) -> bool:
+        clean_role = role.lower().strip()
+        is_admin = 1 if clean_role in ["admin", "superadmin", "dev", "moderator"] else 0
+        with self.db.get_connection() as conn:
+            cursor = conn.execute(
+                "UPDATE users SET role = ?, is_admin = ? WHERE id = ?",
+                (clean_role, is_admin, user_id),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+
     def get_overview(self) -> Dict[str, Any]:
         with self.db.get_connection() as conn:
             member_count = conn.execute("SELECT COUNT(*) AS cnt FROM users").fetchone()["cnt"]
             admin_count = conn.execute("SELECT COUNT(*) AS cnt FROM users WHERE is_admin = 1").fetchone()["cnt"]
             session_count = conn.execute("SELECT COUNT(*) AS cnt FROM sessions").fetchone()["cnt"]
             solved_count = conn.execute("SELECT COUNT(*) AS cnt FROM solved_problems").fetchone()["cnt"]
+            contest_count = conn.execute("SELECT COUNT(*) AS cnt FROM competitions").fetchone()["cnt"]
+            submission_count_row = conn.execute("SELECT COUNT(*) AS cnt FROM submissions").fetchone()
+            submission_count = submission_count_row["cnt"] if submission_count_row else 0
+            blocked_count = conn.execute("SELECT COUNT(*) AS cnt FROM blocked_ips WHERE blocked_until > CURRENT_TIMESTAMP").fetchone()["cnt"]
+            # Per-role counts
+            role_counts = {}
+            for row in conn.execute("SELECT role, COUNT(*) AS cnt FROM users GROUP BY role").fetchall():
+                role_counts[row["role"]] = row["cnt"]
             return {
                 "total_members": member_count,
                 "admin_count": admin_count,
                 "total_sessions": session_count,
                 "total_saved_problems": solved_count,
+                "total_contests": contest_count,
+                "total_submissions": submission_count,
+                "total_blocked_ips": blocked_count,
+                "role_counts": role_counts,
             }
 
     def list_competitions(self, user_id: Optional[int] = None, include_drafts: bool = False) -> List[Dict[str, Any]]:
@@ -594,6 +808,127 @@ class MemoryStore:
             conn.commit()
             return True
 
+    def delete_competition(self, competition_id: int) -> bool:
+        with self.db.get_connection() as conn:
+            existing = conn.execute("SELECT id FROM competitions WHERE id = ?", (competition_id,)).fetchone()
+            if not existing:
+                return False
+            prob_rows = conn.execute("SELECT id FROM competition_problems WHERE competition_id = ?", (competition_id,)).fetchall()
+            for r in prob_rows:
+                conn.execute("DELETE FROM problem_tests WHERE problem_id = ?", (r["id"],))
+            conn.execute("DELETE FROM competition_problems WHERE competition_id = ?", (competition_id,))
+            conn.execute("DELETE FROM competition_tests WHERE competition_id = ?", (competition_id,))
+            conn.execute("DELETE FROM competition_participants WHERE competition_id = ?", (competition_id,))
+            conn.execute("DELETE FROM submissions WHERE competition_id = ?", (competition_id,))
+            conn.execute("DELETE FROM competitions WHERE id = ?", (competition_id,))
+            conn.commit()
+            return True
+
+    def list_all_problems(self) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT p.id, p.competition_id, p.code, p.title, p.statement, p.points, 
+                       p.time_limit, p.memory_limit, p.sort_order,
+                       c.title as contest_title,
+                       (SELECT COUNT(*) FROM problem_tests t WHERE t.problem_id = p.id) as test_count
+                FROM competition_problems p
+                LEFT JOIN competitions c ON p.competition_id = c.id
+                ORDER BY p.id DESC
+                """
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    def get_problem(self, problem_id: int) -> Optional[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT p.id, p.competition_id, p.code, p.title, p.statement, p.points, 
+                       p.time_limit, p.memory_limit, p.sort_order,
+                       c.title as contest_title
+                FROM competition_problems p
+                LEFT JOIN competitions c ON p.competition_id = c.id
+                WHERE p.id = ?
+                """,
+                (problem_id,),
+            ).fetchone()
+            if not row:
+                return None
+            res = dict(row)
+            test_rows = conn.execute(
+                "SELECT id, input, expected, points FROM problem_tests WHERE problem_id = ? ORDER BY id ASC",
+                (problem_id,),
+            ).fetchall()
+            res["tests"] = [dict(t) for t in test_rows]
+            return res
+
+    def create_bank_problem(self, title: str, statement: str, points: int = 100, time_limit: float = 1.0, memory_limit: int = 256, code: str = "A", competition_id: Optional[int] = None, tests: Optional[List[Dict[str, Any]]] = None) -> int:
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            if competition_id is None:
+                c_row = conn.execute("SELECT id FROM competitions ORDER BY id ASC LIMIT 1").fetchone()
+                competition_id = c_row["id"] if c_row else 1
+            cursor.execute(
+                """
+                INSERT INTO competition_problems (competition_id, code, title, statement, points, time_limit, memory_limit, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+                """,
+                (competition_id, code, title, statement, points, time_limit, memory_limit),
+            )
+            prob_id = cursor.lastrowid
+            if tests:
+                conn.executemany(
+                    "INSERT INTO problem_tests (problem_id, input, expected, points) VALUES (?, ?, ?, ?)",
+                    [(prob_id, t.get("input", ""), t.get("expected", ""), t.get("points", 0)) for t in tests],
+                )
+            conn.commit()
+            return prob_id
+
+    def update_bank_problem(self, problem_id: int, title: str, statement: str, points: int = 100, time_limit: float = 1.0, memory_limit: int = 256, code: str = "A", tests: Optional[List[Dict[str, Any]]] = None) -> bool:
+        with self.db.get_connection() as conn:
+            existing = conn.execute("SELECT id FROM competition_problems WHERE id = ?", (problem_id,)).fetchone()
+            if not existing:
+                return False
+            conn.execute(
+                """
+                UPDATE competition_problems 
+                SET title = ?, statement = ?, points = ?, time_limit = ?, memory_limit = ?, code = ?
+                WHERE id = ?
+                """,
+                (title, statement, points, time_limit, memory_limit, code, problem_id),
+            )
+            if tests is not None:
+                conn.execute("DELETE FROM problem_tests WHERE problem_id = ?", (problem_id,))
+                conn.executemany(
+                    "INSERT INTO problem_tests (problem_id, input, expected, points) VALUES (?, ?, ?, ?)",
+                    [(problem_id, t.get("input", ""), t.get("expected", ""), t.get("points", 0)) for t in tests],
+                )
+            conn.commit()
+            return True
+
+    def delete_problem(self, problem_id: int) -> bool:
+        with self.db.get_connection() as conn:
+            existing = conn.execute("SELECT id FROM competition_problems WHERE id = ?", (problem_id,)).fetchone()
+            if not existing:
+                return False
+            conn.execute("DELETE FROM problem_tests WHERE problem_id = ?", (problem_id,))
+            conn.execute("DELETE FROM competition_problems WHERE id = ?", (problem_id,))
+            conn.commit()
+            return True
+
+    def update_problem_tests(self, problem_id: int, tests: List[Dict[str, Any]]) -> bool:
+        with self.db.get_connection() as conn:
+            existing = conn.execute("SELECT id FROM competition_problems WHERE id = ?", (problem_id,)).fetchone()
+            if not existing:
+                return False
+            conn.execute("DELETE FROM problem_tests WHERE problem_id = ?", (problem_id,))
+            conn.executemany(
+                "INSERT INTO problem_tests (problem_id, input, expected, points) VALUES (?, ?, ?, ?)",
+                [(problem_id, t.get("input", ""), t.get("expected", ""), t.get("points", 0)) for t in tests],
+            )
+            conn.commit()
+            return True
+
     def join_competition(self, competition_id: int, user_id: int) -> bool:
         with self.db.get_connection() as conn:
             competition = conn.execute("SELECT id, status FROM competitions WHERE id = ?", (competition_id,)).fetchone()
@@ -633,6 +968,23 @@ class MemoryStore:
                  "score": row["score"], "submission_count": row["submission_count"]}
                 for index, row in enumerate(rows, start=1)
             ]
+
+    def list_competition_submissions(self, competition_id: int, limit: int = 50) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT s.id, s.user_id, u.username, s.competition_id, s.language,
+                       s.verdict, s.score, s.execution_time_ms, s.memory_kb,
+                       s.passed_tests, s.total_tests, s.created_at
+                FROM submissions s
+                JOIN users u ON u.id = s.user_id
+                WHERE s.competition_id = ?
+                ORDER BY s.id DESC
+                LIMIT ?
+                """,
+                (competition_id, limit),
+            ).fetchall()
+            return [dict(row) for row in rows]
 
     def reset_server_state(self) -> None:
         with self.db.get_connection() as conn:

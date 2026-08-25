@@ -10,13 +10,18 @@ from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Header, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel, Field
 
 from backend.core.config import settings
+from backend.core.email_helper import send_otp_email, generate_otp
+from backend.core.storage import StorageService, is_valid_image, convert_to_webp, slugify
+from backend.core.auth_helper import api_response, get_current_user_profile, role_required, ROLE_HIERARCHY
+from backend.services.github_service import get_github_config, git_push, save_github_config, start_auto_push_scheduler, get_git_status, test_connection
 from backend.database.db import DatabaseManager, MemoryStore
 from backend.rag.store import KnowledgeStore
-from backend.tools.compiler import CppCompiler
+from backend.tools.compiler import CppCompiler, MultiLangCompiler
 from backend.tools.sandbox import ProcessSandbox
 from backend.tools.tester import TestRunner
 from backend.tools.generator import EdgeCaseGenerator
@@ -32,19 +37,60 @@ from security.middleware import SecurityMiddleware
 
 app = FastAPI(title="Local C++ Coding AI", version="1.0.0")
 
+@app.on_event("startup")
+async def start_background_services():
+    start_auto_push_scheduler()
+
+SECRET_PAYLOAD_KEY = b"local_cp_secret_v5"
+
+def decrypt_code_payload(payload: str) -> str:
+    if not payload or not isinstance(payload, str):
+        return payload or ""
+    val = payload.strip()
+    if val.startswith("ENC::"):
+        raw_b64 = val[5:]
+        try:
+            raw_bytes = base64.b64decode(raw_b64)
+            decrypted = bytes([b ^ SECRET_PAYLOAD_KEY[i % len(SECRET_PAYLOAD_KEY)] for i, b in enumerate(raw_bytes)])
+            return decrypted.decode('utf-8')
+        except Exception:
+            return val
+    if len(val) > 20 and " " not in val and "\n" not in val:
+        try:
+            decoded = base64.b64decode(val).decode('utf-8')
+            if any(kw in decoded for kw in ["#include", "def ", "class ", "import ", "int main", "return"]):
+                return decoded
+        except Exception:
+            pass
+    return val
+
+
+# ── 7-LAYER SECURITY & HARDENED CORS MIDDLEWARE ──────────────────────────────
 app.add_middleware(
     SecurityMiddleware,
-    requests_per_minute=100,
+    requests_per_minute=120,
     max_request_size=10 * 1024 * 1024,
     block_minutes=10,
+    db_path=settings.memory_settings.get("db_path", "data/memory.db"),
 )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:8000", "http://localhost:8000"],
+    allow_origins=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$",
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "X-RateLimit-Limit"],
+    expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"],
 )
+
 
 # Initialize subsystems
 db_manager = DatabaseManager(settings.memory_settings.get("db_path", "data/memory.db"))
@@ -125,6 +171,9 @@ class BlockIpRequest(BaseModel):
     reason: str = "admin_blocked"
     minutes: int = 10
 
+class UpdateUserRoleRequest(BaseModel):
+    role: str
+
 class ProblemSaveRequest(BaseModel):
     title: str
     category: str
@@ -134,10 +183,15 @@ class ProblemSaveRequest(BaseModel):
     notes: Optional[str] = ""
     verdict: Optional[str] = "AC"
 
+class SendCodeRequest(BaseModel):
+    email: str
+
 class AuthRequest(BaseModel):
-    username: str
+    username: Optional[str] = None
+    login: Optional[str] = None
     password: str
     email: Optional[str] = None
+    verification_code: Optional[str] = None
     remember: bool = False
 
 class UserCodeSaveRequest(BaseModel):
@@ -147,8 +201,13 @@ class UserCodeSaveRequest(BaseModel):
 
 class CompetitionRequest(BaseModel):
     title: str
+    key: Optional[str] = None
     statement: str
     status: str = "draft"
+    format: str = "icpc"
+    is_rated: bool = True
+    access_code: Optional[str] = ""
+    scoreboard_visibility: str = "visible"
     starts_at: Optional[str] = None
     ends_at: Optional[str] = None
     tests: List[Dict[str, str]] = Field(default_factory=list)
@@ -168,16 +227,76 @@ class ClueOJImportRequest(BaseModel):
     problem_dir: str
     statement: str = ""
 
+class LockUserRequest(BaseModel):
+    locked: bool
+
+class DeleteIpRequest(BaseModel):
+    ip: str
+
+class GitHubConfigRequest(BaseModel):
+    auto_push: bool = False
+    backup_time_1: str = "02:00"
+    backup_time_2: str = "14:00"
+    backup_time_3: str = "20:00"
+    trigger_count: int = 0
+    push_on_event: bool = True
+    custom_commit_prefix: Optional[str] = "Auto CP Studio Sync"
+
+class GitHubPushRequest(BaseModel):
+    commit_message: Optional[str] = None
+
+class AdminProblemCreateRequest(BaseModel):
+    title: str
+    statement: str = ""
+    points: int = 100
+    time_limit: float = 1.0
+    memory_limit: int = 256
+    code: str = "A"
+    competition_id: Optional[int] = None
+    tests: List[Dict[str, Any]] = Field(default_factory=list)
+
+class AdminProblemUpdateRequest(BaseModel):
+    title: str
+    statement: str = ""
+    points: int = 100
+    time_limit: float = 1.0
+    memory_limit: int = 256
+    code: str = "A"
+    tests: Optional[List[Dict[str, Any]]] = None
+
+class AdminProblemTestsUpdateRequest(BaseModel):
+    tests: List[Dict[str, Any]] = Field(default_factory=list)
+
+class AIGenerateTestsFromCodeRequest(BaseModel):
+    statement: Optional[str] = ""
+    solution_code: str
+    language: str = "cpp"
+    count: int = 5
+
 def current_user(request: Request, authorization: Optional[str] = Header(default=None)):
     if not authorization or not authorization.lower().startswith("bearer "):
-        raise HTTPException(status_code=401, detail="Vui lòng đăng nhập để sử dụng tính năng lưu code.")
-    user = memory_store.get_user_by_token(authorization[7:].strip())
-    if not user:
+        raise HTTPException(status_code=401, detail="Vui lòng đăng nhập để sử dụng tính năng này.")
+    raw_user = memory_store.get_user_by_token(authorization[7:].strip())
+    if not raw_user:
         raise HTTPException(status_code=401, detail="Phiên đăng nhập không hợp lệ.")
     client_ip = request.client.host if request.client else "unknown"
-    memory_store.record_user_ip(user["id"], client_ip)
+    memory_store.record_user_ip(raw_user["id"], client_ip)
+    user = get_current_user_profile(raw_user)
     user["competition_joined"] = memory_store.has_competition_participation(user["id"])
     return user
+
+def optional_user(request: Request, authorization: Optional[str] = Header(default=None)) -> Optional[Dict[str, Any]]:
+    if not authorization or not authorization.lower().startswith("bearer "):
+        return None
+    raw_user = memory_store.get_user_by_token(authorization[7:].strip())
+    if not raw_user:
+        return None
+    try:
+        user = get_current_user_profile(raw_user)
+        user["competition_joined"] = memory_store.has_competition_participation(user["id"])
+        return user
+    except Exception:
+        return None
 
 def bearer_token(authorization: Optional[str]) -> str:
     if not authorization or not authorization.lower().startswith("bearer "):
@@ -185,15 +304,64 @@ def bearer_token(authorization: Optional[str]) -> str:
     return authorization[7:].strip()
 
 
+def get_user_level(user: Dict[str, Any]) -> int:
+    role = str(user.get("role", "user")).lower()
+    return ROLE_HIERARCHY.get(role, 7 if user.get("is_admin") else 2)
+
 def admin_required(user: Dict[str, Any] = Depends(current_user)):
-    if not user.get("is_admin"):
-        raise HTTPException(status_code=403, detail="Tài khoản này không có quyền truy cập quản trị.")
+    if get_user_level(user) < 7:
+        raise HTTPException(status_code=403, detail="Yêu cầu quyền Quản trị viên (ADMIN) trở lên.")
+    return user
+
+def superadmin_required(user: Dict[str, Any] = Depends(current_user)):
+    if get_user_level(user) < 8:
+        raise HTTPException(status_code=403, detail="Yêu cầu quyền Tổng Quản trị (SUPERADMIN) trở lên.")
+    return user
+
+def dev_required(user: Dict[str, Any] = Depends(current_user)):
+    if get_user_level(user) < 9:
+        raise HTTPException(status_code=403, detail="Yêu cầu quyền Nhà phát triển (DEV) mới có quyền truy cập tính năng này.")
     return user
 
 def ai_access_required(user: Dict[str, Any] = Depends(current_user)):
     if not user.get("is_admin") and memory_store.has_competition_participation(user["id"]):
         raise HTTPException(status_code=403, detail="Bạn đã tham gia cuộc thi nên AI Agent và Assistant đã bị khóa.")
     return user
+
+verification_codes: Dict[str, Dict[str, Any]] = {}
+
+@app.post("/api/auth/send-verification-code")
+async def send_verification_code(req: SendCodeRequest):
+    email = req.email.strip().lower()
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        raise HTTPException(status_code=400, detail="Địa chỉ email không hợp lệ.")
+    
+    with db_manager.get_connection() as conn:
+        existing = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+        if existing:
+            raise HTTPException(status_code=409, detail="Email này đã được đăng ký bởi tài khoản khác.")
+    
+    code = generate_otp()
+    verification_codes[email] = {
+        "code": code,
+        "expires_at": time.time() + 600
+    }
+    
+    import asyncio
+    sent = await asyncio.to_thread(send_otp_email, email, code)
+    
+    if sent:
+        return {
+            "success": True,
+            "message": f"Mã xác thực 6 số đã được gửi tới email {email}. Vui lòng kiểm tra hộp thư của bạn."
+        }
+    else:
+        print(f"\n[EMAIL VERIFICATION OTP] (Fallback) Code for {email}: {code}\n")
+        return {
+            "success": True,
+            "message": f"Không thể gửi email. Mã OTP thử nghiệm của bạn là: {code}",
+            "demo_code": code
+        }
 
 @app.post("/api/auth/register")
 async def register(req: AuthRequest):
@@ -205,18 +373,29 @@ async def register(req: AuthRequest):
     email = (req.email or "").strip().lower()
     if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
         raise HTTPException(status_code=400, detail="Email không hợp lệ.")
+    
+    code = (req.verification_code or "").strip()
+    if not code:
+        raise HTTPException(status_code=400, detail="Vui lòng nhập mã xác thực Email (OTP 6 số).")
+    
+    stored = verification_codes.get(email)
+    if not stored or stored["code"] != code or time.time() > stored["expires_at"]:
+        raise HTTPException(status_code=400, detail="Mã xác thực Email không đúng hoặc đã hết hạn (10 phút).")
+    
     try:
         user = memory_store.create_user(username, email, req.password)
     except Exception as exc:
         if "UNIQUE" in str(exc).upper():
-            raise HTTPException(status_code=409, detail="Tên tài khoản đã tồn tại.")
+            raise HTTPException(status_code=409, detail="Tên tài khoản hoặc Email đã tồn tại.")
         raise
+    
+    verification_codes.pop(email, None)
     user["competition_joined"] = False
     return {"user": user, "token": memory_store.create_auth_token(user["id"], remember=req.remember)}
 
 @app.post("/api/auth/login")
 async def login(req: AuthRequest):
-    login_value = (req.username or "").strip()
+    login_value = (req.username or req.login or req.email or "").strip()
     user = memory_store.authenticate_user(login_value, req.password)
     if not user:
         raise HTTPException(status_code=401, detail="Tên tài khoản hoặc mật khẩu không đúng.")
@@ -225,7 +404,7 @@ async def login(req: AuthRequest):
 
 @app.get("/api/auth/me")
 async def get_me(user: Dict[str, Any] = Depends(current_user)):
-    return user
+    return {"user": user, **user}
 
 @app.post("/api/auth/logout")
 async def logout(authorization: Optional[str] = Header(default=None)):
@@ -287,7 +466,7 @@ async def admin_judges(user: Dict[str, Any] = Depends(admin_required)):
     }
 
 @app.post("/api/admin/judges/{judge_id}/toggle")
-async def admin_toggle_judge(judge_id: str, enabled: bool, user: Dict[str, Any] = Depends(admin_required)):
+async def admin_toggle_judge(judge_id: str, enabled: bool, user: Dict[str, Any] = Depends(dev_required)):
     try:
         judge = judge_pool.toggle(judge_id, enabled)
     except ValueError as exc:
@@ -308,7 +487,7 @@ async def admin_monitoring(user: Dict[str, Any] = Depends(admin_required)):
     }
 
 @app.post("/api/admin/monitoring/health-check")
-async def admin_monitoring_health_check(user: Dict[str, Any] = Depends(admin_required)):
+async def admin_monitoring_health_check(user: Dict[str, Any] = Depends(dev_required)):
     judges = judge_pool.status()
     return {"success": True, "message": "Đã kiểm tra toàn bộ máy chấm.", "judges": judges, "checked_at": datetime.now().isoformat()}
 
@@ -321,8 +500,23 @@ async def admin_member_detail(user_id: int, user: Dict[str, Any] = Depends(admin
     return detail
 
 
+@app.put("/api/admin/members/{user_id}/role")
+async def admin_update_user_role(user_id: int, req: UpdateUserRoleRequest, user: Dict[str, Any] = Depends(superadmin_required)):
+    role = req.role.lower().strip()
+    valid_roles = ["user", "contestant", "moderator", "admin", "superadmin", "dev"]
+    if role not in valid_roles:
+        raise HTTPException(status_code=400, detail=f"Quyền không hợp lệ. Chỉ chấp nhận: {', '.join(valid_roles)}")
+    if user_id == user["id"] and role not in ["admin", "superadmin", "dev"]:
+        raise HTTPException(status_code=400, detail="Bạn không thể tự gỡ quyền Quản trị của chính tài khoản mình.")
+    
+    success = memory_store.update_user_role(user_id, role)
+    if not success:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng.")
+    return {"success": True, "message": f"Đã cập nhật quyền thành công thành '{role.upper()}'.", "user_id": user_id, "role": role}
+
+
 @app.get("/api/admin/export-members")
-async def admin_export_members(user: Dict[str, Any] = Depends(admin_required)):
+async def admin_export_members(user: Dict[str, Any] = Depends(superadmin_required)):
     return {
         "exported_at": __import__("datetime").datetime.now().isoformat(),
         "members": memory_store.export_members(),
@@ -330,7 +524,7 @@ async def admin_export_members(user: Dict[str, Any] = Depends(admin_required)):
 
 
 @app.post("/api/admin/block-ip")
-async def admin_block_ip(req: BlockIpRequest, user: Dict[str, Any] = Depends(admin_required)):
+async def admin_block_ip(req: BlockIpRequest, user: Dict[str, Any] = Depends(superadmin_required)):
     ip = req.ip.strip()
     if not ip or len(ip) > 64:
         raise HTTPException(status_code=400, detail="Địa chỉ IP không hợp lệ.")
@@ -342,34 +536,121 @@ async def admin_block_ip(req: BlockIpRequest, user: Dict[str, Any] = Depends(adm
 
 
 @app.post("/api/admin/settings/model")
-async def admin_switch_model(req: ModelSwitchRequest, user: Dict[str, Any] = Depends(admin_required)):
+async def admin_switch_model(req: ModelSwitchRequest, user: Dict[str, Any] = Depends(dev_required)):
     settings.update_llm_model(req.model)
     llm_client.model = req.model
     return {"success": True, "current_model": req.model}
 
 
 @app.post("/api/admin/reset")
-async def admin_reset_system(user: Dict[str, Any] = Depends(admin_required)):
+async def admin_reset_system(user: Dict[str, Any] = Depends(dev_required)):
     memory_store.reset_server_state()
     default_model = settings.llm_settings.get("model", "gemma4:latest")
     llm_client.model = default_model
     return {"success": True, "message": "Hệ thống đã được reset thành công.", "current_model": default_model}
 
+
+@app.get("/api/admin/github")
+async def admin_get_github_config(user: Dict[str, Any] = Depends(dev_required)):
+    return get_github_config()
+
+
+@app.get("/api/admin/github/status")
+async def admin_get_github_status(user: Dict[str, Any] = Depends(dev_required)):
+    return get_git_status()
+
+
+@app.post("/api/admin/github/test-connection")
+async def admin_github_test_connection(user: Dict[str, Any] = Depends(dev_required)):
+    return test_connection()
+
+
+@app.put("/api/admin/github")
+async def admin_save_github_config(req: GitHubConfigRequest, user: Dict[str, Any] = Depends(dev_required)):
+    try:
+        config = save_github_config(req.auto_push, req.backup_time_1, req.backup_time_2, req.backup_time_3, req.trigger_count, req.push_on_event, req.custom_commit_prefix or "")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"success": True, "config": config}
+
+
+@app.post("/api/admin/github/push")
+async def admin_github_push(req: GitHubPushRequest, user: Dict[str, Any] = Depends(dev_required)):
+    result = git_push(req.commit_message)
+    return result
+
+
+@app.put("/api/admin/members/{user_id}/lock")
+async def admin_lock_user(user_id: int, req: LockUserRequest, user: Dict[str, Any] = Depends(superadmin_required)):
+    if user_id == user["id"]:
+        raise HTTPException(status_code=400, detail="Bạn không thể tự khóa tài khoản của mình.")
+    success = memory_store.lock_user(user_id, req.locked)
+    if not success:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng.")
+    action = "khóa" if req.locked else "mở khóa"
+    return {"success": True, "message": f"Đã {action} tài khoản thành công.", "user_id": user_id, "is_locked": req.locked}
+
+
+@app.delete("/api/admin/members/{user_id}")
+async def admin_delete_user(user_id: int, user: Dict[str, Any] = Depends(dev_required)):
+    if user_id == user["id"]:
+        raise HTTPException(status_code=400, detail="Bạn không thể xóa tài khoản của chính mình.")
+    success = memory_store.delete_user(user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng.")
+    return {"success": True, "message": "Đã xóa tài khoản thành công.", "user_id": user_id}
+
+
+@app.get("/api/admin/security/blocked-ips")
+async def admin_list_blocked_ips(user: Dict[str, Any] = Depends(superadmin_required)):
+    return {"blocked_ips": memory_store.list_blocked_ips()}
+
+
+@app.delete("/api/admin/security/blocked-ips/{ip:path}")
+async def admin_unblock_ip(ip: str, user: Dict[str, Any] = Depends(superadmin_required)):
+    success = memory_store.unblock_ip(ip)
+    return {"success": success, "message": f"Đã mở chặn IP {ip}." if success else "Không tìm thấy IP trong danh sách chặn."}
+
+
+@app.get("/api/admin/security/events")
+async def admin_security_events(limit: int = 100, user: Dict[str, Any] = Depends(superadmin_required)):
+    return {"events": memory_store.get_security_events(limit=min(limit, 500))}
+
+
+@app.get("/api/standings")
+async def get_global_standings():
+    return {"standings": memory_store.list_global_standings()}
+
 @app.get("/api/competitions")
-async def list_competitions(user: Dict[str, Any] = Depends(current_user)):
-    return memory_store.list_competitions(user_id=user["id"], include_drafts=user.get("is_admin", False))
+async def list_competitions(user: Optional[Dict[str, Any]] = Depends(optional_user)):
+    user_id = user["id"] if user else None
+    include_drafts = user.get("is_admin", False) if user else False
+    return memory_store.list_competitions(user_id=user_id, include_drafts=include_drafts)
 
 @app.get("/api/competitions/{competition_id}/ranking")
-async def get_competition_ranking(competition_id: int, user: Dict[str, Any] = Depends(current_user)):
-    competition = memory_store.get_competition(competition_id, user_id=user["id"])
-    if not competition or (competition["status"] == "draft" and not user.get("is_admin")):
+async def get_competition_ranking(competition_id: int, user: Optional[Dict[str, Any]] = Depends(optional_user)):
+    user_id = user["id"] if user else None
+    is_admin = user.get("is_admin", False) if user else False
+    competition = memory_store.get_competition(competition_id, user_id=user_id)
+    if not competition or (competition["status"] == "draft" and not is_admin):
         raise HTTPException(status_code=404, detail="Không tìm thấy cuộc thi.")
     return {"competition_id": competition_id, "ranking": memory_store.list_competition_ranking(competition_id)}
 
+@app.get("/api/competitions/{competition_id}/submissions")
+async def get_competition_submissions(competition_id: int, user: Optional[Dict[str, Any]] = Depends(optional_user)):
+    user_id = user["id"] if user else None
+    is_admin = user.get("is_admin", False) if user else False
+    competition = memory_store.get_competition(competition_id, user_id=user_id)
+    if not competition or (competition["status"] == "draft" and not is_admin):
+        raise HTTPException(status_code=404, detail="Không tìm thấy cuộc thi.")
+    return {"competition_id": competition_id, "submissions": memory_store.list_competition_submissions(competition_id)}
+
 @app.get("/api/competitions/{competition_id}")
-async def get_competition(competition_id: int, user: Dict[str, Any] = Depends(current_user)):
-    competition = memory_store.get_competition(competition_id, user_id=user["id"], include_tests=user.get("is_admin", False))
-    if not competition or (competition["status"] == "draft" and not user.get("is_admin")):
+async def get_competition(competition_id: int, user: Optional[Dict[str, Any]] = Depends(optional_user)):
+    user_id = user["id"] if user else None
+    is_admin = user.get("is_admin", False) if user else False
+    competition = memory_store.get_competition(competition_id, user_id=user_id, include_tests=is_admin)
+    if not competition or (competition["status"] == "draft" and not is_admin):
         raise HTTPException(status_code=404, detail="Không tìm thấy cuộc thi.")
     return competition
 
@@ -401,6 +682,7 @@ async def submit_competition(competition_id: int, req: CompetitionSubmissionRequ
         raise HTTPException(status_code=400, detail="Cuộc thi chưa bắt đầu.")
     if competition.get("ends_at") and competition["ends_at"] <= now:
         raise HTTPException(status_code=400, detail="Cuộc thi đã kết thúc.")
+    req.source_code = decrypt_code_payload(req.source_code)
     if not req.source_code.strip():
         raise HTTPException(status_code=400, detail="Mã nguồn không được để trống.")
     allowed_languages = {"cpp", "c", "python", "java", "rust", "go"}
@@ -490,6 +772,145 @@ Mỗi phần tử có đúng hai trường: input và expected, đều là chu�
         return {"success": True, "tests": clean_tests[:count]}
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Không tạo được test bằng AI: {exc}")
+
+@app.delete("/api/admin/competitions/{competition_id}")
+async def admin_delete_competition(competition_id: int, user: Dict[str, Any] = Depends(admin_required)):
+    deleted = memory_store.delete_competition(competition_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Không tìm thấy cuộc thi cần xóa.")
+    return {"success": True, "id": competition_id}
+
+@app.get("/api/admin/problems")
+async def admin_list_problems(user: Dict[str, Any] = Depends(admin_required)):
+    return memory_store.list_all_problems()
+
+@app.get("/api/admin/problems/{problem_id}")
+async def admin_get_problem(problem_id: int, user: Dict[str, Any] = Depends(admin_required)):
+    problem = memory_store.get_problem(problem_id)
+    if not problem:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài tập.")
+    return problem
+
+@app.post("/api/admin/problems")
+async def admin_create_problem(req: AdminProblemCreateRequest, user: Dict[str, Any] = Depends(admin_required)):
+    if not req.title.strip():
+        raise HTTPException(status_code=400, detail="Tiêu đề bài tập không được để trống.")
+    pid = memory_store.create_bank_problem(
+        title=req.title.strip(),
+        statement=req.statement,
+        points=req.points,
+        time_limit=req.time_limit,
+        memory_limit=req.memory_limit,
+        code=req.code,
+        competition_id=req.competition_id,
+        tests=req.tests
+    )
+    return {"success": True, "id": pid}
+
+@app.put("/api/admin/problems/{problem_id}")
+async def admin_update_problem(problem_id: int, req: AdminProblemUpdateRequest, user: Dict[str, Any] = Depends(admin_required)):
+    updated = memory_store.update_bank_problem(
+        problem_id=problem_id,
+        title=req.title.strip(),
+        statement=req.statement,
+        points=req.points,
+        time_limit=req.time_limit,
+        memory_limit=req.memory_limit,
+        code=req.code,
+        tests=req.tests
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài tập để cập nhật.")
+    return {"success": True, "id": problem_id}
+
+@app.delete("/api/admin/problems/{problem_id}")
+async def admin_delete_problem(problem_id: int, user: Dict[str, Any] = Depends(admin_required)):
+    deleted = memory_store.delete_problem(problem_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài tập cần xóa.")
+    return {"success": True, "id": problem_id}
+
+@app.put("/api/admin/problems/{problem_id}/tests")
+async def admin_update_problem_tests(problem_id: int, req: AdminProblemTestsUpdateRequest, user: Dict[str, Any] = Depends(admin_required)):
+    updated = memory_store.update_problem_tests(problem_id, req.tests)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài tập để cập nhật test cases.")
+    return {"success": True, "id": problem_id, "count": len(req.tests)}
+
+@app.post("/api/admin/ai/generate-tests-from-code")
+async def admin_generate_tests_from_code(req: AIGenerateTestsFromCodeRequest, user: Dict[str, Any] = Depends(admin_required)):
+    count = max(1, min(req.count, 20))
+    if not req.solution_code.strip():
+        raise HTTPException(status_code=400, detail="Vui lòng cung cấp mã nguồn giải thuật toán.")
+    
+    prompt = f"""Bạn là chuyên gia ra đề thi Competitive Programming ICPC/IOI.
+Nhiệm vụ: Phân tích mã nguồn và đề bài dưới đây để sinh ra {count} bộ dữ liệu ĐẦU VÀO (INPUT) đa dạng và kiểm thử được toàn bộ logic:
+- Trường hợp cơ bản / mẫu
+- Trường hợp biên nhỏ nhất (0, 1, số âm, rỗng nếu cho phép)
+- Trường hợp biên lớn nhất (max N, max giá trị)
+- Trường hợp đặc biệt (các phần tử giống nhau, mảng đã sắp xếp, chu kỳ, chẵn/lẻ)
+- Trường hợp ngẫu nhiên phức tạp
+
+ĐỀ BÀI:
+{req.statement or "Dựa vào mã nguồn giải để suy luận định dạng input"}
+
+MÃ NGUỒN ({req.language.upper()}):
+{req.solution_code}
+
+CHỈ TRẢ VỀ JSON ARRAY CHỨA CÁC CHUỖI INPUT, KHÔNG GIẢI THÍCH, KHÔNG MARKDOWN.
+Ví dụ:
+[
+  "1 2\\n",
+  "0 0\\n",
+  "1000000 2000000\\n"
+]
+"""
+    raw_inputs = []
+    try:
+        response = await llm_client.chat([{"role": "user", "content": prompt}])
+        match = re.search(r"\[[\s\S]*\]", response)
+        if match:
+            parsed = json.loads(match.group(0))
+            if isinstance(parsed, list):
+                raw_inputs = [str(item) if not isinstance(item, dict) else str(item.get("input", "")) for item in parsed]
+    except Exception:
+        pass
+
+    if not raw_inputs:
+        raw_inputs = ["1 2\n", "10 20\n", "0 0\n", "-5 15\n", "100 200\n"][:count]
+
+    compiler = MultiLangCompiler()
+    sandbox = ProcessSandbox(timeout_seconds=2.0)
+    comp_res = compiler.prepare_and_compile(req.solution_code, language=req.language)
+    
+    if not comp_res["success"]:
+        raise HTTPException(status_code=400, detail=f"Mã nguồn không biên dịch được: {comp_res.get('compiler_output', 'Lỗi cú pháp')}")
+
+    exec_cmd = comp_res.get("executable_cmd") or comp_res.get("executable_path_or_cmd")
+    generated_tests = []
+    
+    for i, inp_data in enumerate(raw_inputs[:count]):
+        t_in = inp_data if inp_data.endswith("\n") else inp_data + "\n"
+        run_res = sandbox.execute(exec_cmd, stdin_data=t_in, timeout=2.0)
+        
+        expected_out = run_res["stdout"].strip()
+        if not expected_out and run_res["stderr"]:
+            expected_out = f"/* Lỗi: {run_res['stderr'].strip()[:100]} */"
+        
+        pts = 100 // count if count > 0 else 10
+        generated_tests.append({
+            "input": t_in,
+            "expected": expected_out,
+            "points": pts,
+            "execution_time_ms": run_res.get("execution_time_ms", 0),
+            "status": run_res.get("verdict", "OK")
+        })
+
+    return {
+        "success": True,
+        "tests": generated_tests,
+        "total_generated": len(generated_tests)
+    }
 
 @app.get("/api/sessions")
 async def list_sessions(user: Dict[str, Any] = Depends(current_user)):
@@ -657,6 +1078,7 @@ YÊU CẦU:
 @app.post("/api/compile_and_run")
 
 async def compile_and_run(req: CompileRunRequest):
+    req.source_code = decrypt_code_payload(req.source_code)
     try:
         result = judge_pool.judge(
             source_code=req.source_code,
@@ -723,6 +1145,7 @@ async def get_problems(user: Dict[str, Any] = Depends(current_user)):
 
 @app.post("/api/problems")
 async def save_problem(req: ProblemSaveRequest, user: Dict[str, Any] = Depends(current_user)):
+    req.solution_code = decrypt_code_payload(req.solution_code)
     pid = memory_store.save_problem(
         title=req.title,
         category=req.category,
@@ -763,7 +1186,51 @@ async def get_security_events(limit: int = 50):
 async def get_blocked_ips():
     return memory_store.get_blocked_ips()
 
-# Mount frontend static files
+@app.post("/api/upload/avatar")
+async def upload_avatar(file: UploadFile = File(...), user: Dict[str, Any] = Depends(current_user)):
+    content = await file.read()
+    url = StorageService.upload_avatar(content, file.filename, user["username"])
+    if not url:
+        raise HTTPException(status_code=400, detail="Tệp ảnh không hợp lệ hoặc bị từ chối bảo mật.")
+    return {"success": True, "url": url}
+
+@app.post("/api/upload/problem-image")
+async def upload_problem_image(problem_slug: str = Form(...), file: UploadFile = File(...), user: Dict[str, Any] = Depends(admin_required)):
+    content = await file.read()
+    url = StorageService.upload_problem_image(content, file.filename, problem_slug)
+    if not url:
+        raise HTTPException(status_code=400, detail="Tệp ảnh đề bài không hợp lệ.")
+    return {"success": True, "url": url}
+
+@app.post("/api/upload/ai-attachment")
+async def upload_ai_attachment(session_id: str = Form(...), file: UploadFile = File(...), user: Dict[str, Any] = Depends(current_user)):
+    content = await file.read()
+    url = StorageService.upload_ai_attachment(content, file.filename, session_id)
+    if not url:
+        raise HTTPException(status_code=400, detail="Tệp ảnh đính kèm AI không hợp lệ.")
+    return {"success": True, "url": url}
+
+# Mount static uploads directory
+uploads_dir = Path("data/uploads")
+uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/static/uploads", StaticFiles(directory="data/uploads"), name="uploads")
+
+# Custom 404 handler
 frontend_dir = Path("frontend")
 frontend_dir.mkdir(exist_ok=True)
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404 and not request.url.path.startswith("/api/"):
+        page_404 = frontend_dir / "404.html"
+        if page_404.exists():
+            return FileResponse(str(page_404), status_code=404)
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+# Root route serves welcome landing page (thankyou.html)
+@app.get("/")
+async def root():
+    return FileResponse("frontend/thankyou.html")
+
+# Mount frontend static files
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

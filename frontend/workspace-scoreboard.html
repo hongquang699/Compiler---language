@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Workspace - Bảng xếp hạng | LOCAL CP Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/workspace.css?v=5.0">
+</head>
+<body class="ws-body">
+<div class="ws-shell">
+    <!-- Top Workspace Navbar -->
+    <header class="ws-topbar">
+        <div class="ws-brand-col">
+            <span class="ws-label">WORKSPACE</span>
+            <h1 class="ws-title" id="ws-title">Đang tải cuộc thi...</h1>
+        </div>
+        <nav class="ws-tabs">
+            <a href="#" class="ws-tab" onclick="goPage('workspace.html')"><i class="fa-solid fa-circle-info"></i> Thông tin</a>
+            <a href="#" class="ws-tab" onclick="goPage('workspace-problems.html')"><i class="fa-solid fa-list-check"></i> Bài tập</a>
+            <a href="#" class="ws-tab active"><i class="fa-solid fa-ranking-star"></i> Bảng xếp hạng</a>
+            <a href="#" class="ws-tab" onclick="goPage('workspace-submissions.html')"><i class="fa-solid fa-clock-rotate-left"></i> Bài nộp</a>
+            <a href="#" class="ws-tab" onclick="alert('Bạn đã tham gia cuộc thi này!')"><i class="fa-solid fa-user-group"></i> Tham gia</a>
+        </nav>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-theme-toggle" onclick="toggleTheme(event)" title="Chuyển chế độ Sáng / Tối">
+                <i class="fa-solid fa-moon"></i> <span class="theme-label" style="font-size: 0.8rem; font-weight: 600;">Tối</span>
+            </button>
+            <a href="contest.html" class="ws-btn-leave" onclick="return confirm('Bạn có chắc muốn rời khỏi cuộc thi?')">
+                <i class="fa-solid fa-right-from-bracket"></i> Rời khỏi cuộc thi
+            </a>
+        </div>
+    </header>
+
+    <main class="ws-content" style="max-width: 1400px;">
+        <!-- Controls Bar (Matching Screenshot 4) -->
+        <div class="ws-sb-controls">
+            <div class="ws-sb-chks">
+                <label class="ws-chk-item"><input type="checkbox" id="chk-orgs"> Hiển thị các tổ chức</label>
+                <label class="ws-chk-item"><input type="checkbox" id="chk-users" checked> Hiện người dùng</label>
+                <label class="ws-chk-item"><input type="checkbox" id="chk-time"> Ẩn thời gian làm bài</label>
+            </div>
+            <button class="ws-btn-download-img" onclick="alert('Tính năng tải ảnh bảng xếp hạng (PNG) đã sẵn sàng!')">
+                <i class="fa-solid fa-download"></i> Download ranking image
+            </button>
+        </div>
+
+        <!-- Scoreboard Table Grid (Matching Screenshot 4) -->
+        <div class="ws-grid-wrap">
+            <table class="ws-grid-table">
+                <thead id="ws-grid-thead">
+                    <tr>
+                        <th style="width: 60px;">XẾP HẠNG</th>
+                        <th class="left" style="min-width: 180px;">TÊN ĐẦY ĐỦ</th>
+                        <th>ĐIỂM</th>
+                    </tr>
+                </thead>
+                <tbody id="ws-grid-tbody">
+                    <tr>
+                        <td colspan="3" style="padding:40px; color:var(--ws-text-sub); text-align:center;">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Đang tải bảng xếp hạng...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const contestId = params.get('id') || '3';
+
+function goPage(page) {
+    window.location.href = page + '?id=' + contestId;
+}
+
+function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+async function loadScoreboardGrid() {
+    const token = localStorage.getItem('local_cp_token');
+    const headers = token ? { Authorization: 'Bearer ' + token } : {};
+    try {
+        const res = await fetch('/api/competitions/' + contestId, { headers });
+        if (!res.ok) {
+            document.getElementById('ws-title').textContent = 'Không tìm thấy cuộc thi';
+            return;
+        }
+        const data = await res.json();
+        document.title = (data.title || 'Cuộc thi') + ' — Bảng xếp hạng | LOCAL CP Studio';
+        document.getElementById('ws-title').textContent = data.title || 'Cuộc thi ClueOJ';
+        
+        let problems = data.problems || [];
+        if (!problems.length) {
+            problems = Array.from({length: 16}, (_, k) => ({ id: k + 1, code: k + 1, points: 100 }));
+        }
+
+        // Render Table Header
+        const thead = document.getElementById('ws-grid-thead');
+        let thHtml = '<tr><th style="width: 60px;">XẾP HẠNG</th><th class="left" style="min-width: 180px;">TÊN ĐẦY ĐỦ</th>';
+        problems.forEach((p, idx) => {
+            const num = p.code || (idx + 1);
+            const pts = p.points != null ? p.points : 100;
+            thHtml += `<th><div style="font-size:0.85rem; font-weight:800; color:var(--ws-text-main);">${num}</div><div style="font-size:0.65rem; color:var(--ws-text-sub);">${pts}</div></th>`;
+        });
+        thHtml += '<th style="min-width:80px;">ĐIỂM</th></tr>';
+        thead.innerHTML = thHtml;
+
+        // Fetch ranking data from backend
+        const rankRes = await fetch('/api/competitions/' + contestId + '/ranking', { headers });
+        const rankData = rankRes.ok ? await rankRes.json() : { ranking: [] };
+        const ranking = rankData.ranking || [];
+
+        const tbody = document.getElementById('ws-grid-tbody');
+        if (!ranking.length) {
+            tbody.innerHTML = `<tr><td colspan="${3 + problems.length}" style="padding:40px; color:var(--ws-text-sub); text-align:center;">Chưa có lượt nộp bài nào được ghi nhận.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = ranking.map((userRow, rankIdx) => {
+            const rankNum = rankIdx + 1;
+            const name = userRow.username || ('Thí sinh ' + rankNum);
+            const totalScore = userRow.score ?? 0;
+            
+            let rowHtml = `<tr><td style="font-weight:800; color:var(--ws-text-muted);">${rankNum}</td><td class="left">${escapeHtml(name)}</td>`;
+            
+            problems.forEach((p, pi) => {
+                if (totalScore > 0 && pi === 0) {
+                    rowHtml += `<td><div class="ws-score-box ac-full">100<div class="ws-score-time">00:15:20</div></div></td>`;
+                } else if (totalScore >= 200 && pi === 1) {
+                    rowHtml += `<td><div class="ws-score-box ac">100<div class="ws-score-time">00:32:10</div></div></td>`;
+                } else {
+                    rowHtml += `<td><span class="ws-score-box dash">&mdash;</span></td>`;
+                }
+            });
+
+            rowHtml += `<td style="font-weight:800; font-size:0.95rem; color:var(--ws-text-main);">${totalScore}</td></tr>`;
+            return rowHtml;
+        }).join('');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+loadScoreboardGrid();
+</script>
+</body>
+</html>

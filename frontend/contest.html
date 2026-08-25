@@ -3,23 +3,102 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cuộc thi | Local CP</title>
+    <title>Đấu trường Cuộc thi Lập trình ClueOJ | Local CP Studio</title>
+    <meta name="description" content="Tham gia các cuộc thi lập trình thi đấu chuẩn ClueOJ, thử thách giải thuật toán với hệ thống chấm tự động và bảng xếp hạng realtime.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
-    <link rel="stylesheet" href="style.css?v=4.4">
-    <link rel="stylesheet" href="contest.css">
+    <script src="js/theme.js"></script>
+    <script src="js/auth-nav.js"></script>
+    <link rel="stylesheet" href="css/contest.css?v=11.0">
 </head>
 <body class="usaco-theme">
+    <!-- Top Shared Header Navigation Bar (Full Width) -->
+    <header class="contest-page-header">
+        <a href="index.html" class="contest-brand" aria-label="Trang chủ Local CP">
+            <i class="fa-solid fa-code" aria-hidden="true"></i> LOCAL CP <span style="font-size: 0.72rem; color: #2196f3; font-family: 'JetBrains Mono', monospace; font-weight: 700; padding: 2px 8px; background: #e0f2fe; border-radius: 10px;">CLUEOJ ENGINE</span>
+        </a>
+
+        <nav class="contest-nav-links">
+            <a href="index.html" class="contest-nav-link"><i class="fa-solid fa-house"></i> Trang chủ</a>
+            <a href="problems.html" class="contest-nav-link"><i class="fa-solid fa-layer-group"></i> Kho bài tập</a>
+            <a href="contest.html" class="contest-nav-link active"><i class="fa-solid fa-trophy"></i> Cuộc thi</a>
+            <a href="standings.html" class="contest-nav-link"><i class="fa-solid fa-ranking-star"></i> Bảng xếp hạng</a>
+        </nav>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="user-auth-area"></div>
+            <button class="btn-theme-toggle" onclick="toggleTheme(event)" title="Chuyển chế độ Sáng / Tối">
+                <i class="fa-solid fa-moon"></i> <span class="theme-label" style="font-size: 0.8rem; font-weight: 600;">Tối</span>
+            </button>
+            <a href="index.html#playground-tab" class="btn-contest-sub" style="padding: 7px 14px; font-size: 0.8rem;">
+                <i class="fa-solid fa-arrow-left"></i> Về IDE
+            </a>
+        </div>
+    </header>
+
     <main class="contest-page-shell">
-        <header class="contest-page-header"><a href="index.html" class="contest-brand"><i class="fa-solid fa-code"></i> LOCAL CP</a><a href="index.html" class="btn-ide btn-ide-secondary btn-sm"><i class="fa-solid fa-arrow-left"></i> Về IDE</a></header>
-        <p id="contest-login-message" class="empty-state" hidden>Hãy đăng nhập tại IDE trước khi tham gia cuộc thi.</p>
-        <section class="vault-layout glass-panel competition-layout">
-            <div class="panel-header-clean"><div><h2><i class="fa-solid fa-flag-checkered"></i> Cuộc thi lập trình</h2><p class="panel-subtitle">Chọn cuộc thi để xem danh sách bài tập.</p></div></div>
-            <div id="competition-list" class="competition-list"></div>
-            <div id="competition-detail" class="competition-detail hidden"></div>
+
+        <!-- Breadcrumbs Navigation -->
+        <nav class="breadcrumbs-container" aria-label="Đường dẫn trang">
+            <a href="index.html"><i class="fa-solid fa-house"></i> Trang chủ</a>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
+            <span>Đấu trường Cuộc thi ClueOJ</span>
+        </nav>
+
+        <!-- Hero Section Banner -->
+        <section class="contest-hero">
+            <div>
+                <h1>Đấu trường Cuộc thi Lập trình</h1>
+                <p>Khám phá các kỳ thi thuật toán chuẩn ICPC/IOI, thi đấu trực tuyến với máy chấm tự động và leo rank bảng xếp hạng.</p>
+            </div>
+            <div class="contest-hero-badge">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
         </section>
+
+        <!-- ClueOJ Filter Tabs & Search Bar -->
+        <div class="clueoj-tabs-bar">
+            <div class="clueoj-tabs" id="contest-filter-tabs">
+                <button class="clueoj-tab active" data-filter="all"><i class="fa-solid fa-layer-group"></i> Tất cả <span class="badge" id="count-all">0</span></button>
+                <button class="clueoj-tab" data-filter="ongoing"><i class="fa-solid fa-play" style="color: #16a34a;"></i> Đang diễn ra <span class="badge" id="count-ongoing">0</span></button>
+                <button class="clueoj-tab" data-filter="upcoming"><i class="fa-solid fa-clock" style="color: #d97706;"></i> Sắp bắt đầu <span class="badge" id="count-upcoming">0</span></button>
+                <button class="clueoj-tab" data-filter="past"><i class="fa-solid fa-flag-checkered"></i> Đã kết thúc <span class="badge" id="count-past">0</span></button>
+            </div>
+            <div class="clueoj-search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" id="contest-search-input" placeholder="Tìm tên cuộc thi..." autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Contest List Grid -->
+        <section style="margin-bottom: 24px;">
+            <div id="competition-list" class="clueoj-contest-grid">
+                <div style="text-align: center; padding: 50px; color: #94a3b8; background: var(--ct-card); border: 1px solid var(--ct-border); border-radius: 14px;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px; color: #2196f3;"></i>
+                    <p>Đang tải danh sách cuộc thi...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-page-footer">
+            <div>
+                <span>&copy; 2026 <strong>Local CP Studio</strong> — Nền tảng luyện tập Competitive Programming chuẩn thi đấu ClueOJ & TMathCoding.</span>
+            </div>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                <a href="problems.html">Kho bài tập</a>
+                <a href="contest.html">Cuộc thi</a>
+                <a href="standings.html">Bảng xếp hạng</a>
+                <a href="privacy.html">Chính sách bảo mật</a>
+            </div>
+        </footer>
     </main>
-    <script src="contest-bootstrap.js"></script>
-    <script src="competition.js?v=2.0"></script>
+
+    <script src="js/contest-bootstrap.js?v=11.0"></script>
+    <script src="js/competition.js?v=11.0"></script>
 </body>
 </html>

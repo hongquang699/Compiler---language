@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cảm ơn bạn đã tham gia | Local CP IDE</title>
+    <meta name="description" content="Chào mừng bạn đến với nền tảng luyện tập lập trình thi đấu Local CP IDE. Hãy khám phá trình biên dịch tốc độ cao và trợ lý AI thông minh ngay hôm nay.">
+    <meta name="robots" content="noindex, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="http://localhost:8000/thankyou.html">
+    <meta property="og:title" content="Cảm ơn bạn đã tham gia | Local CP IDE">
+    <meta property="og:description" content="Bắt đầu hành trình chinh phục thuật toán đỉnh cao với Local CP IDE.">
+    <meta property="og:image" content="/assets/og-preview.png">
+
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css?v=7.0">
+    <style>
+        .thankyou-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+            padding: 40px 20px;
+            z-index: 1;
+            position: relative;
+        }
+        .thankyou-card {
+            max-width: 620px;
+            padding: 40px 32px;
+            border-radius: var(--radius-lg);
+        }
+        .thankyou-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(34, 211, 238, 0.2));
+            border: 2px solid var(--accent-green);
+            display: grid;
+            place-items: center;
+            margin: 0 auto 20px;
+            color: var(--accent-green);
+            font-size: 2rem;
+            box-shadow: 0 0 25px rgba(52, 211, 153, 0.3);
+        }
+        .next-steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin: 28px 0;
+            text-align: left;
+        }
+        .step-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .step-item:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-cyan);
+        }
+        .step-item i {
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .step-item strong {
+            display: block;
+            color: var(--text-bright);
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        .step-item p {
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            line-height: 1.4;
+            margin: 0;
+        }
+        .breadcrumbs-bar {
+            margin-bottom: 20px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .breadcrumbs-bar a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body class="usaco-theme">
+    <div class="app-ambient" aria-hidden="true">
+        <div class="orb orb-cyan"></div>
+        <div class="orb orb-violet"></div>
+        <div class="mesh-grid"></div>
+    </div>
+
+    <header class="app-header">
+        <div class="header-left">
+            <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                <div class="logo-badge">
+                    <i class="fa-solid fa-code" aria-label="Logo Local CP"></i>
+                </div>
+                <div class="header-title-box">
+                    <span class="ide-brand">LOCAL CP</span>
+                    <span class="ide-sub">Algorithm Studio</span>
+                </div>
+            </a>
+        </div>
+        <nav class="nav-tabs">
+            <a class="nav-tab" href="index.html"><i class="fa-solid fa-laptop-code"></i> <span>Trang chủ IDE</span></a>
+            <a class="nav-tab" href="contest.html"><i class="fa-solid fa-flag-checkered"></i> <span>Cuộc thi</span></a>
+            <a class="nav-tab" href="privacy.html"><i class="fa-solid fa-shield-halved"></i> <span>Bảo mật</span></a>
+        </nav>
+    </header>
+
+    <main class="thankyou-wrapper">
+        <!-- Breadcrumbs (#5) -->
+        <div class="breadcrumbs-bar">
+            <a href="index.html"><i class="fa-solid fa-house"></i> Trang chủ</a>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
+            <span>Cảm ơn</span>
+        </div>
+
+        <div class="glass-panel thankyou-card">
+            <div class="thankyou-icon">
+                <i class="fa-solid fa-circle-check" aria-label="Biểu tượng thành công"></i>
+            </div>
+            <h1 style="font-family: var(--font-display); font-size: 1.6rem; color: var(--text-bright); margin-bottom: 8px;">
+                Chào mừng bạn đến với Local CP Studio!
+            </h1>
+            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.9rem;">
+                Tài khoản và môi trường lập trình của bạn đã sẵn sàng. Dưới đây là các bước tiếp theo để bắt đầu trải nghiệm:
+            </p>
+
+            <div class="next-steps-grid">
+                <a href="index.html#playground-tab" class="step-item" style="text-decoration: none;">
+                    <i class="fa-solid fa-terminal" aria-label="Mở Code IDE"></i>
+                    <strong>1. Mở Code IDE</strong>
+                    <p>Viết code C++, Python, Rust hoặc Java với tính năng auto-test cực nhanh.</p>
+                </a>
+                <a href="index.html#agent-tab" class="step-item" style="text-decoration: none;">
+                    <i class="fa-solid fa-wand-magic-sparkles" aria-label="Thử AI Code Agent"></i>
+                    <strong>2. Thử AI Code Agent</strong>
+                    <p>Dán đề bài thi đấu hoặc tải ảnh lên để AI lập kế hoạch giải và tự động sửa code.</p>
+                </a>
+                <a href="contest.html" class="step-item" style="text-decoration: none;">
+                    <i class="fa-solid fa-trophy" aria-label="Tham gia thi đấu"></i>
+                    <strong>3. Tham gia Cuộc thi</strong>
+                    <p>Thi đấu trực tiếp trên các bộ đề ClueOJ và bảng xếp hạng realtime.</p>
+                </a>
+                <a href="index.html#rag-tab" class="step-item" style="text-decoration: none;">
+                    <i class="fa-solid fa-book-bookmark" aria-label="Kho Templates RAG"></i>
+                    <strong>4. Tra cứu Templates</strong>
+                    <p>Tìm kiếm nhanh DSU, Dijkstra, Segment Tree từ kho dữ liệu thuật toán.</p>
+                </a>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <a href="index.html" class="btn-ide btn-ide-run btn-lg">
+                    <i class="fa-solid fa-play"></i> <span>Bắt đầu Lập trình Ngay</span>
+                </a>
+                <a href="contest.html" class="btn-ide btn-ide-secondary btn-lg">
+                    <i class="fa-solid fa-flag-checkered"></i> <span>Xem Lịch Cuộc thi</span>
+                </a>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
