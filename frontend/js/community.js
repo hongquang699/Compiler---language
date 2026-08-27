@@ -1,5 +1,5 @@
 /**
- * LOCAL CP AI — Community Hub JavaScript
+ * COMPILER---LANGUAGE — Community Hub JavaScript
  * Handles: auth, community listing, create, join, member approval, payment modal
  */
 

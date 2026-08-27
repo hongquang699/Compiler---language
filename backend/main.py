@@ -43,9 +43,9 @@ from security.crypto import (
     generate_signed_payload,
     verify_and_decode_signed_payload,
 )
+from backend.services.cache_service import global_cache
 
-
-app = FastAPI(title="Local C++ Coding AI", version="1.0.0")
+app = FastAPI(title="Compiler---language", version="1.0.0")
 
 @app.on_event("startup")
 async def start_background_services():
@@ -600,6 +600,10 @@ async def logout(authorization: Optional[str] = Header(default=None)):
 # API Routes
 @app.get("/api/health")
 async def get_health():
+    cached = global_cache.get("system_health")
+    if cached:
+        return cached
+
     llm_health = await llm_client.check_health()
     available_langs = compiler.detect_available_languages()
     
@@ -607,7 +611,7 @@ async def get_health():
     comp_res = compiler.prepare_and_compile("int main(){return 0;}", language="cpp", custom_name="health_check")
     compiler_ok = comp_res["success"]
 
-    return {
+    data = {
         "status": "online",
         "llm": llm_health,
         "compiler": {
@@ -622,6 +626,8 @@ async def get_health():
             "directory": rag_store.knowledge_dir
         }
     }
+    global_cache.set("system_health", data, ttl=3)
+    return data
 
 
 @app.post("/api/settings/model")
@@ -1208,7 +1214,12 @@ async def report_client_tampering(
 
 @app.get("/api/standings")
 async def get_global_standings():
-    return {"standings": memory_store.list_global_standings()}
+    cached = global_cache.get("global_standings")
+    if cached:
+        return cached
+    data = {"standings": memory_store.list_global_standings()}
+    global_cache.set("global_standings", data, ttl=5)
+    return data
 
 @app.get("/api/competitions")
 async def list_competitions(user: Optional[Dict[str, Any]] = Depends(optional_user)):

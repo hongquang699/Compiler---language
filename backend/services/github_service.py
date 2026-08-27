@@ -123,7 +123,7 @@ def git_push(commit_message: str | None = None) -> dict[str, Any]:
             res = {"success": False, "message": "Không thể kiểm tra các thay đổi đã stage.", "output": "\n".join(logs)}
             _add_push_history({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "message": message, "status": "FAILED", "detail": res["message"]})
             return res
-        commit = _run_git("-c", "user.name=Local CP Backup", "-c", "user.email=backup@localhost", "commit", "-m", message, timeout=30)
+        commit = _run_git("-c", "user.name=Compiler---language Backup", "-c", "user.email=backup@localhost", "commit", "-m", message, timeout=30)
         logs.append(f"[git commit] {_output(commit)}")
         if commit.returncode:
             res = {"success": False, "message": "git commit thất bại.", "output": "\n".join(logs)}

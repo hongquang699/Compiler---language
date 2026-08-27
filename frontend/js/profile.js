@@ -1,5 +1,5 @@
 /**
- * LOCAL CP / TMath — Profile Module JavaScript Controller
+ * COMPILER---LANGUAGE / TMath — Profile Module JavaScript Controller
  * Strictly connects to the currently logged-in account or specified ?user= query
  */
 

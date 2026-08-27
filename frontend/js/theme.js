@@ -1,5 +1,5 @@
 /**
- * LOCAL CP Studio — Ultra Smooth Light / Dark Mode Theming Controller
+ * COMPILER---LANGUAGE Studio — Ultra Smooth Light / Dark Mode Theming Controller
  * Features:
  * - Circular Expand/Ripple View Transition API animation
  * - Smooth CSS token transitions (0.3s cubic-bezier)

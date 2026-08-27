@@ -5,7 +5,7 @@ import io
 from pathlib import Path
 from PIL import Image
 
-# Thư mục lưu trữ tệp uploads của Local CP Studio
+# Thư mục lưu trữ tệp uploads của Compiler---language Studio
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 UPLOAD_DIR = BASE_DIR / "data" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -97,7 +97,7 @@ def _clear_folder(rel_path_file: str) -> None:
 
 class StorageService:
     """
-    Storage Service Adapter dành cho Local CP Studio.
+    Storage Service Adapter dành cho Compiler---language Studio.
     Quản lý lưu trữ ảnh đại diện, ảnh sơ đồ bài toán ClueOJ và tệp đính kèm AI Code Agent.
     Đường dẫn trả về dạng '/static/uploads/...' giúp web server phục vụ trực tiếp.
     """

@@ -28,8 +28,13 @@ class DatabaseManager:
         self._track_changes = True
 
     def get_connection(self):
-        conn = sqlite3.connect(self.db_path, check_same_thread=False, factory=TrackedConnection)
+        conn = sqlite3.connect(self.db_path, check_same_thread=False, timeout=15.0, factory=TrackedConnection)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode = WAL;")
+        conn.execute("PRAGMA synchronous = NORMAL;")
+        conn.execute("PRAGMA busy_timeout = 15000;")
+        conn.execute("PRAGMA cache_size = -64000;")
+        conn.execute("PRAGMA temp_store = MEMORY;")
         if self._track_changes:
             conn.change_callback = self._notify_change
         return conn
@@ -357,6 +362,19 @@ class DatabaseManager:
             self._add_column_if_missing(cursor, "admin_notifications", "action_by", "INTEGER")
             self._add_column_if_missing(cursor, "users", "ai_usage_count", "INTEGER NOT NULL DEFAULT 0")
             self._add_column_if_missing(cursor, "users", "ai_usage_month", "TEXT NOT NULL DEFAULT ''")
+
+            # High-Performance Indexes for High-Concurrency (C10K/C100K)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_subs_comp_user ON submissions(competition_id, user_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_subs_session ON submissions(session_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_admin_notifs_read ON admin_notifications(is_read, action_status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_comm_members_uid ON community_members(user_id, community_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_comp_prob_cid ON competition_problems(competition_id)")
+
             conn.commit()
             self._ensure_default_admin()
             self._ensure_default_clueoj_contest()

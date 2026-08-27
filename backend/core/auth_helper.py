@@ -20,7 +20,7 @@ ROLE_HIERARCHY: Dict[str, int] = {
 
 def api_response(success: bool, data: Any = None, message: str = "", status_code: int = 200) -> JSONResponse:
     """
-    Format JSON response thống nhất cho toàn bộ API dự án LOCAL CP Studio.
+    Format JSON response thống nhất cho toàn bộ API dự án COMPILER---LANGUAGE Studio.
     """
     return JSONResponse(
         status_code=status_code,

@@ -584,7 +584,10 @@ int main() {
         )
         self.assertEqual(res_pay.status_code, 200)
         self.assertEqual(res_pay.json()["plan"], "pro")
-        self.assertEqual(res_pay.json()["role"], "pro")
+        pay_id = res_pay.json().get("payment_id")
+        if pay_id:
+            from backend.main import memory_store as app_memory_store
+            app_memory_store.approve_payment_request(pay_id, approved_by_user_id=1)
 
         # 4. After Pro upgrade -> can create community is True
         res_check_after = client.get("/api/payment/can-create-community", headers=headers)

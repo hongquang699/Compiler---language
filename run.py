@@ -34,7 +34,7 @@ def open_browser():
 if __name__ == "__main__":
     local_ip = get_local_ip()
     print("=" * 65)
-    print("   LOCAL C++ AI - COMPETITIVE PROGRAMMING & LOGIC ENGINE")
+    print("   COMPILER---LANGUAGE - MULTI-LANGUAGE CP & LOGIC ENGINE")
     print("=" * 65)
     print("• Host Address: 0.0.0.0 (Public LAN Server)")
     print(f"• Local Machine: http://127.0.0.1:8000")

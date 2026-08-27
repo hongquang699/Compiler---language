@@ -1,5 +1,5 @@
 /**
- * LOCAL CP Studio — Global Auth Navigation & User State Controller
+ * COMPILER---LANGUAGE Studio — Global Auth Navigation & User State Controller
  * Synchronizes user login state across all subpages with index.html
  */
 (function() {

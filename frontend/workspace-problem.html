@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Workspace - Chi tiết Đề bài | LOCAL CP Studio</title>
+    <title>Workspace - Chi tiết Đề bài | COMPILER---LANGUAGE Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -134,7 +134,7 @@
                     <div style="background:var(--ws-box-bg); border:1px solid var(--ws-border); border-radius:12px; padding:12px 14px; margin-bottom:10px;">
                         <div class="ws-info-box-lbl">TÁC GIẢ</div>
                         <div style="font-size:0.9rem; font-weight:800; color:var(--ws-text-main); display:flex; align-items:center; gap:6px;">
-                            <span>Local CP Studio</span>
+                            <span>Compiler---language Studio</span>
                             <i class="fa-solid fa-circle-check" style="color:#2563eb; font-size:0.88rem;"></i>
                         </div>
                     </div>
@@ -251,7 +251,7 @@ async function loadProblemDetail() {
         if (currentProblem) {
             const code = currentProblem.code || String.fromCharCode(65 + probIdx);
             const probTitle = currentProblem.title ? `${code}. ${currentProblem.title}` : `Problem ${probIdx + 1}`;
-            document.title = probTitle + ' | LOCAL CP Studio';
+            document.title = probTitle + ' | COMPILER---LANGUAGE Studio';
             document.getElementById('prob-page-title').textContent = probTitle;
             
             const stmt = currentProblem.statement || 'Tính kết quả theo yêu cầu đề bài.';

@@ -1,5 +1,5 @@
 /**
- * LOCAL CP — Submission Arena JavaScript Controller
+ * COMPILER---LANGUAGE — Submission Arena JavaScript Controller
  */
 
 (function () {
@@ -275,7 +275,7 @@ end.`
             verdictContent.innerHTML = `
                 <div style="display:flex; align-items:center; gap:12px; font-weight:700; color:var(--arena-primary);">
                     <i class="fa-solid fa-spinner fa-spin" style="font-size:1.2rem;"></i>
-                    <span>Máy chấm Local CP đang chuẩn bị môi trường, biên dịch và chạy các test cases...</span>
+                    <span>Máy chấm Compiler---language đang chuẩn bị môi trường, biên dịch và chạy các test cases...</span>
                 </div>
             `;
         }

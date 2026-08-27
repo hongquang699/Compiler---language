@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Workspace - Bảng xếp hạng | LOCAL CP Studio</title>
+    <title>Workspace - Bảng xếp hạng | COMPILER---LANGUAGE Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -92,7 +92,7 @@ async function loadScoreboardGrid() {
             return;
         }
         const data = await res.json();
-        document.title = (data.title || 'Cuộc thi') + ' — Bảng xếp hạng | LOCAL CP Studio';
+        document.title = (data.title || 'Cuộc thi') + ' — Bảng xếp hạng | COMPILER---LANGUAGE Studio';
         document.getElementById('ws-title').textContent = data.title || 'Cuộc thi ClueOJ';
         
         let problems = data.problems || [];

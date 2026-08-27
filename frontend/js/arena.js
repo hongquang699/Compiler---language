@@ -1,4 +1,4 @@
-// Dynamic Problem Bank & Arena Engine for Local CP Studio
+// Dynamic Problem Bank & Arena Engine for Compiler---language Studio
 let allProblems = [];
 let currentPage = 1;
 const pageSize = 25;

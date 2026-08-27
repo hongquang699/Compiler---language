@@ -1,5 +1,5 @@
 // ==========================================================================
-// LOCAL CP — ClueOJ Multi-Role Admin Console Engine v9.0
+// COMPILER---LANGUAGE — ClueOJ Multi-Role Admin Console Engine v9.0
 // ==========================================================================
 
 const getToken = () => localStorage.getItem("local_cp_token") || "";

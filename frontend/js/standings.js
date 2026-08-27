@@ -1,5 +1,5 @@
 /**
- * LOCAL CP — Standings Module JavaScript Controller
+ * COMPILER---LANGUAGE — Standings Module JavaScript Controller
  */
 
 (function () {

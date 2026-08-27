@@ -1,5 +1,5 @@
 // ==========================================================================
-// LOCAL CP IDE — USACO GUIDE & VS CODE EDITION
+// COMPILER---LANGUAGE IDE — USACO GUIDE & VS CODE EDITION
 // Monaco Editor Integration + Multi-Case Test Suite + Code Agent Pipeline
 // ==========================================================================
 
@@ -182,8 +182,8 @@ const LANG_FILE_INFO = {
 let playgroundEditor = null;
 let solutionEditor = null;
 
-// Initialize Application
-document.addEventListener("DOMContentLoaded", () => {
+// Initialize Application safely whether DOM is loading or already ready
+function bootstrapApp() {
     initNavigation();
     initMonaco();
     initUSACOTestSuite();
@@ -198,7 +198,13 @@ document.addEventListener("DOMContentLoaded", () => {
     initThemeModule();
     initPaymentModalIndex();
     fetchAndRenderAIQuota();
-});
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootstrapApp);
+} else {
+    bootstrapApp();
+}
 
 function initAdminModule() {
     const adminModelSelector = document.getElementById("admin-model-selector");
@@ -888,66 +894,97 @@ function updateAuthUI() {
     fetchAndRenderAIQuota();
 }
 
-// 1. Monaco Editor Initialization
+// 1. Monaco Editor Initialization with Robust Auto-Retry & Fallback
 function initMonaco() {
-    if (window.require) {
-        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
-        require(['vs/editor/editor.main'], function () {
-            monaco.editor.defineTheme("cp-aurora", {
-                base: "vs-dark",
-                inherit: true,
-                rules: [
-                    { token: "comment", foreground: "64748b", fontStyle: "italic" },
-                    { token: "keyword", foreground: "22d3ee" },
-                    { token: "string", foreground: "86efac" },
-                    { token: "number", foreground: "fbbf24" },
-                    { token: "type", foreground: "a78bfa" },
-                    { token: "identifier", foreground: "e2e8f0" }
-                ],
-                colors: {
-                    "editor.background": "#0b1220",
-                    "editor.foreground": "#e2e8f0",
-                    "editorLineNumber.foreground": "#475569",
-                    "editorLineNumber.activeForeground": "#94a3b8",
-                    "editor.selectionBackground": "#164e6388",
-                    "editor.lineHighlightBackground": "#1e293b55",
-                    "editorCursor.foreground": "#22d3ee",
-                    "editorGutter.background": "#0b1220",
-                    "editorWidget.background": "#101a30",
-                    "editorSuggestWidget.background": "#101a30",
-                    "editorSuggestWidget.border": "#1e3a5f"
-                }
-            });
-            monaco.editor.defineTheme("cp-light", {
-                base: "vs",
-                inherit: true,
-                rules: [
-                    { token: "comment", foreground: "64748b", fontStyle: "italic" },
-                    { token: "keyword", foreground: "0369a1" },
-                    { token: "string", foreground: "047857" },
-                    { token: "number", foreground: "a16207" },
-                    { token: "type", foreground: "6d28d9" }
-                ],
-                colors: {
-                    "editor.background": "#ffffff",
-                    "editor.foreground": "#173042",
-                    "editorLineNumber.foreground": "#94a3b8",
-                    "editorLineNumber.activeForeground": "#475569",
-                    "editor.selectionBackground": "#bae6fd",
-                    "editor.lineHighlightBackground": "#f1f5f9",
-                    "editorCursor.foreground": "#087f9b",
-                    "editorGutter.background": "#ffffff",
-                    "editorWidget.background": "#ffffff",
-                    "editorSuggestWidget.background": "#ffffff",
-                    "editorSuggestWidget.border": "#cbd5e1"
-                }
-            });
-            monaco.editor.setTheme(document.documentElement.dataset.theme === "light" ? "cp-light" : "cp-aurora");
+    let attempts = 0;
+    const maxAttempts = 25;
 
-            // 1. Playground Editor
-            const pgHost = document.getElementById("monaco-playground-editor");
-            if (pgHost) {
-                playgroundEditor = monaco.editor.create(pgHost, {
+    function tryLoad() {
+        attempts++;
+        if (window.require && typeof window.require.config === "function") {
+            try {
+                require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+                require(['vs/editor/editor.main'], function () {
+                    setupMonacoInstances();
+                }, function (err) {
+                    console.warn("Retrying Monaco require with fallback:", err);
+                    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
+                    require(['vs/editor/editor.main'], setupMonacoInstances);
+                });
+            } catch (e) {
+                console.error("Monaco loader error:", e);
+            }
+        } else if (attempts < maxAttempts) {
+            setTimeout(tryLoad, 100);
+        } else {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js';
+            s.onload = () => {
+                window.require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+                window.require(['vs/editor/editor.main'], setupMonacoInstances);
+            };
+            document.head.appendChild(s);
+        }
+    }
+
+    function setupMonacoInstances() {
+        if (!window.monaco || !window.monaco.editor) return;
+
+        monaco.editor.defineTheme("cp-aurora", {
+            base: "vs-dark",
+            inherit: true,
+            rules: [
+                { token: "comment", foreground: "64748b", fontStyle: "italic" },
+                { token: "keyword", foreground: "22d3ee" },
+                { token: "string", foreground: "86efac" },
+                { token: "number", foreground: "fbbf24" },
+                { token: "type", foreground: "a78bfa" },
+                { token: "identifier", foreground: "e2e8f0" }
+            ],
+            colors: {
+                "editor.background": "#0b1220",
+                "editor.foreground": "#e2e8f0",
+                "editorLineNumber.foreground": "#475569",
+                "editorLineNumber.activeForeground": "#94a3b8",
+                "editor.selectionBackground": "#164e6388",
+                "editor.lineHighlightBackground": "#1e293b55",
+                "editorCursor.foreground": "#22d3ee",
+                "editorGutter.background": "#0b1220",
+                "editorWidget.background": "#101a30",
+                "editorSuggestWidget.background": "#101a30",
+                "editorSuggestWidget.border": "#1e3a5f"
+            }
+        });
+        monaco.editor.defineTheme("cp-light", {
+            base: "vs",
+            inherit: true,
+            rules: [
+                { token: "comment", foreground: "64748b", fontStyle: "italic" },
+                { token: "keyword", foreground: "0369a1" },
+                { token: "string", foreground: "047857" },
+                { token: "number", foreground: "a16207" },
+                { token: "type", foreground: "6d28d9" }
+            ],
+            colors: {
+                "editor.background": "#ffffff",
+                "editor.foreground": "#173042",
+                "editorLineNumber.foreground": "#94a3b8",
+                "editorLineNumber.activeForeground": "#475569",
+                "editor.selectionBackground": "#bae6fd",
+                "editor.lineHighlightBackground": "#f1f5f9",
+                "editorCursor.foreground": "#087f9b",
+                "editorGutter.background": "#ffffff",
+                "editorWidget.background": "#ffffff",
+                "editorSuggestWidget.background": "#ffffff",
+                "editorSuggestWidget.border": "#cbd5e1"
+            }
+        });
+        monaco.editor.setTheme(document.documentElement.dataset.theme === "light" ? "cp-light" : "cp-aurora");
+
+        // 1. Playground Editor
+        const pgHost = document.getElementById("monaco-playground-editor");
+        if (pgHost && !playgroundEditor) {
+            playgroundEditor = monaco.editor.create(pgHost, {
                     value: CODE_TEMPLATES.cpp,
                     language: "cpp",
                     theme: "cp-aurora",
@@ -998,10 +1035,11 @@ function initMonaco() {
                 });
             }
 
-            // 3. Register IntelliSense & Code Suggestions for all languages
-            registerMonacoSnippetsAndCompletions();
-        });
+        // 3. Register IntelliSense & Code Suggestions for all languages
+        registerMonacoSnippetsAndCompletions();
     }
+
+    tryLoad();
 }
 
 // Register Comprehensive CP Code Suggestions / IntelliSense for Monaco

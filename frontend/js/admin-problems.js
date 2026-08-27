@@ -1,5 +1,5 @@
 // ==========================================================================
-// LOCAL CP STUDIO — STANDALONE ADMIN PROBLEMS & AI TESTCASES JS
+// COMPILER---LANGUAGE STUDIO — STANDALONE ADMIN PROBLEMS & AI TESTCASES JS
 // ==========================================================================
 
 const API_BASE = window.location.origin;

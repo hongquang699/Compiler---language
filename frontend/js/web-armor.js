@@ -151,12 +151,8 @@
         } catch (_) {}
     }
 
-    // ── 5. RUNTIME PROTOTYPE & CREDENTIAL TAMPER FREEZE ──────────────────────
-    try {
-        if (Object.freeze) {
-            Object.freeze(Object.prototype);
-        }
-    } catch (_) {}
+    // ── 5. RUNTIME CREDENTIAL TAMPER PROTECTION ────────────────────────────
+    // Object.prototype is preserved to allow Monaco Editor / VS Code AMD loader to initialize properly
 
     // ── 6. DOM MUTATION GUARD (ANTI-MALICIOUS SCRIPT & IFRAME INJECTION) ──────
     if (window.MutationObserver) {

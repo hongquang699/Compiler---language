@@ -1,5 +1,5 @@
 /**
- * LOCAL CP STUDIO — DYNAMIC GLASSMORPHISM & MOUSE SPOTLIGHT TRACKER
+ * COMPILER---LANGUAGE STUDIO — DYNAMIC GLASSMORPHISM & MOUSE SPOTLIGHT TRACKER
  * Tự động kích hoạt hiệu ứng quầng sáng Laser Spotlight theo con trỏ chuột
  * cho toàn bộ Card, Panel, Nút bấm trên toàn bộ các trang web chính.
  */

@@ -1,5 +1,5 @@
 /**
- * LOCAL CP — Workspace Contest Info Controller
+ * COMPILER---LANGUAGE — Workspace Contest Info Controller
  */
 
 (function () {
@@ -28,7 +28,7 @@
                 return;
             }
             const data = await res.json();
-            document.title = (data.title || 'Cuộc thi') + ' | LOCAL CP Studio';
+            document.title = (data.title || 'Cuộc thi') + ' | COMPILER---LANGUAGE Studio';
             const titleEl = document.getElementById('ws-title');
             if (titleEl) titleEl.textContent = data.title || 'Cuộc thi ClueOJ';
 

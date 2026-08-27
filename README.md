@@ -1,4 +1,4 @@
-# 🤖 LOCAL CP AI — Competitive Programming & Algorithm SaaS Studio
+# 🤖 COMPILER---LANGUAGE — Competitive Programming & Algorithm SaaS Studio
 
 > **An Autonomous, Local-First AI Competitive Programming & Online Judge Ecosystem (C++, Python 3, Java, C, Rust, Go) with Real-Time Multi-Agent Pipelines, RAG Knowledge Hub, ClueOJ Contest Engine, Military-Grade Cybersecurity, VietQR Subscription Approval Workflow, and Community Hub.**
 

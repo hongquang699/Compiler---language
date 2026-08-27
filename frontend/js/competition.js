@@ -1,5 +1,5 @@
 // ==========================================================================
-// LOCAL CP — ClueOJ Contest Module Engine
+// COMPILER---LANGUAGE — ClueOJ Contest Module Engine
 // ==========================================================================
 
 const SECRET_PAYLOAD_KEY = "local_cp_secret_v5";

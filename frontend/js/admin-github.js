@@ -1,5 +1,5 @@
 // ==========================================================================
-// LOCAL CP STUDIO — STANDALONE ADMIN GITHUB BACKUP & AUTO PUSH JS
+// COMPILER---LANGUAGE STUDIO — STANDALONE ADMIN GITHUB BACKUP & AUTO PUSH JS
 // ==========================================================================
 
 const API_BASE = window.location.origin;

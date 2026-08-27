@@ -4,7 +4,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-# Cấu hình SMTP Gmail mặc định (LOCAL CP Studio)
+# Cấu hình SMTP Gmail mặc định (COMPILER---LANGUAGE Studio)
 SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
 SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "pvananh2805@gmail.com")
@@ -14,9 +14,9 @@ def generate_otp() -> str:
     """Sinh mã OTP 6 chữ số ngẫu nhiên"""
     return f"{random.randint(100000, 999999)}"
 
-def send_otp_email(to_email: str, otp_code: str, subject: str = "LOCAL CP — Mã xác thực Email đăng ký") -> bool:
+def send_otp_email(to_email: str, otp_code: str, subject: str = "COMPILER---LANGUAGE — Mã xác thực Email đăng ký") -> bool:
     """
-    Gửi email OTP xác minh chuẩn giao diện LOCAL CP Studio đến người dùng.
+    Gửi email OTP xác minh chuẩn giao diện COMPILER---LANGUAGE Studio đến người dùng.
     Trả về True nếu gửi thành công, False nếu thất bại.
     """
     if not SMTP_EMAIL or not SMTP_PASSWORD:
@@ -94,18 +94,18 @@ def send_otp_email(to_email: str, otp_code: str, subject: str = "LOCAL CP — M�
     </head>
     <body>
         <div class="email-container">
-            <div class="logo">⚡ LOCAL CP <span>STUDIO</span></div>
+            <div class="logo">⚡ COMPILER---LANGUAGE <span>STUDIO</span></div>
             <div class="content">
                 <div class="badge">EMAIL VERIFICATION</div>
                 <h3 style="margin-top:0; color:#f8fafc; font-size: 20px;">Xác minh mã OTP của bạn</h3>
                 <p>Xin chào,</p>
-                <p>Bạn nhận được email này vì đã đăng ký tài khoản trên hệ thống <strong>LOCAL CP Studio</strong>.</p>
+                <p>Bạn nhận được email này vì đã đăng ký tài khoản trên hệ thống <strong>COMPILER---LANGUAGE Studio</strong>.</p>
                 <p>Vui lòng sử dụng mã xác minh OTP bên dưới để hoàn tất đăng ký. Mã này có hiệu lực trong vòng <strong>10 phút</strong>:</p>
                 <div class="otp-box">{otp_code}</div>
                 <p style="color:#94a3b8; font-size:13px;">Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này. Không chia sẻ mã OTP này với bất kỳ ai để bảo mật tài khoản.</p>
             </div>
             <div class="footer">
-                © 2026 LOCAL CP Studio. All rights reserved.<br>
+                © 2026 COMPILER---LANGUAGE Studio. All rights reserved.<br>
                 Hệ thống luyện tập & thi đấu thuật toán trực tuyến.
             </div>
         </div>
@@ -116,7 +116,7 @@ def send_otp_email(to_email: str, otp_code: str, subject: str = "LOCAL CP — M�
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = f"LOCAL CP Studio <{SMTP_EMAIL}>"
+        msg["From"] = f"COMPILER---LANGUAGE Studio <{SMTP_EMAIL}>"
         msg["To"] = to_email
         msg.attach(MIMEText(html_content, "html"))
 
