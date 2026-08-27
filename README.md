@@ -1,54 +1,72 @@
-# 🤖 LOCAL CP AI — Competitive Programming & Algorithm Studio
+# 🤖 LOCAL CP AI — Competitive Programming & Algorithm SaaS Studio
 
-> **An Autonomous, Local-First AI Competitive Programming & Online Judge Ecosystem (C++, Python 3, Java, C, Rust, Go) with Real-Time Multi-Agent Pipelines, RAG Knowledge Hub, ClueOJ Contest Engine, and Enterprise Security.**
+> **An Autonomous, Local-First AI Competitive Programming & Online Judge Ecosystem (C++, Python 3, Java, C, Rust, Go) with Real-Time Multi-Agent Pipelines, RAG Knowledge Hub, ClueOJ Contest Engine, Military-Grade Cybersecurity, VietQR Subscription Approval Workflow, and Community Hub.**
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://python.org)
 [![SQLite](https://img.shields.io/badge/SQLite3-Database-003B57?style=flat-square&logo=sqlite)](https://sqlite.org)
 [![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-IDE-1e1e1e?style=flat-square&logo=visualstudiocode)](https://microsoft.github.io/monaco-editor/)
-[![VietQR](https://img.shields.io/badge/VietQR-Instant_Checkout-00b14f?style=flat-square)](https://vietqr.io)
+[![VietQR](https://img.shields.io/badge/VietQR-Manual_Approval-00b14f?style=flat-square)](https://vietqr.io)
+[![Security](https://img.shields.io/badge/Security-HMAC--SHA256_%7C_WebArmor-red?style=flat-square)](https://csrc.nist.gov)
 [![License](https://img.shields.io/badge/License-MIT-purple?style=flat-square)](#license)
 
 ---
 
-## 🌟 Core Highlights
+## 🌟 Core Architecture & Features
 
 ### 1. 🧠 Multi-Agent Autonomous Problem Solver
-- **Automated Problem Formulation**: Parses raw text or problem statement images (OCR Vision), extracts Input/Output specs, constraints, and edge-cases.
+- **Automated Problem Formulation**: Parses raw text or problem statement images (OCR Vision), extracts Input/Output specifications, constraints, and edge-cases.
 - **Complexity Planning**: Uses the $10^8$ ops/second rule to design asymptotically optimal algorithms ($O(1)$, $O(\log N)$, $O(N)$, $O(N \log N)$).
 - **Self-Healing & Auto-Debugging Loop**: Continuously compiles and tests solutions against sample and generated testcases. Automatically intercepts `WA`, `TLE`, `MLE`, `RTE` (SIGSEGV, SIGFPE), and `CE` errors, feeding diagnostics back into the LLM until reaching `AC`.
 - **Cross-Language Solution Converter**: Seamlessly translates algorithms between **C++17/20, Python 3, Java 17, C11, Rust, and Go**.
 
 ### 2. ⚡ Multi-Language Sandbox & 5-Worker Judge Pool
-- **Native g++ / gcc / Python / Java / Rust / Go Sandbox**: High-precision execution monitoring (CPU time limits, peak RAM/resident set size tracking, process sandboxing).
-- **Distributed Judge Pool**: 5 independent judge workers capable of concurrent benchmarking, test suite execution, and stress-testing.
+- **Native Host Toolchains**: Auto-detects and orchestrates system compilers: `g++` (C++17/C++20 with `-O2`), `gcc`, `python3`, `javac/java`, `go`, and `Node.js`.
+- **High-Precision Sandbox**: Process-level resource monitoring (CPU time limits, peak RAM/resident set size tracking, syscall filtering).
+- **Distributed Judge Pool**: 5 independent concurrent judge workers for high-throughput stress testing and contest submissions.
 
 ### 3. 🏆 ClueOJ Contest Builder & Problem Bank
 - **Official Contest Management**: Full support for ICPC & IOI contest formats, rated/unrated modes, access codes, and freeze/unfreeze scoreboards.
 - **ClueOJ Problem Import**: One-click import from ClueOJ folders containing `init.yml`, test archives, and problem statements.
 - **AI Testcase Synthesizer**: Generates boundary cases, extreme constraints ($N = 10^5$, negative numbers, disconnected graphs), and expected outputs from reference logic.
 
-### 4. 🛡️ Enterprise Security Sentinel & Anti-Cheat Radar
-- **Anti-Cheat Scanner**: AST similarity analysis and token frequency comparison across student and contestant submissions.
-- **Web Security Radar**: Real-time IP threat scoring, automatic bot trapping, adaptive rate limiting, and 1-click IP blocking.
-- **Strict Role-Based Access Control (RBAC)**:
-  - **`DEV` (Level 9)**: Root master access to server storage, Nginx logs, 5 judge workers, LLM switching, and system reset.
-  - **`SUPERADMIN` (Level 8)**: Full administrative authority over contests, members, security events, and IP bans.
-  - **`ADMIN` (Level 7)**: Contest creation, problem bank editing, and testcase generation.
-  - **`PRO` / `ENTERPRISE`**: Unlimited AI usage and community creation privileges.
-  - **`USER`**: Free tier with 30 AI requests per month (automatically resets on the 1st of every month).
-
-### 5. 💳 VietQR Instant Subscription & Quota Engine
+### 4. 💳 VietQR Subscription & Manual Admin Approval Workflow
 - **Monthly Token Quota System**:
-  - **Free Users**: **30 complimentary AI requests per month** (Chat, Solve, Convert, OCR). Automatically renews on the 1st of every month. Real-time visual badge tracking.
+  - **Free Users (`user`)**: **30 complimentary AI requests per month** (Chat, Solve, Convert, OCR). Automatically renews on the 1st of every month with visual quota badges.
   - **Pro / Enterprise / Dev / Admin**: **100% Unlimited AI usage** with zero throttling.
-- **Automated VietQR Integration**: Dynamic QR generation with memo reference codes and automated notification dispatch to `dev` and `superadmin` containing account username, transfer name, plan, and timestamp.
+- **Bank Transfer Verification Flow (Zero Auto-Exploit)**:
+  1. User enters transfer sender name (`sender_name`) and scans VietQR code.
+  2. Transaction is created in **`PENDING`** state. User role remains strictly `user` (no automatic privilege escalation).
+  3. Real-time alert dispatched to **Dev & SuperAdmin** in the Admin Console (**"Thông Báo & Duyệt Gói"**).
+  4. Dev / SuperAdmin cross-checks bank statement and performs 1-click action:
+     - `[ ✓ Approve & Upgrade ]`: Upgrades user role to `PRO` or `ENTERPRISE`.
+     - `[ ✕ Reject with Reason ]`: Rejects invalid transactions with reason logging.
+  5. Cryptographic transaction validation with **HMAC-SHA256** tamper-proof digital signatures.
 
-### 6. 🎨 Cyberpunk UI/UX Pro Max Web Studio
-- **Monaco Editor Integration**: Custom `cp-aurora` dark theme, syntax highlighting, and auto-completion.
-- **Smooth FAQ & Knowledge Navigation**: Hardware-accelerated CSS Grid accordions with real-time fuzzy search (`/` shortcut) and category pills.
-- **Showcase Floating Scroll Controller**: Interactive neon scrollbar with progress slider and 1-click top/bottom navigation.
-- **Unified Master Console**: Dedicated admin console (`admin-console.html`) and problem bank studio (`admin-problems.html`).
+### 5. 👥 Developer Communities Hub
+- **Access Gating**: Community creation is exclusively reserved for **`PRO`**, **`ENTERPRISE`**, **`ADMIN`**, **`SUPERADMIN`**, and **`DEV`** members.
+- **Free User Guard**: Non-upgraded users attempting community creation receive `HTTP 403 Forbidden` and are guided to the VietQR upgrade modal.
+- **Public & Private Communities**: Private communities feature join requests and approval controls by community owners.
+
+### 6. 🛡️ Military-Grade Cybersecurity & Web Armor
+- **Client-Side Web Armor (`web-armor.js`)**:
+  - Blocks shortcut hijacking (`F12`, `Ctrl+Shift+I/J/C/K`, `Ctrl+U`, `Ctrl+S`) and right-click context menu scraping.
+  - Anti-debugging tarpit loops activate for unauthorized users if DevTools is inspected.
+  - Memory scraper neutralizer and `MutationObserver` DOM protection against injected malicious external scripts.
+  - Anti-clickjacking iframe breakout protection.
+- **Web Application Firewall (WAF)**:
+  - Dangerous HTTP method blocker (`TRACE`, `TRACK`, `DEBUG`, `CONNECT` -> 405 Method Not Allowed).
+  - Null-byte and path traversal filter (`%00`, `\x00`, `..%2f`, `..%5c` -> 400 Bad Request).
+  - Threat scoring, honeypot traps, and automated scanner detection.
+- **Googlebot & Search Engine De-indexing**:
+  - Comprehensive `robots.txt` disallowing all administrative routes and APIs.
+  - `<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">` in all console files.
+  - `X-Robots-Tag: noindex, nofollow` HTTP response header for all admin endpoints.
+
+### 7. 🔐 Cryptographic Integrity Suite (`security/crypto.py`)
+- **Streaming SHA-256 Checksums**: High-speed chunked checksum computation for database backups, storage archives, and `ETag` headers.
+- **HMAC-SHA256 Signature Verification**: Constant-time signature comparison for payment webhooks and telemetry reports.
+- **Signed JWT Tokens**: HS256-signed session tokens for secure authentication.
 
 ---
 
@@ -57,9 +75,15 @@
 ### Prerequisites
 - **Python 3.10+** (64-bit recommended)
 - **C++ Compiler**: `g++` (MinGW-w64 on Windows or GCC on Linux/macOS) with C++17/20 support.
-- **Ollama / Local LLM / Cloud Endpoint**: Defaults to local models (`gemma4`, `deepseek-coder-v2`, `qwen2.5-coder`, `llama3.1`).
+- **Ollama / Local LLM / Cloud Endpoint**: Defaults to local models (`qwen2.5-coder:7b`, `gemma4`, `deepseek-coder-v2`).
 
-### 1. Installation
+### 1. 1-Click Startup (Windows)
+Double-click either:
+- **`CHAY_DU_AN.bat`** (or **`start.bat`** / **`run.bat`**)
+
+The script will automatically configure `.venv`, verify dependencies, start the backend on `http://127.0.0.1:8000`, and launch your default browser.
+
+### 2. Manual CLI Installation & Run
 ```bash
 # Clone the repository
 git clone https://github.com/hongquang699/Compiler---language.git
@@ -74,17 +98,19 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
-```
 
-### 2. Launch the Application
-```bash
-# 1-Click launcher (Starts FastAPI backend and opens browser at http://127.0.0.1:8000)
+# Run server
 python run.py
 ```
 
-### 3. Run System Test Suite
+### 3. Run Automated Verification Test Suite
 ```bash
+# Run comprehensive system test suite
 python -m unittest discover -s tests
+
+# Run payment approval & security verification tests
+python scratch/test_payment_approval_flow.py
+python scratch/test_community_roles.py
 ```
 
 ---
@@ -92,25 +118,25 @@ python -m unittest discover -s tests
 ## 📐 System Architecture
 
 ```
-                               ┌──────────────────────────────────────────────┐
-                               │           Monaco Web IDE Studio              │
-                               │  (Playground, Agent, Chat, RAG, Vault, Admin) │
-                               └──────────────────────┬───────────────────────┘
-                                                      │ HTTP / SSE Stream
-                                                      ▼
+                                ┌──────────────────────────────────────────────┐
+                                │           Monaco Web IDE Studio              │
+                                │  (Playground, Agent, Chat, RAG, Vault, Admin) │
+                                └──────────────────────┬───────────────────────┘
+                                                       │ HTTP / SSE Stream
+                                                       ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                        FastAPI Application Server                                      │
 │                                                                                                        │
 │  ┌───────────────────────┐   ┌────────────────────────┐   ┌─────────────────────────────────────────┐  │
 │  │   Auth & RBAC Layer   │   │  AI Agent Pipeline     │   │     Security & Sentinel Radar           │  │
 │  │  (Token Auth, Dev/    │   │  (Planner, Evaluator,  │   │  (Anti-Cheat AST, Threat Scoring,       │  │
-│  │   Admin Guards)       │   │   Self-Debugging Loop) │   │   Honeypots, Rate Limiters)             │  │
+│  │   Admin Guards)       │   │   Self-Debugging Loop) │   │   Web Armor, WAF, Honeypots)            │  │
 │  └──────────┬────────────┘   └───────────┬────────────┘   └────────────────────┬────────────────────┘  │
 │             │                            │                                     │                       │
 │  ┌──────────▼────────────┐   ┌───────────▼────────────┐   ┌────────────────────▼────────────────────┐  │
 │  │   SQLite Memory DB    │   │   Local / Cloud LLM    │   │    Multi-Language Sandbox & Judges      │  │
-│  │  (Users, Quota, Contests, │  (Ollama, DeepSeek,    │   │  (g++, python, java, rust, go           │  │
-│  │   Payments, Vault)    │   │   Qwen, Gemma, LLaMA)  │   │   5-Worker Isolated Execution Pool)     │  │
+│  │  (Users, Quota, Contests, │  (Ollama, DeepSeek,    │   │  (g++, gcc, python, java, go            │  │
+│  │   Payments, Approvals)│   │   Qwen, Gemma, LLaMA)  │   │   5-Worker Isolated Execution Pool)     │  │
 │  └───────────────────────┘   └────────────────────────┘   └─────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -121,7 +147,10 @@ python -m unittest discover -s tests
 
 ```
 Local-Ai/
-├── run.py                     # 1-Click server launcher & browser opener
+├── CHAY_DU_AN.bat             # 1-Click automated server & browser launcher
+├── start.bat                  # Fast batch launcher
+├── run.bat                    # Shortcut launcher
+├── run.py                     # Python server launcher & browser opener
 ├── config.yaml                # Core config (LLM model, g++ paths, timeouts, RAG)
 ├── requirements.txt           # Python dependencies
 ├── data/
@@ -129,6 +158,9 @@ Local-Ai/
 │   ├── knowledge_base/        # RAG algorithm templates (DSU, Segment Tree, Dijkstra, etc.)
 │   ├── media/                 # Problem images & user avatars
 │   └── sandbox/               # Ephemeral compile & execution binaries
+├── security/
+│   ├── crypto.py              # SHA-256 streaming, HMAC-SHA256 signatures, JWT helpers
+│   └── middleware.py          # WAF, HTTP method filtering, X-Robots-Tag headers
 ├── backend/
 │   ├── main.py                # Main FastAPI backend & REST / SSE endpoints
 │   ├── core/
@@ -155,37 +187,40 @@ Local-Ai/
 │   │   ├── embedding.py       # Hybrid BM25 & vector embeddings
 │   │   └── loader.py          # Markdown & source code chunker
 │   └── database/
-│       └── db.py              # SQLite storage & database migrations
+│       └── db.py              # SQLite storage, payment approvals & migrations
 └── frontend/
-    ├── index.html             # Main IDE & Client Application
-    ├── landing.html           # SaaS Landing & Pricing Page
+    ├── landing.html           # SaaS Landing & Pricing Page (Served at /)
+    ├── index.html             # Monaco Web IDE & Client Application
     ├── admin-console.html     # Dedicated Dev & SuperAdmin Master Console
     ├── admin-problems.html    # Problem Studio & AI Authoring Studio
     ├── contest.html           # Contest Arena & Leaderboard
     ├── community.html         # Developer Communities Hub
     ├── css/
     │   ├── style.css          # Cyberpunk IDE dark theme & animations
-    │   └── admin.css          # Admin Console styles
+    │   ├── admin.css          # Admin Console styles
+    │   └── glassmorphism.css  # Glassmorphism UI effects
     └── js/
         ├── app.js             # Client IDE, AI Agent, Monaco & Quota logic
-        ├── admin.js           # Admin Dashboard & Judge monitoring
+        ├── admin.js           # Admin Dashboard, Judge monitoring & Payment Approvals
         ├── admin-problems.js  # Problem authoring & test generator logic
         ├── competition.js     # Contest timers, scoreboard & submissions
-        └── landing.js         # Landing page interactivity & VietQR modal
+        ├── community.js       # Communities management & permission gating
+        ├── landing.js         # Landing page interactivity & VietQR modal
+        └── web-armor.js       # Client-side anti-tampering & debugger traps
 ```
 
 ---
 
-## 👥 Roles & Access Permissions
+## 👥 Role Hierarchy & Access Matrix
 
-| Role | Hierarchy Level | Privileges & Access Scope |
-| :--- | :---: | :--- |
-| **`dev`** | **Level 9** | **Root Access**: Storage/Nginx monitor, 5 Judge workers, AI model switching, system reset, unlimited AI, all administrative actions. |
-| **`superadmin`**| **Level 8** | Contest management, user role promotion/demotion, IP security bans, submission audits, unlimited AI. |
-| **`admin`** | **Level 7** | Contest builder, problem bank authoring, AI test generation, unlimited AI. |
-| **`enterprise`**| **Level 6** | Unlimited AI usage, community creation, priority queue. |
-| **`pro`** | **Level 5** | Unlimited AI usage, community creation, standard priority. |
-| **`user`** | **Level 2** | Free tier (30 AI requests limit), public contests, code playground. |
+| Role | Level | AI Quota | Community Creation | Admin Console Access | Payment Approval |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **`dev`** | **9 (Root)** | Unlimited | ✅ Allowed | Full Master Workspace (13 views) | ✅ Full Authority |
+| **`superadmin`** | **8** | Unlimited | ✅ Allowed | Control Center (Contests, Users, IP, Notifs) | ✅ Full Authority |
+| **`admin`** | **7** | Unlimited | ✅ Allowed | Contest & Problem Bank Workspace | ❌ Blocked (403) |
+| **`enterprise`** | **5** | Unlimited | ✅ Allowed | ❌ No Access | ❌ No Access |
+| **`pro`** | **3** | Unlimited | ✅ Allowed | ❌ No Access | ❌ No Access |
+| **`user`** | **1** | 30 / month | ❌ Blocked (Must Upgrade) | ❌ No Access | ❌ No Access |
 
 ---
 
@@ -194,6 +229,7 @@ Local-Ai/
 - **100% Local Execution**: All source code, AI prompts, and database records remain strictly within your local environment.
 - **Isolated Process Sandboxing**: Compilations and executions run with constrained wall-clock timeouts and memory limits to prevent malicious system access (`fork` bombs, unauthorized syscalls).
 - **PBKDF2 Password Hashing**: Cryptographically secure salts and PBKDF2-HMAC-SHA256 password storage.
+- **Military-Grade Anti-Tampering**: Multi-layered browser armor, WAF method filtering, null-byte traversal sanitization, and Google search engine de-indexing.
 
 ---
 
