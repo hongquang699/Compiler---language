@@ -351,6 +351,7 @@ class DatabaseManager:
             self._add_column_if_missing(cursor, "competitions", "scoreboard_visibility", "TEXT DEFAULT 'visible'")
             self._add_column_if_missing(cursor, "payments", "sender_name", "TEXT DEFAULT ''")
             self._add_column_if_missing(cursor, "users", "ai_usage_count", "INTEGER NOT NULL DEFAULT 0")
+            self._add_column_if_missing(cursor, "users", "ai_usage_month", "TEXT NOT NULL DEFAULT ''")
             conn.commit()
             self._ensure_default_admin()
             self._ensure_default_clueoj_contest()
@@ -1640,26 +1641,35 @@ class MemoryStore:
             return [dict(r) for r in rows]
 
     # =========================================================================
-    # AI Token & Usage Limit Methods (Free = 30 uses, Dev/SuperAdmin/Admin/Pro/Enterprise = Unlimited)
+    # AI Token & Usage Limit Methods (Free = 30 uses per month, Dev/SuperAdmin/Admin/Pro/Enterprise = Unlimited)
     # =========================================================================
     FREE_AI_REQUEST_LIMIT = 30
     UNLIMITED_AI_ROLES = {"pro", "enterprise", "admin", "superadmin", "dev", "developer", "administrator"}
 
     def get_user_ai_quota(self, user_id: int) -> Dict[str, Any]:
-        """Return AI usage quota status for a user."""
+        """Return AI usage quota status for a user with automatic monthly reset."""
         with self.db.get_connection() as conn:
             user = conn.execute(
-                "SELECT id, username, role, is_admin, COALESCE(ai_usage_count, 0) AS ai_usage_count FROM users WHERE id = ?",
+                "SELECT id, username, role, is_admin, COALESCE(ai_usage_count, 0) AS ai_usage_count, COALESCE(ai_usage_month, '') AS ai_usage_month FROM users WHERE id = ?",
                 (user_id,),
             ).fetchone()
             if not user:
-                return {"unlimited": False, "limit": self.FREE_AI_REQUEST_LIMIT, "used": 0, "remaining": 0, "role": "user"}
+                return {"unlimited": False, "limit": self.FREE_AI_REQUEST_LIMIT, "used": 0, "remaining": 0, "role": "user", "period": "monthly"}
 
             username = (user["username"] or "").strip().lower()
             role = (user["role"] or "user").strip().lower()
             is_admin = bool(user["is_admin"])
             is_unlimited = is_admin or (role in self.UNLIMITED_AI_ROLES) or (username in {"dev", "admin", "superadmin"})
+            
+            current_month = datetime.now().strftime("%Y-%m")
+            stored_month = (user["ai_usage_month"] or "").strip()
             used = int(user["ai_usage_count"] or 0)
+
+            # Auto reset usage count if entering a new calendar month
+            if stored_month != current_month:
+                used = 0
+                conn.execute("UPDATE users SET ai_usage_count = 0, ai_usage_month = ? WHERE id = ?", (current_month, user_id))
+                conn.commit()
 
             if is_unlimited:
                 return {
@@ -1667,7 +1677,9 @@ class MemoryStore:
                     "role": role if role in self.UNLIMITED_AI_ROLES else ("admin" if is_admin else "dev"),
                     "limit": None,
                     "used": used,
-                    "remaining": None
+                    "remaining": None,
+                    "current_month": current_month,
+                    "period": "monthly"
                 }
             else:
                 remaining = max(0, self.FREE_AI_REQUEST_LIMIT - used)
@@ -1676,14 +1688,16 @@ class MemoryStore:
                     "role": role,
                     "limit": self.FREE_AI_REQUEST_LIMIT,
                     "used": used,
-                    "remaining": remaining
+                    "remaining": remaining,
+                    "current_month": current_month,
+                    "period": "monthly"
                 }
 
     def check_and_increment_ai_usage(self, user_id: int) -> Dict[str, Any]:
-        """Check AI quota. If free user and exceeds 30, raise PermissionError. Dev/SuperAdmin/Admin/Pro/Enterprise are Unlimited."""
+        """Check AI quota for current month. If free user and exceeds 30/month, raise PermissionError. Dev/SuperAdmin/Admin/Pro/Enterprise are Unlimited."""
         with self.db.get_connection() as conn:
             user = conn.execute(
-                "SELECT id, username, role, is_admin, COALESCE(ai_usage_count, 0) AS ai_usage_count FROM users WHERE id = ?",
+                "SELECT id, username, role, is_admin, COALESCE(ai_usage_count, 0) AS ai_usage_count, COALESCE(ai_usage_month, '') AS ai_usage_month FROM users WHERE id = ?",
                 (user_id,),
             ).fetchone()
             if not user:
@@ -1693,37 +1707,49 @@ class MemoryStore:
             role = (user["role"] or "user").strip().lower()
             is_admin = bool(user["is_admin"])
             is_unlimited = is_admin or (role in self.UNLIMITED_AI_ROLES) or (username in {"dev", "admin", "superadmin"})
+            
+            current_month = datetime.now().strftime("%Y-%m")
+            stored_month = (user["ai_usage_month"] or "").strip()
             used = int(user["ai_usage_count"] or 0)
+
+            # Auto reset usage count if entering a new calendar month
+            if stored_month != current_month:
+                used = 0
 
             if not is_unlimited:
                 if used >= self.FREE_AI_REQUEST_LIMIT:
                     raise PermissionError(
-                        f"Bạn đã sử dụng hết {self.FREE_AI_REQUEST_LIMIT} lượt AI miễn phí ({used}/{self.FREE_AI_REQUEST_LIMIT} lượt). "
-                        "Vui lòng nâng cấp lên gói Pro Developer hoặc Enterprise để sử dụng AI không giới hạn!"
+                        f"Bạn đã sử dụng hết {self.FREE_AI_REQUEST_LIMIT} lượt AI miễn phí của tháng này ({used}/{self.FREE_AI_REQUEST_LIMIT} lượt). "
+                        "Hệ thống sẽ tự động làm mới 30 lượt vào đầu tháng sau, hoặc bạn có thể nâng cấp lên gói Pro Developer / Enterprise để sử dụng AI không giới hạn ngay bây giờ!"
                     )
                 new_used = used + 1
-                conn.execute("UPDATE users SET ai_usage_count = ? WHERE id = ?", (new_used, user_id))
+                conn.execute("UPDATE users SET ai_usage_count = ?, ai_usage_month = ? WHERE id = ?", (new_used, current_month, user_id))
                 conn.commit()
                 return {
                     "unlimited": False,
                     "used": new_used,
-                    "remaining": max(0, self.FREE_AI_REQUEST_LIMIT - new_used)
+                    "remaining": max(0, self.FREE_AI_REQUEST_LIMIT - new_used),
+                    "current_month": current_month,
+                    "period": "monthly"
                 }
             else:
                 new_used = used + 1
-                conn.execute("UPDATE users SET ai_usage_count = ? WHERE id = ?", (new_used, user_id))
+                conn.execute("UPDATE users SET ai_usage_count = ?, ai_usage_month = ? WHERE id = ?", (new_used, current_month, user_id))
                 conn.commit()
                 return {
                     "unlimited": True,
                     "role": role if role in self.UNLIMITED_AI_ROLES else ("admin" if is_admin else "dev"),
                     "used": new_used,
-                    "remaining": None
+                    "remaining": None,
+                    "current_month": current_month,
+                    "period": "monthly"
                 }
 
     def reset_ai_usage(self, user_id: int) -> bool:
         """Reset AI usage count to 0 (admin / dev tool)."""
+        current_month = datetime.now().strftime("%Y-%m")
         with self.db.get_connection() as conn:
-            conn.execute("UPDATE users SET ai_usage_count = 0 WHERE id = ?", (user_id,))
+            conn.execute("UPDATE users SET ai_usage_count = 0, ai_usage_month = ? WHERE id = ?", (current_month, user_id))
             conn.commit()
             return True
 

@@ -36,12 +36,12 @@
   - **`SUPERADMIN` (Level 8)**: Full administrative authority over contests, members, security events, and IP bans.
   - **`ADMIN` (Level 7)**: Contest creation, problem bank editing, and testcase generation.
   - **`PRO` / `ENTERPRISE`**: Unlimited AI usage and community creation privileges.
-  - **`USER`**: Free tier with 30 AI requests.
+  - **`USER`**: Free tier with 30 AI requests per month (automatically resets on the 1st of every month).
 
 ### 5. 💳 VietQR Instant Subscription & Quota Engine
-- **Token Quota System**:
-  - **Free Users**: 30 complimentary AI queries (Chat, Solve, Convert, OCR). Real-time visual badge tracking.
-  - **Pro / Enterprise / Dev / Admin**: **100% Unlimited AI usage**.
+- **Monthly Token Quota System**:
+  - **Free Users**: **30 complimentary AI requests per month** (Chat, Solve, Convert, OCR). Automatically renews on the 1st of every month. Real-time visual badge tracking.
+  - **Pro / Enterprise / Dev / Admin**: **100% Unlimited AI usage** with zero throttling.
 - **Automated VietQR Integration**: Dynamic QR generation with memo reference codes and automated notification dispatch to `dev` and `superadmin` containing account username, transfer name, plan, and timestamp.
 
 ### 6. 🎨 Cyberpunk UI/UX Pro Max Web Studio

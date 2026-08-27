@@ -2162,8 +2162,8 @@ async function fetchAndRenderAIQuota() {
     const chatText = document.getElementById("chat-quota-text");
 
     if (!token || !state.auth.user) {
-        if (agentText) agentText.textContent = "30/30 lượt AI miễn phí";
-        if (chatText) chatText.textContent = "30/30 lượt AI miễn phí";
+        if (agentText) agentText.textContent = "30/30 lượt AI / tháng";
+        if (chatText) chatText.textContent = "30/30 lượt AI / tháng";
         return;
     }
 
@@ -2191,16 +2191,16 @@ async function fetchAndRenderAIQuota() {
                 const remaining = quota.remaining ?? (30 - (quota.used || 0));
                 const used = quota.used || 0;
                 const limit = quota.limit || 30;
-                textEl.innerHTML = `<span>${remaining}/${limit} lượt AI miễn phí</span>`;
+                textEl.innerHTML = `<span>${remaining}/${limit} lượt AI / tháng</span>`;
                 if (remaining <= 5 && remaining > 0) {
                     badgeEl.classList.add("warning");
-                    badgeEl.title = `Bạn chỉ còn ${remaining} lượt AI miễn phí. Bấm để nâng cấp Pro/Enterprise!`;
+                    badgeEl.title = `Bạn chỉ còn ${remaining}/${limit} lượt AI trong tháng này (Làm mới vào đầu tháng sau). Bấm để nâng cấp Pro/Enterprise!`;
                 } else if (remaining <= 0) {
                     badgeEl.classList.add("danger");
-                    textEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Hết lượt AI (0/${limit})`;
-                    badgeEl.title = "Đã hết lượt AI miễn phí! Bấm để nâng cấp gói Pro/Enterprise.";
+                    textEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Hết lượt tháng (0/${limit})`;
+                    badgeEl.title = `Đã hết ${limit} lượt AI miễn phí của tháng này. Lượt dùng sẽ tự động làm mới vào ngày đầu tháng sau, hoặc bạn có thể bấm để nâng cấp dùng không giới hạn!`;
                 } else {
-                    badgeEl.title = `Bạn đã sử dụng ${used}/${limit} lượt AI miễn phí. Bấm để nâng cấp dùng không giới hạn!`;
+                    badgeEl.title = `Bạn đã sử dụng ${used}/${limit} lượt AI miễn phí của tháng này. Hệ thống tự động làm mới 30 lượt mỗi tháng!`;
                 }
             }
         };
@@ -2213,7 +2213,7 @@ async function fetchAndRenderAIQuota() {
 }
 
 function showAIQuotaUpgradePrompt(msg) {
-    const defaultMsg = "Bạn đã sử dụng hết 30 lượt AI miễn phí. Vui lòng nâng cấp lên gói Pro Developer hoặc Enterprise để sử dụng AI không giới hạn!";
+    const defaultMsg = "Bạn đã sử dụng hết 30 lượt AI miễn phí của tháng này. Hệ thống sẽ tự động làm mới vào đầu tháng sau, hoặc bạn có thể nâng cấp lên gói Pro Developer / Enterprise để sử dụng AI không giới hạn ngay bây giờ!";
     openPaymentModalIndex("pro", msg || defaultMsg);
 }
 
