@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local CP AI — World-Class Competitive Programming SaaS & AI Sandbox</title>
+    <meta name="description" content="Local CP AI là nền tảng SaaS lập trình thi đấu thuật toán thế hệ mới với Trình biên dịch Sandbox siêu tốc và Trợ lý AI Agent tự động giải toán & sửa lỗi code.">
+    <meta name="keywords" content="Local CP AI, Competitive Programming SaaS, AI Code Agent, C++ Sandbox, Python 3, USACO, Codeforces, ICPC, Algorithm IDE">
+    <meta name="author" content="Local CP Studio Team">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="css/style.css?v=11.0">
+    <link rel="stylesheet" href="css/glassmorphism-effects.css">
+    <script src="js/theme.js"></script>
+    <script src="js/glassmorphism.js"></script>
+    <script src="js/landing.js" defer></script>
+</head>
+
+<body class="usaco-theme" spellcheck="false">
+    <!-- Ambient Animated Mesh Background -->
+    <div class="app-ambient" aria-hidden="true">
+        <div class="orb orb-cyan"></div>
+        <div class="orb orb-violet"></div>
+        <div class="orb orb-emerald"></div>
+        <div class="mesh-grid"></div>
+    </div>
+
+    <!-- Sticky Glass Navigation Header -->
+    <header class="app-header">
+        <a class="header-left" href="index.html#playground-tab" title="Vào Web IDE">
+            <div class="logo-badge">
+                <i class="fa-solid fa-code"></i>
+            </div>
+            <div class="header-title-box">
+                <span class="ide-brand">LOCAL CP AI</span>
+                <span class="ide-sub">Algorithm SaaS Studio</span>
+            </div>
+        </a>
+
+        <nav class="nav-tabs">
+            <a class="nav-tab active" href="#hero"><i class="fa-solid fa-rocket"></i> <span>Trang chủ</span></a>
+            <a class="nav-tab" href="#features"><i class="fa-solid fa-layer-group"></i> <span>Tính năng</span></a>
+            <a class="nav-tab" href="#demo"><i class="fa-solid fa-laptop-code"></i> <span>Live Demo</span></a>
+            <a class="nav-tab" href="#pricing"><i class="fa-solid fa-tags"></i> <span>Bảng giá</span></a>
+            <a class="nav-tab" href="community.html"><i class="fa-solid fa-people-group"></i> <span>Community</span></a>
+            <a class="nav-tab" href="#faq"><i class="fa-solid fa-circle-question"></i> <span>FAQ</span></a>
+            <a class="nav-tab" href="index.html"><i class="fa-solid fa-terminal"></i> <span>Web IDE</span></a>
+        </nav>
+
+        <div class="header-right">
+            <div class="status-indicator-badge">
+                <span class="status-dot green"></span>
+                <span>Sandbox 100% Ready</span>
+            </div>
+
+            <div class="account-area">
+                <a href="index.html#playground-tab" class="btn-saas-primary" style="padding: 8px 18px; font-size: 0.85rem;">
+                    <i class="fa-solid fa-play"></i> Launch Web IDE
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container" style="max-width: 1200px; margin: 0 auto; padding-top: 20px;">
+        
+        <!-- HERO SECTION -->
+        <section id="hero" class="saas-hero-section">
+            <div class="saas-badge-pill">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> LOCAL-FIRST AI &amp; MULTI-LANG SANDBOX ENGINE v5.0
+            </div>
+            
+            <h1 class="saas-hero-title">
+                Luyện Thuật Toán Peak Level với<br>
+                <span class="saas-gradient-text">AI Agent Auto-Debugging Loop</span>
+            </h1>
+            
+            <p class="saas-hero-subtitle">
+                Studio lập trình thi đấu cho C++, Python, Java, Rust &amp; Go. Tích hợp RAG tra cứu thuật toán, Sandbox biên dịch siêu tốc &lt; 2.0s và AI Agent tự sửa lỗi thông minh bảo mật 100% dữ liệu.
+            </p>
+
+            <div class="saas-hero-actions">
+                <a href="index.html#playground-tab" class="btn-saas-primary">
+                    <i class="fa-solid fa-bolt"></i> Mở Web IDE Miễn Phí
+                </a>
+                <a href="#demo" class="btn-saas-secondary">
+                    <i class="fa-solid fa-circle-play"></i> Xem Trải Nghiệm Demo
+                </a>
+            </div>
+
+            <!-- HERO INTERACTIVE CODE SIMULATOR -->
+            <div id="demo" class="hero-simulator-wrapper">
+                <div class="hero-sim-header">
+                    <div class="hero-sim-dots">
+                        <span class="dot-red"></span>
+                        <span class="dot-yellow"></span>
+                        <span class="dot-green"></span>
+                    </div>
+                    <div class="hero-sim-tabs">
+                        <button class="hero-sim-tab active" data-lang="cpp"><i class="fa-solid fa-code"></i> C++17</button>
+                        <button class="hero-sim-tab" data-lang="python"><i class="fa-brands fa-python"></i> Python 3</button>
+                        <button class="hero-sim-tab" data-lang="rust"><i class="fa-brands fa-rust"></i> Rust</button>
+                    </div>
+                    <span id="hero-sim-filename" style="font-family: var(--font-code); font-size: 0.75rem; color: var(--text-muted);">dijkstra_shortest_path.cpp</span>
+                </div>
+
+                <div class="hero-sim-body">
+                    <div class="hero-sim-code-pane">
+                        <pre id="hero-sim-code">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+
+// Fast I/O &amp; Dijkstra Algorithm Template
+const long long INF = 1e18;
+
+void solve() {
+    int n, m;
+    if (!(cin &gt;&gt; n &gt;&gt; m)) return;
+    vector&lt;vector&lt;pair&lt;int, int&gt;&gt;&gt; adj(n + 1);
+    for (int i = 0; i &lt; m; ++i) {
+        int u, v, w; cin &gt;&gt; u &gt;&gt; v &gt;&gt; w;
+        adj[u].push_back({v, w});
+        adj[v].push_back({u, w});
+    }
+    vector&lt;long long&gt; dist(n + 1, INF);
+    priority_queue&lt;pair&lt;long long, int&gt;, vector&lt;pair&lt;long long, int&gt;&gt;, greater&lt;&gt;&gt; pq;
+    dist[1] = 0;
+    pq.push({0, 1});
+    while (!pq.empty()) {
+        auto [d, u] = pq.top(); pq.pop();
+        if (d &gt; dist[u]) continue;
+        for (auto&amp; [v, w] : adj[u]) {
+            if (dist[u] + w &lt; dist[v]) {
+                dist[v] = dist[u] + w;
+                pq.push({dist[v], v});
+            }
+        }
+    }
+    cout &lt;&lt; (dist[n] == INF ? -1 : dist[n]) &lt;&lt; "\n";
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    solve();
+    return 0;
+}</pre>
+                    </div>
+
+                    <div class="hero-sim-output-pane">
+                        <div>
+                            <div class="hero-sim-output-header">
+                                <i class="fa-solid fa-terminal"></i> Terminal Sandbox Output
+                            </div>
+                            <pre id="hero-sim-output" class="hero-sim-output-text">[Compile] g++ -std=c++17 -O2 -Wall dijkstra_shortest_path.cpp -o main.exe
+[Sandbox] Executing inside isolated process sandbox...
+[Input] Nodes: 5, Edges: 6
+[Output] Shortest Path (1 -> 5): 14
+[Verdict] AC — Time: 0.002s | RAM: 1.8MB | Exit: 0</pre>
+                        </div>
+                        <div class="hero-sim-footer-actions">
+                            <button id="hero-sim-run-btn" class="btn-ide btn-ide-run btn-xs" style="flex: 1;">
+                                <i class="fa-solid fa-play"></i> Run Sandbox
+                            </button>
+                            <button id="hero-sim-fix-btn" class="btn-ide btn-ide-secondary btn-xs" style="flex: 1;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Auto-Fix
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- METRICS COUNTER BANNER -->
+        <section class="saas-metrics-banner">
+            <div class="metric-card">
+                <div class="metric-number metric-num-count" data-count="50000" data-suffix="+">50,000+</div>
+                <div class="metric-label">Test cases Chấm Sandbox</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number metric-num-count" data-count="99" data-suffix=".9%">99.9%</div>
+                <div class="metric-label">Local Sandbox Uptime</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">6</div>
+                <div class="metric-label">Trình biên dịchThi đấu</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">0ms</div>
+                <div class="metric-label">Rò rỉ dữ liệu ngoài</div>
+            </div>
+        </section>
+
+        <!-- BENTO GRID SAAS FEATURE MATRIX -->
+        <section id="features">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h2 style="font-family: var(--font-display); font-size: 2.2rem; color: var(--text-bright);">Tính Năng Đỉnh Cao SaaS Local CP</h2>
+                <p style="color: var(--text-secondary); max-width: 600px; margin: 8px auto 0;">Thiết kế chuyên sâu cho các kỳ thi USACO, Codeforces, VNOI và ICPC.</p>
+            </div>
+
+            <div class="bento-grid">
+                <div class="bento-card span-2">
+                    <div class="bento-icon-wrapper">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <h3 class="bento-title">Multi-Language Process Sandbox Engine</h3>
+                    <p class="bento-desc">
+                        Thực thi mã nguồn an toàn trong môi trường cô lập process với giới hạn thời gian (Timeout), giới hạn bộ nhớ RAM, bắt lỗi Segmentation Fault (SIGSEGV), chia 0 (SIGFPE) cho C++17, Python 3.12, Java 17, Rust và Go.
+                    </p>
+                    <div class="bento-tag-list">
+                        <span class="bento-tag">C++17 (g++)</span>
+                        <span class="bento-tag">Python 3.12</span>
+                        <span class="bento-tag">Java 17</span>
+                        <span class="bento-tag">Rust 2021</span>
+                        <span class="bento-tag">Go 1.21</span>
+                    </div>
+                </div>
+
+                <div class="bento-card">
+                    <div class="bento-icon-wrapper">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <h3 class="bento-title">AI Auto-Debugging Loop</h3>
+                    <p class="bento-desc">
+                        Tự động phân tích đề bài, đề xuất thuật toán $O(N \log N)$, sinh mã nguồn chuẩn và tự chạy testcases trong sandbox. Nếu gặp `WA` hoặc `TLE`, AI tự sửa code và chấm lại cho đến khi `AC`.
+                    </p>
+                    <div class="bento-tag-list">
+                        <span class="bento-tag">RAG Prompt</span>
+                        <span class="bento-tag">Auto-Fix</span>
+                    </div>
+                </div>
+
+                <div class="bento-card">
+                    <div class="bento-icon-wrapper">
+                        <i class="fa-solid fa-book-bookmark"></i>
+                    </div>
+                    <h3 class="bento-title">Algorithm RAG Knowledge Hub</h3>
+                    <p class="bento-desc">
+                        Kho tài liệu thuật toán và C++ templates chuẩn (DSU, Segment Tree, Fenwick, Dijkstra, DP Patterns, Fast I/O) giúp AI tra cứu tức thì khi làm bài.
+                    </p>
+                    <div class="bento-tag-list">
+                        <span class="bento-tag">DSU</span>
+                        <span class="bento-tag">Segment Tree</span>
+                        <span class="bento-tag">Graph DP</span>
+                    </div>
+                </div>
+
+                <div class="bento-card">
+                    <div class="bento-icon-wrapper">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h3 class="bento-title">Online Contest &amp; ClueOJ Arena</h3>
+                    <p class="bento-desc">
+                        Hệ thống tổ chức cuộc thi trực tuyến tích hợp máy chấm ClueOJ song song 5 worker. Tự động xếp hạng Real-time Scoreboard theo luật ACM ICPC và khóa AI bảo mật.
+                    </p>
+                    <div class="bento-tag-list">
+                        <span class="bento-tag">ClueOJ</span>
+                        <span class="bento-tag">ICPC Rules</span>
+                    </div>
+                </div>
+
+                <div class="bento-card">
+                    <div class="bento-icon-wrapper">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <h3 class="bento-title">Monaco Web IDE Integration</h3>
+                    <p class="bento-desc">
+                        Trình soạn thảo chuẩn VS Code tích hợp gợi ý mã nguồn, tùy chỉnh phím tắt, hỗ trợ sinh test biên (Edge-case generator) và lưu trữ Solved Vault riêng tư.
+                    </p>
+                    <div class="bento-tag-list">
+                        <span class="bento-tag">Monaco Editor</span>
+                        <span class="bento-tag">Edge Cases</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SAAS PRICING SECTION -->
+        <section id="pricing">
+            <div class="saas-pricing-header">
+                <h2 style="font-family: var(--font-display); font-size: 2.2rem; color: var(--text-bright);">Bảng Giá Gói Dịch Vụ SaaS</h2>
+                <p style="color: var(--text-secondary); margin-top: 8px;">Lựa chọn gói linh hoạt cho cá nhân, thí sinh luyện thi hoặc trường học.</p>
+            </div>
+
+            <div class="pricing-toggle-wrapper">
+                <span class="pricing-toggle-label">Thanh toán Hàng tháng</span>
+                <label class="pricing-toggle-switch">
+                    <input type="checkbox" id="pricing-billing-toggle">
+                    <span class="pricing-slider"></span>
+                </label>
+                <span class="pricing-toggle-label">Thanh toán Hàng năm <span style="color: var(--accent-green); font-size: 0.78rem;">(Tiết kiệm 20%)</span></span>
+            </div>
+
+            <div class="pricing-grid">
+                <!-- Community Tier -->
+                <div class="pricing-card">
+                    <div class="pricing-tier-name">Community</div>
+                    <div class="pricing-tier-desc">Dành cho cá nhân tự cài đặt và luyện tập local offline.</div>
+                    <div class="pricing-price-box">
+                        <span class="pricing-val">$0</span>
+                        <span class="pricing-period">/ vĩnh viễn</span>
+                    </div>
+                    <ul class="pricing-features-list">
+                        <li><i class="fa-solid fa-check"></i> Toàn bộ 6 trình biên dịch Sandbox</li>
+                        <li><i class="fa-solid fa-check"></i> Monaco Web IDE tối ưu</li>
+                        <li><i class="fa-solid fa-check"></i> Kho RAG templates cục bộ</li>
+                        <li><i class="fa-solid fa-check"></i> SQLite Memory Vault</li>
+                    </ul>
+                    <a href="index.html#playground-tab" class="btn-saas-secondary" style="justify-content: center;">Bắt đầu Miễn phí</a>
+                </div>
+
+                <!-- Pro Tier (Popular) -->
+                <div class="pricing-card popular">
+                    <div class="popular-badge">PHỔ BIẾN NHẤT</div>
+                    <div class="pricing-tier-name">Pro Developer</div>
+                    <div class="pricing-tier-desc">Dành cho thí sinh USACO, Codeforces &amp; Đội tuyển ICPC.</div>
+                    <div class="pricing-price-box">
+                        <span class="pricing-val" id="price-pro-val">$19</span>
+                        <span class="pricing-period">/ tháng</span>
+                    </div>
+                                        <ul class="pricing-features-list">
+                        <li><i class="fa-solid fa-check"></i> Tất cả tính năng Community</li>
+                        <li><i class="fa-solid fa-check"></i> Cloud LLM Auto-Failover (DeepSeek V4, Gemma)</li>
+                        <li><i class="fa-solid fa-check"></i> AI Agent tự sửa lỗi không giới hạn</li>
+                        <li><i class="fa-solid fa-check"></i> Đấu trường Online Contest &amp; Rank</li>
+                        <li><i class="fa-solid fa-check"></i> Quyền tạo và quản lý Community</li>
+                        <li><i class="fa-solid fa-check"></i> Đồng bộ đám mây Solved Vault</li>
+                    </ul>
+                    <button class="btn-saas-primary open-payment-btn" data-plan="pro" style="justify-content: center; width: 100%; border: none; cursor: pointer;">
+                        <i class="fa-solid fa-qrcode"></i> Nâng cấp Pro (VietQR)
+                    </button>
+                </div>
+
+                <!-- Enterprise Tier -->
+                <div class="pricing-card">
+                    <div class="pricing-tier-name">Enterprise / Campus</div>
+                    <div class="pricing-tier-desc">Dành cho trường chuyên, trung tâm &amp; giảng viên.</div>
+                    <div class="pricing-price-box">
+                        <span class="pricing-val" id="price-enterprise-val">$99</span>
+                        <span class="pricing-period">/ tháng</span>
+                    </div>
+                    <ul class="pricing-features-list">
+                        <li><i class="fa-solid fa-check"></i> Tất cả tính năng Pro Developer</li>
+                        <li><i class="fa-solid fa-check"></i> Cụm 5 Worker Máy chấm ClueOJ song song</li>
+                        <li><i class="fa-solid fa-check"></i> Quyền Dev/Admin quản trị tất cả Community</li>
+                        <li><i class="fa-solid fa-check"></i> Tự nạp thư mục bài tập tùy chỉnh</li>
+                        <li><i class="fa-solid fa-check"></i> Hỗ trợ kỹ thuật 24/7 SLA</li>
+                    </ul>
+                    <button class="btn-saas-secondary open-payment-btn" data-plan="enterprise" style="justify-content: center; width: 100%; border: none; cursor: pointer;">
+                        <i class="fa-solid fa-qrcode"></i> Đăng ký Enterprise (VietQR)
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ SECTION -->
+        <section id="faq" style="margin-bottom: 70px;">
+            <div style="text-align: center; margin-bottom: 28px;">
+                <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(56,189,248,.1); border: 1px solid rgba(56,189,248,.25); border-radius: 100px; padding: 5px 14px; font-size: 0.78rem; font-weight: 600; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">
+                    <i class="fa-solid fa-circle-question"></i> FAQ &amp; Giải Đáp Thắc Mắc
+                </div>
+                <h2 style="font-family: var(--font-display); font-size: 2.3rem; color: var(--text-bright); margin-bottom: 10px;">Câu Hỏi Thường Gặp</h2>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; max-width: 580px; margin: 0 auto;">Tất cả câu trả lời về kiến trúc Sandbox, AI Agent tự sửa mã nguồn và nền tảng Offline Judge.</p>
+            </div>
+
+            <!-- Search & Filter Controls -->
+            <div class="faq-search-box">
+                <i class="fa-solid fa-magnifying-glass faq-search-icon"></i>
+                <input type="text" id="landing-faq-search" placeholder="Tìm kiếm câu hỏi (nhấn / để tìm nhanh)..." autocomplete="off" spellcheck="false">
+                <button class="faq-search-clear" id="landing-faq-clear" title="Xóa tìm kiếm">✕</button>
+            </div>
+
+            <div class="faq-filter-tabs" id="landing-faq-tabs">
+                <button class="faq-tab-chip active" data-cat="all"><i class="fa-solid fa-layer-group"></i> Tất cả</button>
+                <button class="faq-tab-chip" data-cat="offline"><i class="fa-solid fa-laptop-code"></i> Offline First</button>
+                <button class="faq-tab-chip" data-cat="security"><i class="fa-solid fa-shield-halved"></i> Bảo mật &amp; Sandbox</button>
+                <button class="faq-tab-chip" data-cat="ai"><i class="fa-solid fa-robot"></i> AI Auto-Fix</button>
+                <button class="faq-tab-chip" data-cat="judge"><i class="fa-solid fa-trophy"></i> ClueOJ &amp; Contest</button>
+            </div>
+            
+            <div class="faq-accordion-container" id="landing-faq-list">
+                <!-- Item 1 -->
+                <div class="faq-accordion-item open" data-cat="offline">
+                    <button class="faq-accordion-question" type="button" aria-expanded="true">
+                        <div class="faq-q-left">
+                            <span class="faq-badge-num">01</span>
+                            <span class="faq-category-pill pill-offline">⚡ Offline First</span>
+                            <span class="faq-q-title">Local CP AI có thực sự hoạt động hoàn toàn offline không?</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-accordion-answer-wrap">
+                        <div class="faq-accordion-answer-inner">
+                            <div class="faq-accordion-answer">
+                                <div class="faq-answer-divider"></div>
+                                <p><strong>Hoàn toàn có thể.</strong> Nền tảng tích hợp trình biên dịch C++17 (G++ / Clang), Python 3.12, Rust cục bộ và hỗ trợ chạy mô hình ngôn ngữ lớn (LLM) offline thông qua <code>Ollama</code> hoặc <code>LM Studio</code>. Bạn có thể tự do viết code, sinh test case ngẫu nhiên, stress-test và chấm điểm trực tiếp mà không cần bất kỳ kết nối Internet nào.</p>
+                                <div class="faq-meta-footer">
+                                    <span><i class="fa-regular fa-clock"></i> Cập nhật gần nhất: Hôm nay</span>
+                                    <div>
+                                        <span>Hữu ích?</span>
+                                        <button class="faq-feedback-btn" onclick="handleFaqVote(this, true)"><i class="fa-regular fa-thumbs-up"></i> Có</button>
+                                        <button class="faq-feedback-btn" onclick="handleFaqVote(this, false)"><i class="fa-regular fa-thumbs-down"></i> Chưa rõ</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Item 2 -->
+                <div class="faq-accordion-item" data-cat="security">
+                    <button class="faq-accordion-question" type="button" aria-expanded="false">
+                        <div class="faq-q-left">
+                            <span class="faq-badge-num">02</span>
+                            <span class="faq-category-pill pill-security">🛡️ Sandbox</span>
+                            <span class="faq-q-title">Cơ chế bảo mật Sandbox chống mã độc nguy hiểm như thế nào?</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-accordion-answer-wrap">
+                        <div class="faq-accordion-answer-inner">
+                            <div class="faq-accordion-answer">
+                                <div class="faq-answer-divider"></div>
+                                <p>Mỗi bài nộp được thực thi trong một tiến trình con cô lập (<strong>Process Isolation</strong>) có giới hạn thời gian (Timeout), giới hạn RAM và chặn các lệnh hệ thống nguy hiểm (như fork bomb, mở port socket hay ghi file hệ thống). Nếu code gặp <code>Segmentation Fault</code> hoặc <code>Memory Limit Exceeded</code>, Sandbox sẽ dừng tiến trình ngay trong 0.05ms mà không ảnh hưởng tới máy chủ của bạn.</p>
+                                <div class="faq-meta-footer">
+                                    <span><i class="fa-regular fa-clock"></i> Cập nhật gần nhất: 27/08/2026</span>
+                                    <div>
+                                        <span>Hữu ích?</span>
+                                        <button class="faq-feedback-btn" onclick="handleFaqVote(this, true)"><i class="fa-regular fa-thumbs-up"></i> Có</button>
+                                        <button class="faq-feedback-btn" onclick="handleFaqVote(this, false)"><i class="fa-regular fa-thumbs-down"></i> Chưa rõ</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Item 3 -->
+                <div class="faq-accordion-item" data-cat="ai">
+                    <button class="faq-accordion-question" type="button" aria-expanded="false">
+                        <div class="faq-q-left">
+                            <span class="faq-badge-num">03</span>
+                            <span class="faq-category-pill pill-ai">🤖 AI Auto-Fix</span>
+                            <span class="faq-q-title">AI Agent có thể giúp tôi tự sửa lỗi mã nguồn như thế nào?</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-accordion-answer-wrap">
+                        <div class="faq-accordion-answer-inner">
+                            <div class="faq-accordion-answer">
+                                <div class="faq-answer-divider"></div>
+                                <p>AI Agent làm việc theo vòng lặp khép kín 5 bước:</p>
+                                <p style="margin: 8px 0; padding: 8px 12px; background: rgba(56,189,248,0.06); border-radius: 8px; border-left: 3px solid var(--accent-cyan); font-family: var(--font-mono, monospace); font-size: 0.84rem;">
+                                    Tra cứu thuật toán RAG &rarr; Phân tích ràng buộc đề bài &rarr; Sinh mã nguồn &rarr; Chạy thử Sandbox &rarr; Đọc traceback &amp; Auto-fix
+                                </p>
+                                <p>Nếu gặp lỗi <code>WA</code> (Wrong Answer) hoặc <code>TLE</code> (Time Limit Exceeded), AI tự trích xuất phản ví dụ (counter-example) và tối ưu độ phức tạp tới khi đạt kết quả <code>AC (Accepted)</code>.</p>
+                                <div class="faq-meta-footer">
+                                    <span><i class="fa-regular fa-clock"></i> Cập nhật gần nhất: 27/08/2026</span>
+                                    <div>
+                                        <span>Hữu ích?</span>
+                                        <button class="faq-feedback-btn" onclick="handleFaqVote(this, true)"><i class="fa-regular fa-thumbs-up"></i> Có</button>
+                                        <button class="faq-feedback-btn" onclick="handleFaqVote(this, false)"><i class="fa-regular fa-thumbs-down"></i> Chưa rõ</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Item 4 -->
+                <div class="faq-accordion-item" data-cat="judge">
+                    <button class="faq-accordion-question" type="button" aria-expanded="false">
+                        <div class="faq-q-left">
+                            <span class="faq-badge-num">04</span>
+                            <span class="faq-category-pill pill-judge">🏆 ClueOJ Judge</span>
+                            <span class="faq-q-title">Làm thế nào để kết nối máy chấm ClueOJ cho cuộc thi trực tuyến?</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-accordion-answer-wrap">
+                        <div class="faq-accordion-answer-inner">
+                            <div class="faq-accordion-answer">
+                                <div class="faq-answer-divider"></div>
+                                <p>Quản trị viên có thể truy cập tab <strong>Admin</strong>, chọn mục <em>"Nạp problem ClueOJ"</em> và cung cấp đường dẫn thư mục bộ test chuẩn (<code>.in</code> / <code>.out</code> hoặc format Themis / Polygon). Hệ thống sẽ tự động lập bảng Scoreboard trực tiếp với cơ chế Anti-Cheat và chấm thi song song đa luồng siêu tốc.</p>
+                                <div class="faq-meta-footer">
+                                    <span><i class="fa-regular fa-clock"></i> Cập nhật gần nhất: 26/08/2026</span>
+                                    <div>
+                                        <span>Hữu ích?</span>
+                                        <button class="faq-feedback-btn" onclick="handleFaqVote(this, true)"><i class="fa-regular fa-thumbs-up"></i> Có</button>
+                                        <button class="faq-feedback-btn" onclick="handleFaqVote(this, false)"><i class="fa-regular fa-thumbs-down"></i> Chưa rõ</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Item 5 -->
+                <div class="faq-accordion-item" data-cat="security">
+                    <button class="faq-accordion-question" type="button" aria-expanded="false">
+                        <div class="faq-q-left">
+                            <span class="faq-badge-num">05</span>
+                            <span class="faq-category-pill pill-security">🔒 Quyền Riêng Tư</span>
+                            <span class="faq-q-title">Dữ liệu và mã nguồn của tôi có bị rò rỉ hoặc gửi lên đám mây không?</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-accordion-answer-wrap">
+                        <div class="faq-accordion-answer-inner">
+                            <div class="faq-accordion-answer">
+                                <div class="faq-answer-divider"></div>
+                                <p>Chúng tôi cam kết triết lý <strong>Privacy-First</strong>: Tất cả các file code, lịch sử bài nộp, và cơ sở dữ liệu SQLite được lưu trữ nguyên vẹn trên ổ cứng cục bộ của bạn. Khi sử dụng mô hình AI Offline (Ollama), dữ liệu không bao giờ rời khỏi thiết bị.</p>
+                                <div class="faq-meta-footer">
+                                    <span><i class="fa-regular fa-clock"></i> Cập nhật gần nhất: 25/08/2026</span>
+                                    <div>
+                                        <span>Hữu ích?</span>
+                                        <button class="faq-feedback-btn" onclick="handleFaqVote(this, true)"><i class="fa-regular fa-thumbs-up"></i> Có</button>
+                                        <button class="faq-feedback-btn" onclick="handleFaqVote(this, false)"><i class="fa-regular fa-thumbs-down"></i> Chưa rõ</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ======================================================================
+         VIETQR PAYMENT MODAL (EXPANDED WIDE LAYOUT)
+    ====================================================================== -->
+    <div class="auth-modal hidden" id="payment-modal" role="dialog" style="z-index: 10000;">
+        <div class="auth-card payment-card-wide">
+            <aside class="auth-showcase" aria-hidden="true">
+                <div class="auth-showcase-glow" style="background: radial-gradient(circle at 60% 40%, rgba(127,0,255,.6) 0%, transparent 60%);"></div>
+                <div class="auth-showcase-brand"><span class="auth-showcase-mark"><i class="fa-solid fa-crown"></i></span> LOCAL CP SAAS</div>
+                <div class="auth-showcase-copy">
+                    <span class="auth-kicker">NÂNG CẤP TÀI KHOẢN</span>
+                    <h2>Kích hoạt<br><em>Gói dịch vụ.</em></h2>
+                    <p>Quét mã VietQR để thanh toán và hệ thống nâng cấp quyền tự động cho tài khoản của bạn.</p>
+                </div>
+                <div class="auth-perks">
+                    <span><i class="fa-solid fa-people-group"></i> Quyền tạo &amp; Quản lý Community</span>
+                    <span><i class="fa-solid fa-wand-magic-sparkles"></i> AI Agent tự sửa lỗi không giới hạn</span>
+                    <span><i class="fa-solid fa-server"></i> 5 Worker máy chấm ClueOJ song song</span>
+                    <span><i class="fa-solid fa-cloud-arrow-up"></i> Đồng bộ kho Solved Vault đám mây</span>
+                </div>
+            </aside>
+            <div class="auth-form-area">
+                <button class="auth-close" id="close-payment-modal" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
+                <div class="auth-heading" style="margin-bottom: 20px;">
+                    <span class="auth-heading-icon" style="background: rgba(0,242,254,0.12); color: var(--accent-cyan);"><i class="fa-solid fa-qrcode"></i></span>
+                    <div>
+                        <h2 id="payment-plan-title" style="font-size: 1.35rem; color: var(--text-bright); margin-bottom: 2px;">Nâng cấp Pro Developer</h2>
+                        <p style="color: var(--text-muted); font-size: 0.82rem;">Quét mã VietQR và xác nhận kích hoạt tài khoản bên dưới.</p>
+                    </div>
+                </div>
+
+                <!-- QR Code Display -->
+                <div class="payment-qr-box">
+                    <img src="assets/payment-qr.png" alt="QR thanh toán VO HONG QUANG" class="payment-qr-img">
+                    <div style="margin-top: 12px; text-align: center;">
+                        <strong style="color: var(--text-bright); font-size: 1.05rem; letter-spacing: 0.5px; display: block;">VO HONG QUANG</strong>
+                        <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 6px;">
+                            <span style="font-size: 0.75rem; color: var(--accent-cyan); background: rgba(0,242,254,0.12); border: 1px solid rgba(0,242,254,0.25); padding: 3px 10px; border-radius: 6px; font-weight: 600;">
+                                <i class="fa-solid fa-bolt"></i> VietQR · ZaloPay · BIDV
+                            </span>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 0.76rem; margin-top: 6px;">Nhận tiền tức thì từ mọi App Ngân hàng &amp; Ví điện tử</p>
+                    </div>
+                </div>
+
+                <!-- Payment Details Table -->
+                <div class="payment-details-table">
+                    <div class="payment-details-row">
+                        <span><i class="fa-solid fa-user-shield" style="color: var(--accent-cyan); margin-right: 6px;"></i> Tài khoản kích hoạt:</span>
+                        <strong id="payment-user-display" style="color: var(--accent-cyan); font-family: var(--font-mono, monospace);">USER</strong>
+                    </div>
+                    <div class="payment-details-row">
+                        <span><i class="fa-solid fa-money-bill-wave" style="color: var(--accent-cyan); margin-right: 6px;"></i> Số tiền thanh toán:</span>
+                        <strong id="payment-amount">485.000đ</strong>
+                    </div>
+                    <div class="payment-details-row">
+                        <span><i class="fa-solid fa-message" style="color: var(--accent-cyan); margin-right: 6px;"></i> Nội dung chuyển khoản:</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="payment-ref-pill" id="payment-ref">LOCALCP USER PRO</span>
+                            <button id="copy-ref-btn" class="btn-mini" title="Sao chép nội dung"><i class="fa-solid fa-copy"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sender Name Input Field -->
+                <div style="margin: 14px 0 12px; text-align: left;">
+                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-bright); margin-bottom: 6px;">
+                        <i class="fa-solid fa-signature" style="color: var(--accent-cyan); margin-right: 4px;"></i> Họ và tên người chuyển khoản: <span style="color: #f87171;">*</span>
+                    </label>
+                    <input type="text" id="payment-sender-name" placeholder="VD: NGUYEN VAN A (tên tài khoản ngân hàng)" style="width: 100%; background: rgba(10, 18, 35, 0.85); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 10px 14px; color: var(--text-bright); font-size: 0.88rem; outline: none; transition: border-color 0.2s;" required autocomplete="name" />
+                    <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 4px;">
+                        <i class="fa-solid fa-bell" style="color: #fbbf24;"></i> Yêu cầu kèm tên tài khoản &amp; tên chuyển khoản sẽ được gửi trực tiếp đến <strong>Dev &amp; SuperAdmin</strong>.
+                    </small>
+                </div>
+
+                <p style="color: var(--text-muted); font-size: 0.78rem; text-align: center; margin-bottom: 14px; line-height: 1.5;">
+                    <i class="fa-solid fa-circle-check" style="color: var(--accent-green); margin-right: 4px;"></i> Sau khi chuyển khoản, bấm nút bên dưới để gửi thông báo xác nhận đến quản trị viên.
+                </p>
+                <p class="auth-error hidden" id="payment-error" style="margin-bottom: 12px;"></p>
+                <button class="btn-ide btn-ide-run btn-block btn-confirm-payment" id="confirm-payment-btn">
+                    <i class="fa-solid fa-check-circle"></i> Tôi đã chuyển khoản — Xác nhận kích hoạt ngay
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="global-site-footer">
+        <div>
+            <span>&copy; 2026 <strong>Local CP AI</strong> — World-Class Competitive Programming SaaS Studio.</span>
+        </div>
+        <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+            <a href="landing.html">Trang chủ SaaS</a>
+            <a href="index.html#playground-tab">Web IDE</a>
+            <a href="index.html#agent-tab">AI Agent</a>
+            <a href="index.html#rag-tab">Templates RAG</a>
+            <a href="contest.html">Cuộc thi Online</a>
+            <a href="privacy.html">Bảo mật</a>
+        </div>
+    </footer>
+</body>
+</html>

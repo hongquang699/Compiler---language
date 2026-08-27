@@ -306,7 +306,15 @@
                 </table>
             </div>
         </section>
-    </main>
+    <!-- ==================== FLOATING QUICK SCROLL CONTROLLER (KÉO LÊN / KÉO XUỐNG) ==================== -->
+    <div class="floating-scroll-controls" title="Điều hướng Nhanh Kéo lên / Kéo xuống">
+        <button type="button" class="btn-scroll-action up" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Cuộn lên đầu trang (Scroll to Top)">
+            <i class="fa-solid fa-chevron-up"></i>
+        </button>
+        <button type="button" class="btn-scroll-action down" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="Cuộn xuống cuối trang (Scroll to Bottom)">
+            <i class="fa-solid fa-chevron-down"></i>
+        </button>
+    </div>
 
     <script src="js/admin-github.js?v=1.0"></script>
 </body>

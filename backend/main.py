@@ -33,6 +33,8 @@ from backend.ai.agent import CppCodeAgent
 from backend.ai.prompt_engine import PromptEngine
 from backend.ai.evaluator import CodeEvaluator
 from security.middleware import SecurityMiddleware
+from security.sentinel_bot import sentinel_bot
+from security.anti_cheat import anti_cheat_engine
 
 
 app = FastAPI(title="Local C++ Coding AI", version="1.0.0")
@@ -40,6 +42,8 @@ app = FastAPI(title="Local C++ Coding AI", version="1.0.0")
 @app.on_event("startup")
 async def start_background_services():
     start_auto_push_scheduler()
+    import asyncio
+    asyncio.create_task(sentinel_bot.start_background_scanner(interval_seconds=10))
 
 SECRET_PAYLOAD_KEY = b"local_cp_secret_v5"
 
@@ -95,6 +99,7 @@ app.add_middleware(
 # Initialize subsystems
 db_manager = DatabaseManager(settings.memory_settings.get("db_path", "data/memory.db"))
 memory_store = MemoryStore(db_manager)
+sentinel_bot.db = db_manager
 
 rag_store = KnowledgeStore(
     knowledge_dir=settings.rag_settings.get("knowledge_dir", "data/knowledge_base"),
@@ -171,6 +176,35 @@ class BlockIpRequest(BaseModel):
     reason: str = "admin_blocked"
     minutes: int = 10
 
+class SentinelModeRequest(BaseModel):
+    mode: str
+
+class SentinelSkillExecuteRequest(BaseModel):
+    skill_name: str
+    target: Optional[str] = None
+    params: Optional[Dict[str, Any]] = None
+
+class AntiCheatScanRequest(BaseModel):
+    threshold: Optional[float] = 60.0
+
+class AntiCheatVerdictRequest(BaseModel):
+    report_id: int
+    verdict: str
+    details: Optional[str] = ""
+
+class DevManualBanRequest(BaseModel):
+    user_id: Optional[int] = None
+    ip: Optional[str] = None
+    reason: str = "Dev Manual Ban"
+    minutes: int = 1440
+
+class DevManualUnbanRequest(BaseModel):
+    user_id: Optional[int] = None
+    ip: Optional[str] = None
+
+class DevToggleBotRequest(BaseModel):
+    active: bool
+
 class UpdateUserRoleRequest(BaseModel):
     role: str
 
@@ -198,6 +232,10 @@ class UserCodeSaveRequest(BaseModel):
     title: str
     language: str = "cpp"
     source_code: str
+
+class ProblemBankSubmissionRequest(BaseModel):
+    source_code: str
+    language: str = "python"
 
 class CompetitionRequest(BaseModel):
     title: str
@@ -230,6 +268,14 @@ class ClueOJImportRequest(BaseModel):
 class LockUserRequest(BaseModel):
     locked: bool
 
+class UpdateProfileRequest(BaseModel):
+    fullname: Optional[str] = None
+    bio: Optional[str] = None
+    timezone: Optional[str] = None
+    language: Optional[str] = None
+    editor_theme: Optional[str] = None
+    avatar_path: Optional[str] = None
+
 class DeleteIpRequest(BaseModel):
     ip: str
 
@@ -254,6 +300,7 @@ class AdminProblemCreateRequest(BaseModel):
     code: str = "A"
     competition_id: Optional[int] = None
     tests: List[Dict[str, Any]] = Field(default_factory=list)
+    is_hidden: bool = False
 
 class AdminProblemUpdateRequest(BaseModel):
     title: str
@@ -263,6 +310,14 @@ class AdminProblemUpdateRequest(BaseModel):
     memory_limit: int = 256
     code: str = "A"
     tests: Optional[List[Dict[str, Any]]] = None
+    is_hidden: Optional[bool] = None
+
+class AdminProblemVisibilityRequest(BaseModel):
+    is_hidden: Optional[bool] = None
+
+class AdminProblemBulkActionRequest(BaseModel):
+    problem_ids: List[int]
+    action: str  # 'hide', 'unhide', 'delete'
 
 class AdminProblemTestsUpdateRequest(BaseModel):
     tests: List[Dict[str, Any]] = Field(default_factory=list)
@@ -283,6 +338,7 @@ def current_user(request: Request, authorization: Optional[str] = Header(default
     memory_store.record_user_ip(raw_user["id"], client_ip)
     user = get_current_user_profile(raw_user)
     user["competition_joined"] = memory_store.has_competition_participation(user["id"])
+    user["ai_quota"] = memory_store.get_user_ai_quota(user["id"])
     return user
 
 def optional_user(request: Request, authorization: Optional[str] = Header(default=None)) -> Optional[Dict[str, Any]]:
@@ -294,6 +350,7 @@ def optional_user(request: Request, authorization: Optional[str] = Header(defaul
     try:
         user = get_current_user_profile(raw_user)
         user["competition_joined"] = memory_store.has_competition_participation(user["id"])
+        user["ai_quota"] = memory_store.get_user_ai_quota(user["id"])
         return user
     except Exception:
         return None
@@ -319,13 +376,24 @@ def superadmin_required(user: Dict[str, Any] = Depends(current_user)):
     return user
 
 def dev_required(user: Dict[str, Any] = Depends(current_user)):
-    if get_user_level(user) < 9:
+    role = str(user.get("role", "")).strip().lower()
+    if get_user_level(user) < 9 and role not in {"dev", "developer"}:
         raise HTTPException(status_code=403, detail="Yêu cầu quyền Nhà phát triển (DEV) mới có quyền truy cập tính năng này.")
     return user
 
 def ai_access_required(user: Dict[str, Any] = Depends(current_user)):
     if not user.get("is_admin") and memory_store.has_competition_participation(user["id"]):
         raise HTTPException(status_code=403, detail="Bạn đã tham gia cuộc thi nên AI Agent và Assistant đã bị khóa.")
+    
+    try:
+        quota_info = memory_store.check_and_increment_ai_usage(user["id"])
+        user["ai_quota"] = quota_info
+    except PermissionError as pe:
+        raise HTTPException(
+            status_code=429,
+            detail=str(pe),
+            headers={"X-AI-Limit-Reached": "true"}
+        )
     return user
 
 verification_codes: Dict[str, Dict[str, Any]] = {}
@@ -406,6 +474,94 @@ async def login(req: AuthRequest):
 async def get_me(user: Dict[str, Any] = Depends(current_user)):
     return {"user": user, **user}
 
+@app.get("/api/user/ai-quota")
+async def get_user_ai_quota_endpoint(user: Dict[str, Any] = Depends(current_user)):
+    """Return the current user's AI quota and token usage status."""
+    quota = memory_store.get_user_ai_quota(user["id"])
+    return {"quota": quota, "user_id": user["id"], "username": user.get("username", "")}
+
+@app.post("/api/admin/users/{target_user_id}/reset-ai-quota")
+async def admin_reset_user_ai_quota(target_user_id: int, user: Dict[str, Any] = Depends(admin_required)):
+    """Reset a user's AI usage count to 0 (Admin/Dev)."""
+    memory_store.reset_ai_usage(target_user_id)
+    return {"success": True, "user_id": target_user_id, "ai_usage_count": 0}
+
+@app.get("/api/user/profile")
+async def get_my_profile(
+    username: Optional[str] = None,
+    user_id: Optional[int] = None,
+    authorization: Optional[str] = Header(default=None)
+):
+    target_user_id = None
+    if user_id:
+        target_user_id = user_id
+    elif username:
+        u = memory_store.get_user_by_username(username)
+        if not u:
+            raise HTTPException(status_code=404, detail=f"Không tìm thấy người dùng '{username}'.")
+        target_user_id = u["id"]
+    else:
+        token = bearer_token(authorization)
+        user = memory_store.get_user_by_token(token) if token else None
+        if user:
+            target_user_id = user["id"]
+        else:
+            with memory_store.db.get_connection() as conn:
+                u_row = conn.execute("SELECT id FROM users ORDER BY is_admin DESC, id ASC LIMIT 1").fetchone()
+                if u_row:
+                    target_user_id = u_row["id"]
+                else:
+                    raise HTTPException(status_code=401, detail="Vui lòng đăng nhập để xem thông tin tài khoản của bạn.")
+
+    profile_data = memory_store.get_user_profile_stats(target_user_id)
+    if not profile_data:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ người dùng.")
+    return profile_data
+
+@app.post("/api/user/profile")
+async def update_my_profile(req: UpdateProfileRequest, authorization: Optional[str] = Header(default=None)):
+    token = bearer_token(authorization)
+    user = memory_store.get_user_by_token(token) if token else None
+    if not user:
+        with memory_store.db.get_connection() as conn:
+            u_row = conn.execute("SELECT id FROM users ORDER BY is_admin DESC, id ASC LIMIT 1").fetchone()
+            user = {"id": u_row["id"]} if u_row else None
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Vui lòng đăng nhập để chỉnh sửa thông tin.")
+    
+    ok = memory_store.update_user_profile(
+        user_id=user["id"],
+        fullname=req.fullname,
+        bio=req.bio,
+        timezone=req.timezone,
+        language=req.language,
+        editor_theme=req.editor_theme,
+        avatar_path=req.avatar_path,
+    )
+    return {"success": ok}
+
+@app.get("/api/user/submissions")
+async def get_my_submissions(limit: int = 50, authorization: Optional[str] = Header(default=None)):
+    token = bearer_token(authorization)
+    user = memory_store.get_user_by_token(token) if token else None
+    if not user:
+        with memory_store.db.get_connection() as conn:
+            u_row = conn.execute("SELECT id FROM users ORDER BY is_admin DESC, id ASC LIMIT 1").fetchone()
+            user = {"id": u_row["id"]} if u_row else None
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Vui lòng đăng nhập để xem lịch sử bài nộp.")
+    
+    return memory_store.list_user_submissions(user["id"], limit=limit)
+
+@app.get("/api/user/submissions/{submission_id}")
+async def get_my_submission_detail(submission_id: int, authorization: Optional[str] = Header(default=None)):
+    sub = memory_store.get_submission_detail(submission_id)
+    if not sub:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài nộp.")
+    return sub
+
 @app.post("/api/auth/logout")
 async def logout(authorization: Optional[str] = Header(default=None)):
     memory_store.revoke_auth_token(bearer_token(authorization))
@@ -465,6 +621,11 @@ async def admin_judges(user: Dict[str, Any] = Depends(admin_required)):
         "checked_at": datetime.now().isoformat(),
     }
 
+
+@app.get("/api/admin/submissions")
+async def admin_list_submissions(limit: int = 100, user: Dict[str, Any] = Depends(admin_required)):
+    return memory_store.list_all_submissions(limit=limit)
+
 @app.post("/api/admin/judges/{judge_id}/toggle")
 async def admin_toggle_judge(judge_id: str, enabled: bool, user: Dict[str, Any] = Depends(dev_required)):
     try:
@@ -472,6 +633,21 @@ async def admin_toggle_judge(judge_id: str, enabled: bool, user: Dict[str, Any] 
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"success": True, "judge": judge}
+
+
+@app.post("/api/admin/judges/{judge_id}/benchmark")
+async def admin_benchmark_judge(judge_id: str, user: Dict[str, Any] = Depends(admin_required)):
+    t0 = datetime.now()
+    res = judge_pool.judge("#include<iostream>\nusing namespace std;\nint main(){cout<<\"OK\";return 0;}", "cpp", [{"input":"", "expected":"OK"}], timeout=1.0)
+    latency_ms = round((datetime.now() - t0).total_seconds() * 1000, 2)
+    return {
+        "success": res.get("overall_verdict") == "AC",
+        "judge_id": judge_id,
+        "verdict": res.get("overall_verdict"),
+        "latency_ms": latency_ms,
+        "compile_time_ms": res.get("compile_time_ms", 0),
+        "detail": res
+    }
 
 @app.get("/api/admin/monitoring")
 async def admin_monitoring(user: Dict[str, Any] = Depends(admin_required)):
@@ -492,6 +668,174 @@ async def admin_monitoring_health_check(user: Dict[str, Any] = Depends(dev_requi
     return {"success": True, "message": "Đã kiểm tra toàn bộ máy chấm.", "judges": judges, "checked_at": datetime.now().isoformat()}
 
 
+# ===================================================================
+# STORAGE & BACKUP MONITORING ENDPOINTS (DEV ONLY)
+# ===================================================================
+@app.get("/api/admin/storage/stats")
+async def admin_storage_stats(user: Dict[str, Any] = Depends(dev_required)):
+    def get_dir_size(path: Path) -> int:
+        total = 0
+        if not path.exists():
+            return 0
+        if path.is_file():
+            return path.stat().st_size
+        for entry in path.rglob('*'):
+            if entry.is_file():
+                try:
+                    total += entry.stat().st_size
+                except Exception:
+                    pass
+        return total
+
+    db_path = Path("data/memory.db")
+    db_size = db_path.stat().st_size if db_path.exists() else 0
+    
+    python_300_path = Path("data/python_300_kids")
+    python_300_size = get_dir_size(python_300_path)
+    
+    media_path = Path("data/media")
+    media_size = get_dir_size(media_path)
+    
+    sandbox_path = Path("data/sandbox")
+    sandbox_size = get_dir_size(sandbox_path)
+    
+    logs_path = Path("logs")
+    logs_size = get_dir_size(logs_path)
+    
+    backups_path = Path("backups")
+    backups_size = get_dir_size(backups_path)
+    
+    backups = []
+    if backups_path.exists():
+        for b in sorted(backups_path.glob("localcp_backup_*.zip"), key=lambda x: x.stat().st_mtime, reverse=True):
+            backups.append({
+                "filename": b.name,
+                "size_mb": round(b.stat().st_size / (1024 * 1024), 2),
+                "created_at": datetime.fromtimestamp(b.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+            })
+
+    total_space, used_space, free_space = shutil.disk_usage(".")
+    
+    db_counts = {}
+    try:
+        with db_manager.get_connection() as conn:
+            cur = conn.cursor()
+            for tbl in ["users", "competitions", "competition_problems", "problem_tests", "submissions", "ai_chat_sessions"]:
+                try:
+                    cur.execute(f"SELECT COUNT(*) FROM {tbl}")
+                    db_counts[tbl] = cur.fetchone()[0]
+                except Exception:
+                    db_counts[tbl] = 0
+    except Exception:
+        pass
+
+    return {
+        "database": {
+            "path": str(db_path),
+            "size_mb": round(db_size / (1024 * 1024), 2),
+            "counts": db_counts
+        },
+        "problem_bank": {
+            "path": str(python_300_path),
+            "size_mb": round(python_300_size / (1024 * 1024), 2),
+            "problems_count": db_counts.get("competition_problems", 300),
+            "tests_count": db_counts.get("problem_tests", 9000),
+            "chapters_count": 30
+        },
+        "media": {
+            "path": str(media_path),
+            "size_mb": round(media_size / (1024 * 1024), 2),
+            "avatars_count": len(list(Path("data/media/avatars").glob("*"))) if Path("data/media/avatars").exists() else 0,
+            "images_count": len(list(Path("data/media/problem_images").glob("*"))) if Path("data/media/problem_images").exists() else 0
+        },
+        "sandbox": {
+            "path": str(sandbox_path),
+            "size_mb": round(sandbox_size / (1024 * 1024), 2),
+            "active_temp_files": len(list(sandbox_path.glob("*"))) if sandbox_path.exists() else 0
+        },
+        "logs": {
+            "path": str(logs_path),
+            "size_mb": round(logs_size / (1024 * 1024), 2)
+        },
+        "backups": {
+            "path": str(backups_path),
+            "size_mb": round(backups_size / (1024 * 1024), 2),
+            "total_backups": len(backups),
+            "latest_backup": backups[0]["created_at"] if backups else "Chưa có",
+            "items": backups
+        },
+        "disk": {
+            "total_gb": round(total_space / (1024**3), 1),
+            "used_gb": round(used_space / (1024**3), 1),
+            "free_gb": round(free_space / (1024**3), 1),
+            "percent_used": round((used_space / total_space) * 100, 1)
+        },
+        "checked_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+@app.post("/api/admin/storage/backup")
+async def admin_create_backup(user: Dict[str, Any] = Depends(dev_required)):
+    import zipfile
+    root_dir = Path(".")
+    backup_dir = root_dir / "backups"
+    backup_dir.mkdir(exist_ok=True)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_filename = f"localcp_backup_{timestamp}.zip"
+    backup_filepath = backup_dir / backup_filename
+    
+    items_to_backup = [
+        root_dir / "data" / "memory.db",
+        root_dir / "data" / "python_300_kids",
+        root_dir / "data" / "media",
+        root_dir / ".env"
+    ]
+    
+    with zipfile.ZipFile(backup_filepath, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for item in items_to_backup:
+            if not item.exists():
+                continue
+            if item.is_file():
+                zipf.write(item, item.relative_to(root_dir))
+            elif item.is_dir():
+                for root, _, files in os.walk(item):
+                    if "sandbox" in root:
+                        continue
+                    for file in files:
+                        full_p = Path(root) / file
+                        zipf.write(full_p, full_p.relative_to(root_dir))
+                        
+    size_mb = round(backup_filepath.stat().st_size / (1024 * 1024), 2)
+    return {
+        "success": True,
+        "message": f"Tạo bản sao lưu thành công: {backup_filename} ({size_mb} MB)",
+        "filename": backup_filename,
+        "size_mb": size_mb,
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+@app.get("/api/admin/storage/backups/{filename}/download")
+async def admin_download_backup(filename: str, user: Dict[str, Any] = Depends(dev_required)):
+    safe_name = Path(filename).name
+    filepath = Path("backups") / safe_name
+    if not filepath.exists() or not filepath.is_file():
+        raise HTTPException(status_code=404, detail="Không tìm thấy tệp sao lưu.")
+    return FileResponse(
+        path=str(filepath),
+        filename=safe_name,
+        media_type="application/zip"
+    )
+
+@app.delete("/api/admin/storage/backups/{filename}")
+async def admin_delete_backup(filename: str, user: Dict[str, Any] = Depends(dev_required)):
+    safe_name = Path(filename).name
+    filepath = Path("backups") / safe_name
+    if not filepath.exists() or not filepath.is_file():
+        raise HTTPException(status_code=404, detail="Không tìm thấy tệp sao lưu.")
+    filepath.unlink()
+    return {"success": True, "message": f"Đã xóa bản sao lưu {safe_name}"}
+
+
 @app.get("/api/admin/members/{user_id}")
 async def admin_member_detail(user_id: int, user: Dict[str, Any] = Depends(admin_required)):
     detail = memory_store.get_member_detail(user_id)
@@ -508,6 +852,16 @@ async def admin_update_user_role(user_id: int, req: UpdateUserRoleRequest, user:
         raise HTTPException(status_code=400, detail=f"Quyền không hợp lệ. Chỉ chấp nhận: {', '.join(valid_roles)}")
     if user_id == user["id"] and role not in ["admin", "superadmin", "dev"]:
         raise HTTPException(status_code=400, detail="Bạn không thể tự gỡ quyền Quản trị của chính tài khoản mình.")
+    
+    # Chỉ có DEV mới được phép cấp vai trò DEV hoặc SUPERADMIN
+    if role in ["dev", "superadmin"] and user.get("role") != "dev":
+        sentinel_bot.skill_evaluate_and_react(
+            ip="unknown",
+            event_type="privilege_escalation_attempt",
+            details=f"Unauthorized attempt to promote user #{user_id} to '{role}' by user '{user.get('username')}'",
+            user=user
+        )
+        raise HTTPException(status_code=403, detail="Chỉ có DEV mới có quyền cấp vai trò DEV hoặc SUPERADMIN.")
     
     success = memory_store.update_user_role(user_id, role)
     if not success:
@@ -617,6 +971,173 @@ async def admin_security_events(limit: int = 100, user: Dict[str, Any] = Depends
     return {"events": memory_store.get_security_events(limit=min(limit, 500))}
 
 
+# ── SENTINEL AUTONOMOUS DEFENSE BOT ENDPOINTS ──────────────────────────────
+@app.get("/api/admin/security/sentinel/status")
+async def admin_sentinel_status(user: Dict[str, Any] = Depends(admin_required)):
+    return sentinel_bot.skill_get_security_telemetry()
+
+
+@app.post("/api/admin/security/sentinel/mode")
+async def admin_set_sentinel_mode(req: SentinelModeRequest, user: Dict[str, Any] = Depends(superadmin_required)):
+    mode = req.mode.lower().strip()
+    if mode not in {"autonomous", "monitoring", "strict"}:
+        raise HTTPException(status_code=400, detail="Chế độ không hợp lệ. Chỉ chấp nhận: autonomous, monitoring, strict")
+    sentinel_bot.mode = mode
+    return {"success": True, "mode": mode, "message": f"Đã chuyển Sentinel Bot sang chế độ {mode.upper()}."}
+
+
+@app.post("/api/admin/security/sentinel/execute-skill")
+async def admin_execute_sentinel_skill(req: SentinelSkillExecuteRequest, user: Dict[str, Any] = Depends(superadmin_required)):
+    skill = req.skill_name.strip()
+    target = req.target or ""
+    
+    if skill == "session_killswitch":
+        if not target:
+            raise HTTPException(status_code=400, detail="Thiếu target IP hoặc User ID để killswitch.")
+        uid = int(target) if target.isdigit() else None
+        ip = target if not target.isdigit() else None
+        ok = sentinel_bot.skill_session_killswitch(user_id=uid, ip=ip, reason="Admin Manual Execution")
+        return {"success": ok, "message": f"Đã thực hiện Session Killswitch cho target '{target}'."}
+    
+    elif skill == "reset_threat_score":
+        if not target:
+            raise HTTPException(status_code=400, detail="Thiếu target IP để reset.")
+        if target in sentinel_bot.threat_cache:
+            del sentinel_bot.threat_cache[target]
+        ok = memory_store.reset_threat_score(target)
+        return {"success": ok, "message": f"Đã xóa điểm nguy cơ cho IP '{target}'."}
+    
+    elif skill == "anti_cheat_scan":
+        comp_id = int(target) if target.isdigit() else None
+        if not comp_id:
+            raise HTTPException(status_code=400, detail="Thiếu ID cuộc thi cần quét.")
+        reports = anti_cheat_engine.scan_competition_cheating(comp_id, db_manager)
+        return {"success": True, "reports_count": len(reports), "reports": reports}
+    
+    elif skill == "emergency_lockdown":
+        sentinel_bot.mode = "strict"
+        return {"success": True, "mode": "strict", "message": "Đã kích hoạt chế độ Phòng thủ Nghiêm ngặt (Strict Lockdown Mode)."}
+    
+    else:
+        raise HTTPException(status_code=400, detail=f"Kỹ năng '{skill}' không được hỗ trợ hoặc không khả dụng.")
+
+
+@app.get("/api/admin/security/sentinel/actions")
+async def admin_list_sentinel_actions(limit: int = 100, user: Dict[str, Any] = Depends(superadmin_required)):
+    return {"actions": memory_store.list_sentinel_actions(limit=min(limit, 200))}
+
+
+@app.get("/api/admin/security/honeypot/logs")
+async def admin_list_honeypot_logs(limit: int = 100, user: Dict[str, Any] = Depends(superadmin_required)):
+    return {"logs": memory_store.list_honeypot_logs(limit=min(limit, 200))}
+
+
+@app.get("/api/admin/security/threat-scores")
+async def admin_get_threat_scores(limit: int = 50, user: Dict[str, Any] = Depends(superadmin_required)):
+    return {"threat_scores": memory_store.get_threat_scores(limit=min(limit, 100))}
+
+
+@app.delete("/api/admin/security/threat-scores/{ip:path}")
+async def admin_delete_threat_score(ip: str, user: Dict[str, Any] = Depends(superadmin_required)):
+    if ip in sentinel_bot.threat_cache:
+        del sentinel_bot.threat_cache[ip]
+    success = memory_store.reset_threat_score(ip)
+    return {"success": success, "message": f"Đã xóa điểm nguy cơ IP {ip}." if success else "Không tìm thấy IP."}
+
+
+# ── ANTI-CHEAT & PLAGIARISM INSPECTOR ENDPOINTS ────────────────────────────
+@app.get("/api/admin/security/anti-cheat/reports")
+async def admin_list_anti_cheat_reports(competition_id: Optional[int] = None, limit: int = 100, user: Dict[str, Any] = Depends(admin_required)):
+    return {"reports": memory_store.list_anti_cheat_reports(competition_id=competition_id, limit=limit)}
+
+
+@app.post("/api/admin/security/anti-cheat/scan/{competition_id}")
+async def admin_scan_contest_anti_cheat(competition_id: int, req: AntiCheatScanRequest, user: Dict[str, Any] = Depends(admin_required)):
+    contest = memory_store.get_competition(competition_id)
+    if not contest:
+        raise HTTPException(status_code=404, detail="Không tìm thấy cuộc thi.")
+    threshold = max(20.0, min(req.threshold or 60.0, 100.0))
+    reports = anti_cheat_engine.scan_competition_cheating(competition_id, db_manager, threshold=threshold)
+    return {
+        "success": True,
+        "competition_id": competition_id,
+        "threshold": threshold,
+        "flagged_count": len(reports),
+        "reports": reports
+    }
+
+
+@app.post("/api/admin/security/anti-cheat/verdict")
+async def admin_set_anti_cheat_verdict(req: AntiCheatVerdictRequest, user: Dict[str, Any] = Depends(admin_required)):
+    valid_verdicts = {"CLEAN", "SUSPICIOUS", "FLAGGED", "PLAGIARISM_FLAGGED", "DISQUALIFIED"}
+    verdict = req.verdict.upper().strip()
+    if verdict not in valid_verdicts:
+        raise HTTPException(status_code=400, detail=f"Verdict không hợp lệ. Cho phép: {', '.join(valid_verdicts)}")
+    ok = memory_store.update_anti_cheat_verdict(req.report_id, verdict, req.details or "")
+    if not ok:
+        raise HTTPException(status_code=404, detail="Không tìm thấy báo cáo gian lận.")
+    return {"success": True, "report_id": req.report_id, "verdict": verdict}
+
+
+# ── DEV-ONLY ANTI-CHEAT & WEB SECURITY MONITORING ENDPOINTS ────────────────
+@app.get("/api/dev/anticheat-monitor/stats")
+async def dev_anticheat_stats(user: Dict[str, Any] = Depends(dev_required)):
+    """DEV-ONLY: Trả về toàn bộ số liệu phân tích gian lận, tỷ lệ đạo nhái và danh sách thí sinh bị bot ban."""
+    return sentinel_bot.skill_get_dev_anticheat_stats()
+
+
+@app.get("/api/dev/web-monitor/telemetry")
+async def dev_web_telemetry(user: Dict[str, Any] = Depends(dev_required)):
+    """DEV-ONLY: Trả về live radar SOC, danh sách theo dõi toàn bộ IP / Member / Admin và stream hành động của bot."""
+    return sentinel_bot.skill_get_dev_web_telemetry()
+
+
+@app.post("/api/dev/web-monitor/trigger-scan")
+async def dev_trigger_system_scan(user: Dict[str, Any] = Depends(dev_required)):
+    """DEV-ONLY: Kích hoạt quét an ninh toàn hệ thống ngay lập tức và thi hành án phạt tự động."""
+    sentinel_bot._run_threat_scan_cycle()
+    return {"success": True, "message": "Đã thực thi chu kỳ quét an ninh toàn diện và trừng phạt tự động các đối tượng nguy cơ."}
+
+
+@app.post("/api/dev/web-monitor/ban-user")
+async def dev_manual_ban(req: DevManualBanRequest, user: Dict[str, Any] = Depends(dev_required)):
+    """DEV-ONLY: Lệnh can thiệp trực tiếp từ DEV để ban IP, khóa tài khoản hacker và hủy phiên làm việc."""
+    if req.user_id:
+        if sentinel_bot.is_dev_exempt(user_id=req.user_id):
+            raise HTTPException(status_code=400, detail="Không thể ban tài khoản DEV (Dev Immunity Rule).")
+        memory_store.lock_user(req.user_id, locked=True)
+        sentinel_bot.skill_session_killswitch(user_id=req.user_id, reason=req.reason)
+    if req.ip:
+        memory_store.block_ip(req.ip, req.reason, minutes=req.minutes)
+        sentinel_bot.skill_session_killswitch(ip=req.ip, reason=req.reason)
+    
+    sentinel_bot._log_sentinel_action("DEV_MANUAL_BAN", target_ip=req.ip, target_user_id=req.user_id, reason=req.reason)
+    return {"success": True, "message": "Đã thi hành lệnh cấm và khóa tài khoản thành công."}
+
+
+@app.post("/api/dev/web-monitor/unban")
+async def dev_manual_unban(req: DevManualUnbanRequest, user: Dict[str, Any] = Depends(dev_required)):
+    """DEV-ONLY: Mở khóa tài khoản và gỡ bỏ lệnh cấm IP."""
+    memory_store.unban_user_and_ip(user_id=req.user_id, ip=req.ip)
+    if req.ip and req.ip in sentinel_bot.threat_cache:
+        del sentinel_bot.threat_cache[req.ip]
+    sentinel_bot._log_sentinel_action("DEV_MANUAL_UNBAN", target_ip=req.ip, target_user_id=req.user_id, reason="Dev Unban Action")
+    return {"success": True, "message": "Đã mở khóa và xóa lệnh cấm thành công."}
+
+
+@app.post("/api/dev/web-monitor/toggle-bot")
+async def dev_toggle_sentinel_bot(req: DevToggleBotRequest, user: Dict[str, Any] = Depends(dev_required)):
+    """DEV-ONLY: Bật hoặc tắt trạng thái tự động phòng thủ và quét ngầm liên tục 24/7 của Bot Sentinel."""
+    sentinel_bot.active = req.active
+    action_type = "BOT_24_7_DEFENSE_ENABLED" if req.active else "BOT_DEFENSE_PAUSED_BY_DEV"
+    sentinel_bot._log_sentinel_action(action_type, reason="Dev Master Toggle Switch")
+    return {
+        "success": True, 
+        "active": sentinel_bot.active, 
+        "message": f"Bot giám sát đã được {'BẬT và đang chạy ngầm liên tục 24/7' if req.active else 'TẮT / TẠM DỪNG'}."
+    }
+
+
 @app.get("/api/standings")
 async def get_global_standings():
     return {"standings": memory_store.list_global_standings()}
@@ -685,9 +1206,26 @@ async def submit_competition(competition_id: int, req: CompetitionSubmissionRequ
     req.source_code = decrypt_code_payload(req.source_code)
     if not req.source_code.strip():
         raise HTTPException(status_code=400, detail="Mã nguồn không được để trống.")
-    allowed_languages = {"cpp", "c", "python", "java", "rust", "go"}
+    lang_input = req.language.lower().strip()
+    lang_alias_map = {
+        "py": "python", "python3": "python",
+        "c++": "cpp", "g++": "cpp",
+        "gcc": "c",
+        "js": "javascript", "nodejs": "javascript",
+        "ts": "typescript",
+        "cs": "csharp", "dotnet": "csharp",
+        "pas": "pascal", "freepascal": "pascal",
+        "golang": "go", "rs": "rust"
+    }
+    req.language = lang_alias_map.get(lang_input, lang_input)
+    allowed_languages = {"cpp", "c", "python", "java", "rust", "go", "javascript", "typescript", "csharp", "pascal"}
     if req.language not in allowed_languages:
-        raise HTTPException(status_code=400, detail="Ngôn ngữ không được hỗ trợ.")
+        raise HTTPException(status_code=400, detail=f"Ngôn ngữ '{lang_input}' không được hỗ trợ. Các ngôn ngữ được hỗ trợ: C++, C, Python, Java, Go, Rust, JavaScript, TypeScript, C#, Pascal.")
+
+    # Sentinel Pre-Execution Code Sanitizer
+    is_safe, violations = sentinel_bot.skill_code_sandbox_sanitizer(req.source_code, req.language)
+    if not is_safe:
+        raise HTTPException(status_code=400, detail=f"Mã nguồn bị Sentinel Defense Bot từ chối: {'; '.join(violations)}")
     tests = competition["tests"]
     if req.problem_id is not None:
         problem = next((item for item in competition.get("problems", []) if item["id"] == req.problem_id), None)
@@ -803,7 +1341,8 @@ async def admin_create_problem(req: AdminProblemCreateRequest, user: Dict[str, A
         memory_limit=req.memory_limit,
         code=req.code,
         competition_id=req.competition_id,
-        tests=req.tests
+        tests=req.tests,
+        is_hidden=1 if req.is_hidden else 0
     )
     return {"success": True, "id": pid}
 
@@ -817,18 +1356,34 @@ async def admin_update_problem(problem_id: int, req: AdminProblemUpdateRequest, 
         time_limit=req.time_limit,
         memory_limit=req.memory_limit,
         code=req.code,
-        tests=req.tests
+        tests=req.tests,
+        is_hidden=1 if req.is_hidden is True else (0 if req.is_hidden is False else None)
     )
     if not updated:
         raise HTTPException(status_code=404, detail="Không tìm thấy bài tập để cập nhật.")
     return {"success": True, "id": problem_id}
+
+@app.post("/api/admin/problems/{problem_id}/toggle-visibility")
+async def admin_toggle_problem_visibility(problem_id: int, req: AdminProblemVisibilityRequest = AdminProblemVisibilityRequest(), user: Dict[str, Any] = Depends(admin_required)):
+    res = memory_store.toggle_problem_visibility(problem_id, is_hidden=req.is_hidden)
+    if not res:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài tập.")
+    status_str = "ẨN" if res["is_hidden"] else "HIỂN THỊ"
+    return {"success": True, "data": res, "message": f"Đã chuyển trạng thái bài [{res['code']}] sang {status_str}."}
+
+@app.post("/api/admin/problems/bulk-action")
+async def admin_bulk_problems_action(req: AdminProblemBulkActionRequest, user: Dict[str, Any] = Depends(admin_required)):
+    if req.action not in ["hide", "unhide", "delete"]:
+        raise HTTPException(status_code=400, detail="Hành động không hợp lệ ('hide', 'unhide', 'delete').")
+    res = memory_store.bulk_problems_action(req.problem_ids, req.action)
+    return res
 
 @app.delete("/api/admin/problems/{problem_id}")
 async def admin_delete_problem(problem_id: int, user: Dict[str, Any] = Depends(admin_required)):
     deleted = memory_store.delete_problem(problem_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Không tìm thấy bài tập cần xóa.")
-    return {"success": True, "id": problem_id}
+    return {"success": True, "id": problem_id, "message": "Đã xóa bài tập thành công."}
 
 @app.put("/api/admin/problems/{problem_id}/tests")
 async def admin_update_problem_tests(problem_id: int, req: AdminProblemTestsUpdateRequest, user: Dict[str, Any] = Depends(admin_required)):
@@ -836,6 +1391,66 @@ async def admin_update_problem_tests(problem_id: int, req: AdminProblemTestsUpda
     if not updated:
         raise HTTPException(status_code=404, detail="Không tìm thấy bài tập để cập nhật test cases.")
     return {"success": True, "id": problem_id, "count": len(req.tests)}
+
+@app.get("/api/admin/problems/{problem_ref}/tests")
+async def admin_get_problem_tests(problem_ref: str, user: Dict[str, Any] = Depends(admin_required)):
+    ref_str = str(problem_ref).strip()
+    
+    # 1. Check if ref is integer ID in SQLite DB
+    if ref_str.isdigit():
+        prob = memory_store.get_problem(int(ref_str))
+        if prob:
+            return {
+                "id": prob["id"],
+                "code": prob.get("code", "A"),
+                "title": prob.get("title", ""),
+                "total_tests": len(prob.get("tests", [])),
+                "tests": prob.get("tests", [])
+            }
+            
+    # 2. Check by code in SQLite DB
+    with db_manager.get_connection() as conn:
+        p_row = conn.execute("SELECT id, code, title FROM competition_problems WHERE UPPER(code) = ? LIMIT 1", (ref_str.upper(),)).fetchone()
+        if p_row:
+            prob = memory_store.get_problem(p_row["id"])
+            if prob:
+                return {
+                    "id": prob["id"],
+                    "code": prob.get("code", ref_str.upper()),
+                    "title": prob.get("title", ""),
+                    "total_tests": len(prob.get("tests", [])),
+                    "tests": prob.get("tests", [])
+                }
+                
+    # 3. Fallback to python_300_full_bank.json
+    bank_path = Path("data/python_300_kids/python_300_full_bank.json")
+    if bank_path.exists():
+        with open(bank_path, "r", encoding="utf-8") as f:
+            problems = json.load(f)
+        for p in problems:
+            if p.get("code", "").upper() == ref_str.upper() or str(p.get("num", "")) == ref_str:
+                return {
+                    "id": p.get("num"),
+                    "code": p.get("code"),
+                    "title": p.get("title"),
+                    "total_tests": len(p.get("tests", [])),
+                    "tests": p.get("tests", [])
+                }
+                
+    # 4. Check folder tests.json
+    tests_file = Path(f"data/python_300_kids/problems/{ref_str.upper()}/tests.json")
+    if tests_file.exists():
+        with open(tests_file, "r", encoding="utf-8") as f:
+            tests_data = json.load(f)
+        return {
+            "id": None,
+            "code": ref_str.upper(),
+            "title": f"Bài tập {ref_str.upper()}",
+            "total_tests": len(tests_data),
+            "tests": tests_data
+        }
+        
+    raise HTTPException(status_code=404, detail=f"Không tìm thấy test cases cho bài tập '{problem_ref}'.")
 
 @app.post("/api/admin/ai/generate-tests-from-code")
 async def admin_generate_tests_from_code(req: AIGenerateTestsFromCodeRequest, user: Dict[str, Any] = Depends(admin_required)):
@@ -1076,9 +1691,12 @@ YÊU CẦU:
     }
 
 @app.post("/api/compile_and_run")
-
 async def compile_and_run(req: CompileRunRequest):
     req.source_code = decrypt_code_payload(req.source_code)
+    # Sentinel Pre-Execution Code Sanitizer
+    is_safe, violations = sentinel_bot.skill_code_sandbox_sanitizer(req.source_code, req.language or "cpp")
+    if not is_safe:
+        raise HTTPException(status_code=400, detail=f"Mã nguồn bị Sentinel Defense Bot từ chối: {'; '.join(violations)}")
     try:
         result = judge_pool.judge(
             source_code=req.source_code,
@@ -1167,6 +1785,169 @@ async def save_user_code(req: UserCodeSaveRequest, user: Dict[str, Any] = Depend
     )
     return {"success": True, "id": pid}
 
+@app.get("/api/problem-bank")
+async def list_problem_bank(
+    q: Optional[str] = None,
+    chapter: Optional[int] = None,
+    difficulty: Optional[str] = None,
+    page: int = 1,
+    limit: int = 50
+):
+    json_path = Path("data/python_300_kids/python_300_full_bank.json")
+    if not json_path.exists():
+        return {"total": 0, "problems": [], "page": page, "limit": limit}
+    
+    with open(json_path, "r", encoding="utf-8") as f:
+        problems = json.load(f)
+        
+    # Exclude hidden problems
+    hidden_codes = set()
+    try:
+        with db_manager.get_connection() as conn:
+            rows = conn.execute("SELECT code FROM competition_problems WHERE is_hidden = 1").fetchall()
+            hidden_codes = {r["code"].upper() for r in rows if r["code"]}
+    except Exception:
+        pass
+
+    filtered = [p for p in problems if p.get("code", "").upper() not in hidden_codes]
+    if q:
+        q_low = q.lower().strip()
+        filtered = [p for p in filtered if q_low in p.get("title", "").lower() or q_low in p.get("code", "").lower() or q_low in p.get("chapter_title", "").lower()]
+    if chapter:
+        filtered = [p for p in filtered if p.get("chapter_num") == chapter]
+        
+    total = len(filtered)
+    start_idx = (page - 1) * limit
+    end_idx = start_idx + limit
+    page_items = filtered[start_idx:end_idx]
+    
+    return {
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "total_pages": (total + limit - 1) // limit if total > 0 else 1,
+        "problems": [
+            {
+                "num": p.get("num"),
+                "code": p.get("code"),
+                "title": p.get("title"),
+                "chapter_num": p.get("chapter_num"),
+                "chapter_title": p.get("chapter_title"),
+                "test_count": p.get("test_count", len(p.get("tests", []))),
+                "sample_input": p.get("sample_input", ""),
+                "sample_output": p.get("sample_output", "")
+            }
+            for p in page_items
+        ]
+    }
+
+@app.get("/api/problem-bank/{code}")
+async def get_problem_bank_detail(code: str):
+    code_upper = code.upper().strip()
+    
+    # Check if problem is hidden in database
+    try:
+        with db_manager.get_connection() as conn:
+            h_row = conn.execute("SELECT is_hidden FROM competition_problems WHERE UPPER(code) = ? LIMIT 1", (code_upper,)).fetchone()
+            if h_row and h_row["is_hidden"]:
+                raise HTTPException(status_code=403, detail="Bài tập này hiện đang tạm ẩn bởi Quản trị viên.")
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
+    json_path = Path("data/python_300_kids/python_300_full_bank.json")
+    if not json_path.exists():
+        raise HTTPException(status_code=404, detail="Kho bài tập chưa được khởi tạo.")
+    
+    with open(json_path, "r", encoding="utf-8") as f:
+        problems = json.load(f)
+        
+    for p in problems:
+        if p.get("code", "").upper() == code_upper or str(p.get("num", "")) == code.strip():
+            return {
+                "num": p.get("num"),
+                "code": p.get("code"),
+                "title": p.get("title"),
+                "chapter_num": p.get("chapter_num"),
+                "chapter_title": p.get("chapter_title"),
+                "statement": p.get("statement"),
+                "explanation": p.get("explanation"),
+                "algorithm": p.get("algorithm", ""),
+                "tests": p.get("tests", []),
+                "test_count": len(p.get("tests", [])),
+                "solution_code": p.get("solution_code", ""),
+                "time_limit": 1.0,
+                "memory_limit": 256,
+                "languages": ["python", "cpp", "c", "java", "go", "rust", "javascript", "typescript", "csharp", "pascal"]
+            }
+            
+    raise HTTPException(status_code=404, detail=f"Không tìm thấy bài tập '{code}'.")
+
+@app.post("/api/problem-bank/{code}/submit")
+async def submit_problem_bank(code: str, req: ProblemBankSubmissionRequest, user: Dict[str, Any] = Depends(current_user)):
+    code_upper = code.upper().strip()
+    json_path = Path("data/python_300_kids/python_300_full_bank.json")
+    if not json_path.exists():
+        raise HTTPException(status_code=404, detail="Kho bài tập chưa được khởi tạo.")
+    
+    with open(json_path, "r", encoding="utf-8") as f:
+        problems = json.load(f)
+        
+    target_prob = next((p for p in problems if p.get("code", "").upper() == code_upper or str(p.get("num", "")) == code.strip()), None)
+    if not target_prob:
+        raise HTTPException(status_code=404, detail=f"Không tìm thấy bài tập '{code}'.")
+        
+    req.source_code = decrypt_code_payload(req.source_code)
+    if not req.source_code.strip():
+        raise HTTPException(status_code=400, detail="Mã nguồn không được để trống.")
+        
+    lang_input = req.language.lower().strip()
+    lang_alias_map = {
+        "py": "python", "python3": "python",
+        "c++": "cpp", "g++": "cpp",
+        "gcc": "c",
+        "js": "javascript", "nodejs": "javascript",
+        "ts": "typescript",
+        "cs": "csharp", "dotnet": "csharp",
+        "pas": "pascal", "freepascal": "pascal",
+        "golang": "go", "rs": "rust"
+    }
+    req.language = lang_alias_map.get(lang_input, lang_input)
+    allowed_languages = {"cpp", "c", "python", "java", "rust", "go", "javascript", "typescript", "csharp", "pascal"}
+    if req.language not in allowed_languages:
+        raise HTTPException(status_code=400, detail=f"Ngôn ngữ '{lang_input}' không được hỗ trợ. Các ngôn ngữ được hỗ trợ: C++, C, Python, Java, Go, Rust, JavaScript, TypeScript, C#, Pascal.")
+        
+    # Sentinel Pre-Execution Code Sanitizer
+    is_safe, violations = sentinel_bot.skill_code_sandbox_sanitizer(req.source_code, req.language)
+    if not is_safe:
+        raise HTTPException(status_code=400, detail=f"Mã nguồn bị Sentinel Defense Bot từ chối: {'; '.join(violations)}")
+        
+    tests = target_prob.get("tests", [])
+    try:
+        result = judge_pool.judge(req.source_code, req.language, tests, timeout=2)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        
+    score = round((result["passed_tests"] / result["total_tests"]) * 100, 2) if result["total_tests"] else 0
+    submission_id = memory_store.log_submission(
+        None, req.source_code, result["overall_verdict"], result.get("total_execution_time_ms", 0),
+        result.get("max_memory_kb", 0), result.get("compiler_output", ""), user_id=user["id"],
+        competition_id=None, language=req.language, score=score,
+        passed_tests=result["passed_tests"], total_tests=result["total_tests"]
+    )
+    return {
+        "submission_id": submission_id,
+        "problem_code": target_prob.get("code"),
+        "problem_title": target_prob.get("title"),
+        "verdict": result["overall_verdict"],
+        "score": score,
+        "passed_tests": result["passed_tests"],
+        "total_tests": result["total_tests"],
+        "execution_time_ms": result.get("total_execution_time_ms", 0),
+        "details": result.get("test_results", [])
+    }
+
 @app.get("/api/generate_edge_cases")
 async def get_edge_cases(case_type: str = "array"):
     if case_type == "graph":
@@ -1210,10 +1991,176 @@ async def upload_ai_attachment(session_id: str = Form(...), file: UploadFile = F
         raise HTTPException(status_code=400, detail="Tệp ảnh đính kèm AI không hợp lệ.")
     return {"success": True, "url": url}
 
-# Mount static uploads directory
+# Mount static uploads & media directory
 uploads_dir = Path("data/uploads")
 uploads_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/static/uploads", StaticFiles(directory="data/uploads"), name="uploads")
+
+media_dir = Path("data/media")
+media_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory="data/media"), name="media")
+
+# =============================================================================
+# PAYMENT API — VietQR Checkout & Membership Upgrade
+# =============================================================================
+class PaymentConfirmRequest(BaseModel):
+    plan: str                       # 'pro' | 'enterprise'
+    ref_code: str                   # Transfer memo from user
+    sender_name: Optional[str] = "" # Họ tên người chuyển khoản theo tài khoản ngân hàng
+
+@app.post("/api/payment/confirm")
+async def payment_confirm(req: PaymentConfirmRequest, user: Dict[str, Any] = Depends(current_user)):
+    """Record a completed VietQR payment, upgrade user membership, and notify Dev & SuperAdmin."""
+    try:
+        result = memory_store.confirm_payment(
+            user_id=user["id"],
+            plan=req.plan,
+            ref_code=req.ref_code.strip(),
+            sender_name=(req.sender_name or "").strip(),
+        )
+        return {"success": True, **result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/admin/notifications")
+async def get_admin_notifications_api(user: Dict[str, Any] = Depends(admin_required)):
+    """Return all system notifications for Dev and SuperAdmin."""
+    notifications = memory_store.get_admin_notifications(limit=100)
+    unread_count = sum(1 for n in notifications if not n.get("is_read"))
+    return {"notifications": notifications, "unread_count": unread_count}
+
+@app.post("/api/admin/notifications/{notification_id}/read")
+async def mark_admin_notification_read_api(notification_id: int, user: Dict[str, Any] = Depends(admin_required)):
+    """Mark a notification as read."""
+    memory_store.mark_notification_read(notification_id)
+    return {"success": True}
+
+@app.get("/api/payment/history")
+async def payment_history(user: Dict[str, Any] = Depends(current_user)):
+    """Return current user's payment history."""
+    return {"payments": memory_store.get_user_payments(user["id"])}
+
+@app.get("/api/payment/can-create-community")
+async def can_create_community_check(user: Dict[str, Any] = Depends(current_user)):
+    allowed = memory_store.can_create_community(user["id"])
+    return {"allowed": allowed, "role": user.get("role", "user")}
+
+# =============================================================================
+# COMMUNITY API
+# =============================================================================
+class CommunityCreateRequest(BaseModel):
+    name: str
+    description: str
+    privacy_mode: str = "public"   # 'public' | 'private'
+
+class JoinRequestActionRequest(BaseModel):
+    status: str   # 'approved' | 'rejected'
+
+@app.get("/api/communities")
+async def list_communities(user: Dict[str, Any] = Depends(current_user)):
+    """List communities visible to the current user."""
+    communities = memory_store.list_communities(
+        viewer_user_id=user["id"],
+        viewer_role=user.get("role", "user"),
+    )
+    return {"communities": communities}
+
+@app.post("/api/communities")
+async def create_community(req: CommunityCreateRequest, user: Dict[str, Any] = Depends(current_user)):
+    """Create a new community. Requires Pro/Enterprise/Admin/Dev role."""
+    try:
+        community = memory_store.create_community(
+            name=req.name.strip(),
+            description=req.description.strip(),
+            privacy_mode=req.privacy_mode,
+            created_by=user["id"],
+        )
+        return {"success": True, "community": community}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/communities/{community_id}")
+async def get_community(community_id: int, user: Dict[str, Any] = Depends(current_user)):
+    community = memory_store.get_community(community_id)
+    if not community:
+        raise HTTPException(status_code=404, detail="Community không tồn tại.")
+    # Check access to private communities
+    role = user.get("role", "user")
+    if community["privacy_mode"] == "private" and role not in memory_store.PRIVILEGED_ROLES:
+        from backend.database.db import MemoryStore as _MS
+        with db_manager.get_connection() as conn:
+            is_member = conn.execute(
+                "SELECT 1 FROM community_members WHERE community_id = ? AND user_id = ?",
+                (community_id, user["id"]),
+            ).fetchone()
+        if not is_member:
+            raise HTTPException(status_code=403, detail="Community riêng tư. Bạn cần tham gia trước.")
+    return {"community": community}
+
+@app.post("/api/communities/{community_id}/join")
+async def join_community(community_id: int, user: Dict[str, Any] = Depends(current_user)):
+    """Join a public community directly, or submit a join request for a private one."""
+    try:
+        result = memory_store.join_community(community_id=community_id, user_id=user["id"])
+        return {"success": True, **result}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.get("/api/communities/{community_id}/members")
+async def list_community_members(community_id: int, user: Dict[str, Any] = Depends(current_user)):
+    try:
+        members = memory_store.list_community_members(
+            community_id=community_id,
+            viewer_user_id=user["id"],
+            viewer_role=user.get("role", "user"),
+        )
+        return {"members": members}
+    except (PermissionError, ValueError) as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+@app.get("/api/communities/{community_id}/requests")
+async def list_join_requests(community_id: int, user: Dict[str, Any] = Depends(current_user)):
+    """List pending join requests for a private community (owner/admin/dev only)."""
+    try:
+        requests = memory_store.list_join_requests(
+            community_id=community_id,
+            reviewer_user_id=user["id"],
+            reviewer_role=user.get("role", "user"),
+        )
+        return {"requests": requests}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+@app.post("/api/communities/requests/{request_id}/process")
+async def process_join_request(request_id: int, req: JoinRequestActionRequest, user: Dict[str, Any] = Depends(current_user)):
+    """Approve or reject a community join request."""
+    try:
+        memory_store.process_join_request(
+            request_id=request_id,
+            status=req.status,
+            reviewer_user_id=user["id"],
+            reviewer_role=user.get("role", "user"),
+        )
+        return {"success": True, "status": req.status}
+    except (PermissionError, ValueError) as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+@app.delete("/api/communities/{community_id}")
+async def delete_community(community_id: int, user: Dict[str, Any] = Depends(current_user)):
+    """Delete a community (owner or privileged roles only)."""
+    try:
+        memory_store.delete_community(
+            community_id=community_id,
+            requester_user_id=user["id"],
+            requester_role=user.get("role", "user"),
+        )
+        return {"success": True}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
 # Custom 404 handler
 frontend_dir = Path("frontend")

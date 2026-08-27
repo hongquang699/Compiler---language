@@ -1,3 +1,6 @@
+import os
+import uuid
+import shutil
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Lock
@@ -12,7 +15,7 @@ from backend.tools.tester import TestRunner
 
 
 class JudgePool:
-    """Runs submissions across isolated local judge workers."""
+    """Runs submissions across isolated local judge workers with high concurrency support."""
 
     def __init__(self, template_runner: TestRunner, worker_count: int = 5):
         self.worker_count = worker_count
@@ -21,7 +24,10 @@ class JudgePool:
             raise RuntimeError(f"Cần đúng {worker_count} file cấu hình judge trong config/judges.")
         self._next_worker = 0
         self._lock = Lock()
-        self._executor = ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="local-judge")
+        
+        # Scale executor workers based on CPU capacity for high concurrency
+        max_pool_threads = max(16, (os.cpu_count() or 4) * 4)
+        self._executor = ThreadPoolExecutor(max_workers=max_pool_threads, thread_name_prefix="local-judge")
         self._workers = [self._create_worker(template_runner, index) for index in range(worker_count)]
         self._enabled = [bool(config.get("enabled", True)) for config in self._configs]
         self._started_at = [datetime.now(timezone.utc)] * worker_count
@@ -45,14 +51,19 @@ class JudgePool:
         return TestRunner(compiler=compiler, sandbox=sandbox)
 
     def _select_worker(self) -> int:
+        """Selects the least-loaded enabled worker node for maximum throughput."""
         with self._lock:
-            for offset in range(self.worker_count):
-                index = (self._next_worker + offset) % self.worker_count
+            best_index = -1
+            min_jobs = float('inf')
+            for index in range(self.worker_count):
                 if self._enabled[index]:
-                    self._next_worker = (index + 1) % self.worker_count
-                    self._last_job_at[index] = datetime.now(timezone.utc)
-                    self._active_jobs[index] += 1
-                    return index
+                    if self._active_jobs[index] < min_jobs:
+                        min_jobs = self._active_jobs[index]
+                        best_index = index
+            if best_index != -1:
+                self._last_job_at[best_index] = datetime.now(timezone.utc)
+                self._active_jobs[best_index] += 1
+                return best_index
         raise RuntimeError("Không còn máy chấm nào đang bật.")
 
     def judge(self, source_code: str, language: str, tests: List[Dict[str, Any]], timeout: float = 2) -> Dict[str, Any]:
@@ -63,7 +74,32 @@ class JudgePool:
         return result
 
     def _run(self, worker_index: int, source_code: str, language: str, tests: List[Dict[str, Any]], timeout: float) -> Dict[str, Any]:
-        result = self._workers[worker_index].run_tests(source_code, tests, language=language, timeout=timeout)
+        base_worker = self._workers[worker_index]
+        base_comp = base_worker.compiler
+        
+        # Create an isolated subfolder per job to prevent file collisions during concurrent submissions
+        job_id = f"job_{uuid.uuid4().hex[:8]}"
+        job_dir = Path(base_comp.temp_dir) / job_id
+        job_dir.mkdir(parents=True, exist_ok=True)
+
+        job_compiler = MultiLangCompiler(
+            temp_dir=str(job_dir),
+            gpp_path=base_comp.gpp_path,
+            gcc_path=base_comp.gcc_path,
+            standard=base_comp.standard,
+            flags=list(base_comp.flags)
+        )
+        job_runner = TestRunner(compiler=job_compiler, sandbox=base_worker.sandbox)
+
+        try:
+            result = job_runner.run_tests(source_code, tests, language=language, timeout=timeout)
+        finally:
+            # Clean up job sandbox dir
+            try:
+                shutil.rmtree(job_dir, ignore_errors=True)
+            except Exception:
+                pass
+
         with self._lock:
             self._active_jobs[worker_index] -= 1
             if result.get("overall_verdict") == "AC":

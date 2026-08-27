@@ -191,6 +191,8 @@ document.addEventListener("DOMContentLoaded", () => {
     initAdminModule();
     initPlaygroundSave();
     initThemeModule();
+    initPaymentModalIndex();
+    fetchAndRenderAIQuota();
 });
 
 function initAdminModule() {
@@ -222,6 +224,56 @@ function initAdminModule() {
             document.getElementById("admin-total-saved").textContent = overview.total_saved_problems ?? 0;
             adminModelSelector.value = overview.current_model || adminModelSelector.value;
 
+            // Load Payment Notifications for Dev / SuperAdmin
+            const loadPaymentNotifications = async () => {
+                const tbody = document.getElementById("admin-payment-notifications-body");
+                if (!tbody) return;
+                try {
+                    const notifsRes = await authFetch("/api/admin/notifications");
+                    if (!notifsRes.ok) return;
+                    const notifsData = await notifsRes.json();
+                    const notifs = notifsData.notifications || [];
+                    if (notifs.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 1.2rem; color: var(--text-muted);"><i class="fa-solid fa-inbox"></i> Chưa có thông báo thanh toán nào.</td></tr>`;
+                        return;
+                    }
+
+                    tbody.innerHTML = notifs.map(n => {
+                        let meta = {};
+                        try { meta = JSON.parse(n.data_json || "{}"); } catch (_) {}
+                        const planBadge = meta.plan === "enterprise"
+                            ? `<span style="background: rgba(167,139,250,0.15); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 600;">Enterprise (2.49M)</span>`
+                            : `<span style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 600;">Pro Dev (485k)</span>`;
+                        const timeStr = n.created_at ? new Date(n.created_at).toLocaleString("vi-VN") : "Hôm nay";
+                        const senderDisplay = meta.sender_name 
+                            ? `<strong style="color: #34d399;"><i class="fa-solid fa-signature"></i> ${meta.sender_name}</strong>` 
+                            : `<span style="color: var(--text-muted);">Chưa nhập</span>`;
+                        const amountStr = meta.amount_vnd ? Number(meta.amount_vnd).toLocaleString("vi-VN") + "đ" : "485.000đ";
+                        
+                        return `
+                            <tr style="border-bottom: 1px solid rgba(148,163,184,0.15);">
+                                <td style="padding: 0.6rem 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-clock"></i> ${timeStr}</td>
+                                <td style="padding: 0.6rem 0.75rem;"><strong style="color: var(--accent-cyan);"><i class="fa-solid fa-user"></i> ${meta.username || 'User'}</strong></td>
+                                <td style="padding: 0.6rem 0.75rem;">${senderDisplay}</td>
+                                <td style="padding: 0.6rem 0.75rem;">${planBadge}</td>
+                                <td style="padding: 0.6rem 0.75rem; font-weight: 600; color: #fbbf24;">${amountStr}</td>
+                                <td style="padding: 0.6rem 0.75rem;"><code style="font-family: var(--font-mono); color: var(--accent-cyan); background: rgba(56,189,248,0.08); padding: 2px 6px; border-radius: 4px;">${meta.ref_code || n.title}</code></td>
+                                <td style="padding: 0.6rem 0.75rem; text-align: center;"><span style="color: #34d399; font-size: 0.76rem; background: rgba(52,211,153,0.12); padding: 2px 8px; border-radius: 100px; border: 1px solid rgba(52,211,153,0.25);">✓ Đã ghi nhận</span></td>
+                            </tr>
+                        `;
+                    }).join("");
+                } catch (e) {
+                    console.error("Error loading payment notifications:", e);
+                }
+            };
+
+            await loadPaymentNotifications();
+            const refreshNotifsBtn = document.getElementById("admin-refresh-notifs-btn");
+            if (refreshNotifsBtn && !refreshNotifsBtn.dataset.bound) {
+                refreshNotifsBtn.addEventListener("click", loadPaymentNotifications);
+                refreshNotifsBtn.dataset.bound = "true";
+            }
+
             members = membersPayload.members || [];
 
             const renderMembers = () => {
@@ -236,16 +288,24 @@ function initAdminModule() {
 
                 membersTableBody.innerHTML = "";
                 for (const member of filteredMembers) {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">${member.username}</td>
-                    <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">${member.is_admin ? "Admin" : "User"}</td>
-                    <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">${member.ips || "Chưa ghi nhận"}</td>
-                    <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">${member.session_count ?? 0}</td>
-                    <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">${member.solved_count ?? 0}</td>
-                    <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">${new Date(member.created_at).toLocaleString("vi-VN")}</td>
-                    <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);"><button class="btn-ide btn-ide-secondary btn-xs" data-member-id="${member.id}">Xem</button></td>
-                `;
+                    const roleTag = (member.role || (member.is_admin ? "admin" : "user")).toUpperCase();
+                    const roleBadgeHtml = roleTag === "DEV" ? `<span style="background:rgba(168,85,247,0.18);color:#c084fc;border:1px solid rgba(168,85,247,0.4);padding:2px 8px;border-radius:6px;font-weight:700;">DEV</span>` :
+                                          roleTag === "SUPERADMIN" ? `<span style="background:rgba(236,72,153,0.18);color:#f472b6;border:1px solid rgba(236,72,153,0.4);padding:2px 8px;border-radius:6px;font-weight:700;">SUPERADMIN</span>` :
+                                          roleTag === "ADMIN" ? `<span style="background:rgba(34,211,238,0.15);color:#22d3ee;border:1px solid rgba(34,211,238,0.35);padding:2px 8px;border-radius:6px;font-weight:700;">ADMIN</span>` :
+                                          roleTag === "PRO" ? `<span style="background:rgba(56,189,248,0.18);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);padding:2px 8px;border-radius:6px;font-weight:700;">PRO</span>` :
+                                          roleTag === "ENTERPRISE" ? `<span style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:2px 8px;border-radius:6px;font-weight:700;">ENTERPRISE</span>` :
+                                          `<span style="background:rgba(255,255,255,0.08);color:var(--text-secondary);padding:2px 8px;border-radius:6px;">USER</span>`;
+
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);"><strong style="color:var(--text-bright);">${member.username}</strong></td>
+                        <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">${roleBadgeHtml}</td>
+                        <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">${member.ips || "Chưa ghi nhận"}</td>
+                        <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">${member.session_count ?? 0}</td>
+                        <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">${member.solved_count ?? 0}</td>
+                        <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">${new Date(member.created_at).toLocaleString("vi-VN")}</td>
+                        <td style="padding:0.75rem; border-bottom:1px solid rgba(148,163,184,.2);"><button class="btn-ide btn-ide-secondary btn-xs" data-member-id="${member.id}">Xem</button></td>
+                    `;
                 row.querySelector("button").addEventListener("click", async () => {
                     const res = await authFetch(`/api/admin/members/${member.id}`);
                     if (!res.ok) return;
@@ -755,7 +815,12 @@ function updateAuthUI() {
     const isAdmin = Boolean(state.auth.user && state.auth.user.is_admin);
     document.getElementById("auth-open-btn").classList.toggle("hidden", loggedIn);
     document.getElementById("account-name").classList.toggle("hidden", !loggedIn);
-    document.getElementById("account-name").textContent = loggedIn ? state.auth.user.username : "";
+    const unameEl = document.getElementById("account-username");
+    if (unameEl) {
+        unameEl.textContent = loggedIn ? state.auth.user.username : "";
+    } else {
+        document.getElementById("account-name").textContent = loggedIn ? state.auth.user.username : "";
+    }
     document.getElementById("auth-logout-btn").classList.toggle("hidden", !loggedIn);
     const adminNavBtn = document.getElementById("admin-nav-btn");
     if (adminNavBtn) adminNavBtn.classList.toggle("hidden", !isAdmin);
@@ -775,6 +840,7 @@ function updateAuthUI() {
     }
     if (typeof window.loadCompetitions === "function") window.loadCompetitions();
     if (isAdmin && typeof window.loadAdminCompetitions === "function") window.loadAdminCompetitions();
+    fetchAndRenderAIQuota();
 }
 
 // 1. Monaco Editor Initialization
@@ -1142,6 +1208,85 @@ function initNavigation() {
             if (solutionEditor) solutionEditor.layout();
         });
     });
+
+    initShowcaseScroll();
+}
+
+// Showcase Tab Scroll Navigation Controller
+function initShowcaseScroll() {
+    const showcase = document.getElementById("showcase-tab");
+    const controller = document.getElementById("showcase-scroll-controller");
+    const topBtn = document.getElementById("showcase-scroll-top-btn");
+    const bottomBtn = document.getElementById("showcase-scroll-bottom-btn");
+    const track = document.getElementById("showcase-scroll-track");
+    const fill = document.getElementById("showcase-scroll-fill");
+    const pct = document.getElementById("showcase-scroll-pct");
+
+    if (!showcase || !controller) return;
+
+    function updateProgress() {
+        const scrollTop = showcase.scrollTop;
+        const maxScroll = showcase.scrollHeight - showcase.clientHeight;
+        const percent = maxScroll > 0 ? Math.min(100, Math.max(0, Math.round((scrollTop / maxScroll) * 100))) : 0;
+
+        if (fill) fill.style.height = percent + "%";
+        if (pct) pct.textContent = percent + "%";
+
+        const isShowcaseActive = showcase.classList.contains("active") || window.location.hash.includes("showcase-tab");
+        if (isShowcaseActive && showcase.scrollHeight > showcase.clientHeight + 40) {
+            controller.classList.add("visible");
+        } else if (!isShowcaseActive) {
+            controller.classList.remove("visible");
+        }
+    }
+
+    showcase.addEventListener("scroll", updateProgress, { passive: true });
+
+    if (topBtn) {
+        topBtn.addEventListener("click", () => {
+            showcase.scrollTo({ top: 0, behavior: "smooth" });
+        });
+    }
+
+    if (bottomBtn) {
+        bottomBtn.addEventListener("click", () => {
+            showcase.scrollTo({ top: showcase.scrollHeight, behavior: "smooth" });
+        });
+    }
+
+    if (track) {
+        let isDragging = false;
+        function scrollToTrackPos(e) {
+            const rect = track.getBoundingClientRect();
+            const clickY = e.clientY - rect.top;
+            const ratio = Math.max(0, Math.min(1, clickY / rect.height));
+            const maxScroll = showcase.scrollHeight - showcase.clientHeight;
+            showcase.scrollTo({ top: ratio * maxScroll, behavior: "smooth" });
+        }
+
+        track.addEventListener("click", scrollToTrackPos);
+        track.addEventListener("mousedown", e => {
+            isDragging = true;
+            scrollToTrackPos(e);
+        });
+
+        window.addEventListener("mousemove", e => {
+            if (isDragging) {
+                scrollToTrackPos(e);
+            }
+        });
+
+        window.addEventListener("mouseup", () => {
+            isDragging = false;
+        });
+    }
+
+    // Tab switch listener
+    const observer = new MutationObserver(updateProgress);
+    observer.observe(showcase, { attributes: true, attributeFilter: ["class", "style"] });
+    window.addEventListener("hashchange", updateProgress);
+
+    setTimeout(updateProgress, 350);
 }
 
 // 3. USACO Guide Multi-Case Test Suite
@@ -1488,9 +1633,13 @@ N <= 200,000; Yêu cầu độ phức tạp O(N log N).`;
         startAgentBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>ĐANG GIẢI & TEST...</span>`;
 
         try {
+            const token = localStorage.getItem("local_cp_token") || localStorage.getItem("auth_token");
             const response = await fetch("/api/agent/solve_stream", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({
                     problem_statement: problem,
                     testcases: testcases,
@@ -1499,6 +1648,21 @@ N <= 200,000; Yêu cầu độ phức tạp O(N log N).`;
                     session_id: state.currentSessionId
                 })
             });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                const detailMsg = errData.detail || "Đã xảy ra lỗi khi gọi AI.";
+                logsContainer.innerHTML += `<div style="color: #f87171; padding: 6px 0;">⚠️ ${detailMsg}</div>`;
+                if (response.status === 429) {
+                    showAIQuotaUpgradePrompt(detailMsg);
+                } else {
+                    alert(detailMsg);
+                }
+                startAgentBtn.disabled = false;
+                startAgentBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Giải toán &amp; tự chấm</span>`;
+                await fetchAndRenderAIQuota();
+                return;
+            }
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
@@ -1552,6 +1716,7 @@ N <= 200,000; Yêu cầu độ phức tạp O(N log N).`;
                     } catch (e) {}
                 }
             }
+            await fetchAndRenderAIQuota();
         } catch (err) {
             logsContainer.innerHTML += `<div style="color:var(--accent-red)">❌ Lỗi: ${err.message}</div>`;
         } finally {
@@ -1575,7 +1740,7 @@ N <= 200,000; Yêu cầu độ phức tạp O(N log N).`;
         convertLangBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Chuyển đổi...`;
 
         try {
-            const res = await fetch("/api/agent/convert_code", {
+            const res = await authFetch("/api/agent/convert_code", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -1587,6 +1752,15 @@ N <= 200,000; Yêu cầu độ phức tạp O(N log N).`;
                 })
             });
             const data = await res.json();
+            if (!res.ok) {
+                const detailMsg = data.detail || "Không thể chuyển đổi mã nguồn.";
+                if (res.status === 429) {
+                    showAIQuotaUpgradePrompt(detailMsg);
+                } else {
+                    alert(detailMsg);
+                }
+                return;
+            }
             if (data.success && data.converted_code) {
                 if (solutionEditor) {
                     const monacoLang = MONACO_LANG_MAP[targetLang] || "cpp";
@@ -1595,6 +1769,7 @@ N <= 200,000; Yêu cầu độ phức tạp O(N log N).`;
                 }
                 state.currentSolutionLang = targetLang;
                 updateGlobalLang(targetLang);
+                await fetchAndRenderAIQuota();
             }
         } catch (err) {
             alert("Lỗi: " + err.message);
@@ -1729,8 +1904,18 @@ function initChatModule() {
                 })
             });
             const data = await res.json();
+            if (!res.ok) {
+                const detailMsg = data.detail || "Đã xảy ra lỗi khi gọi AI.";
+                aiBubble.querySelector(".bubble-content").innerHTML = `<span style="color:var(--accent-red)">⚠️ ${detailMsg}</span>`;
+                if (res.status === 429) {
+                    showAIQuotaUpgradePrompt(detailMsg);
+                }
+                await fetchAndRenderAIQuota();
+                return;
+            }
             aiBubble.querySelector(".bubble-content").innerHTML = safeParse(data.response);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            await fetchAndRenderAIQuota();
         } catch (e) {
             aiBubble.querySelector(".bubble-content").innerHTML = `<span style="color:var(--accent-red)">Lỗi phản hồi: ${e.message}</span>`;
         }
@@ -1962,4 +2147,232 @@ function escapeHtml(str) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+// =========================================================================
+// AI Quota & Payment Modal Logic (30 Free AI requests, Pro/Enterprise Unlimited)
+// =========================================================================
+let currentAIQuota = null;
+
+async function fetchAndRenderAIQuota() {
+    const token = localStorage.getItem("local_cp_token") || localStorage.getItem("auth_token");
+    const agentBadge = document.getElementById("agent-ai-quota-badge");
+    const chatBadge = document.getElementById("chat-ai-quota-badge");
+    const agentText = document.getElementById("agent-quota-text");
+    const chatText = document.getElementById("chat-quota-text");
+
+    if (!token || !state.auth.user) {
+        if (agentText) agentText.textContent = "30/30 lượt AI miễn phí";
+        if (chatText) chatText.textContent = "30/30 lượt AI miễn phí";
+        return;
+    }
+
+    try {
+        const res = await authFetch("/api/user/ai-quota");
+        if (!res.ok) return;
+        const data = await res.json();
+        const quota = data.quota || {};
+        currentAIQuota = quota;
+
+        const updateBadge = (badgeEl, textEl) => {
+            if (!badgeEl || !textEl) return;
+            badgeEl.className = "ai-quota-badge";
+            if (quota.unlimited) {
+                badgeEl.classList.add("unlimited");
+                const roleUpper = (quota.role || "VIP").toUpperCase();
+                const displayLabel = roleUpper === "DEV" ? "DEV" :
+                                     roleUpper === "SUPERADMIN" ? "SUPERADMIN" :
+                                     roleUpper === "ADMIN" ? "ADMIN" :
+                                     roleUpper === "PRO" ? "Gói PRO" :
+                                     roleUpper === "ENTERPRISE" ? "Gói ENTERPRISE" : roleUpper;
+                textEl.innerHTML = `<i class="fa-solid fa-crown" style="color: #fbbf24; margin-right: 4px;"></i> <strong>${displayLabel}</strong>: Không giới hạn AI`;
+                badgeEl.title = `Tài khoản ${displayLabel} của bạn có quyền sử dụng AI hoàn toàn không giới hạn!`;
+            } else {
+                const remaining = quota.remaining ?? (30 - (quota.used || 0));
+                const used = quota.used || 0;
+                const limit = quota.limit || 30;
+                textEl.innerHTML = `<span>${remaining}/${limit} lượt AI miễn phí</span>`;
+                if (remaining <= 5 && remaining > 0) {
+                    badgeEl.classList.add("warning");
+                    badgeEl.title = `Bạn chỉ còn ${remaining} lượt AI miễn phí. Bấm để nâng cấp Pro/Enterprise!`;
+                } else if (remaining <= 0) {
+                    badgeEl.classList.add("danger");
+                    textEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Hết lượt AI (0/${limit})`;
+                    badgeEl.title = "Đã hết lượt AI miễn phí! Bấm để nâng cấp gói Pro/Enterprise.";
+                } else {
+                    badgeEl.title = `Bạn đã sử dụng ${used}/${limit} lượt AI miễn phí. Bấm để nâng cấp dùng không giới hạn!`;
+                }
+            }
+        };
+
+        updateBadge(agentBadge, agentText);
+        updateBadge(chatBadge, chatText);
+    } catch (err) {
+        console.warn("Could not fetch AI quota:", err);
+    }
+}
+
+function showAIQuotaUpgradePrompt(msg) {
+    const defaultMsg = "Bạn đã sử dụng hết 30 lượt AI miễn phí. Vui lòng nâng cấp lên gói Pro Developer hoặc Enterprise để sử dụng AI không giới hạn!";
+    openPaymentModalIndex("pro", msg || defaultMsg);
+}
+
+function openPaymentModalIndex(plan = "pro", customNotice = "") {
+    const modal = document.getElementById("payment-modal");
+    if (!modal) return;
+
+    const username = state.auth.user?.username || "USER";
+    const userDisplay = document.getElementById("payment-user-display");
+    if (userDisplay) userDisplay.textContent = username;
+
+    const titleEl = document.getElementById("payment-plan-title");
+    const amountEl = document.getElementById("payment-amount");
+    const refEl = document.getElementById("payment-ref");
+    const errorEl = document.getElementById("payment-error");
+    const qrImg = document.getElementById("payment-qr-img");
+
+    if (plan === "pro") {
+        if (titleEl) titleEl.textContent = "Nâng cấp Pro Developer (Không giới hạn AI)";
+        if (amountEl) amountEl.textContent = "485.000đ";
+        if (refEl) refEl.textContent = `LOCALCP ${username.toUpperCase()} PRO`;
+        if (qrImg) qrImg.src = `https://img.vietqr.io/image/970418-21510003058863-compact2.png?amount=485000&addInfo=LOCALCP%20${username.toUpperCase()}%20PRO&accountName=VO%20HONG%20QUANG`;
+    } else {
+        if (titleEl) titleEl.textContent = "Đăng ký Enterprise / Campus (Không giới hạn AI)";
+        if (amountEl) amountEl.textContent = "2.490.000đ";
+        if (refEl) refEl.textContent = `LOCALCP ${username.toUpperCase()} ENT`;
+        if (qrImg) qrImg.src = `https://img.vietqr.io/image/970418-21510003058863-compact2.png?amount=2490000&addInfo=LOCALCP%20${username.toUpperCase()}%20ENT&accountName=VO%20HONG%20QUANG`;
+    }
+
+    if (errorEl) {
+        if (customNotice) {
+            errorEl.textContent = customNotice;
+            errorEl.classList.remove("hidden");
+            errorEl.style.color = "#fbbf24";
+        } else {
+            errorEl.classList.add("hidden");
+            errorEl.style.color = "";
+        }
+    }
+
+    const senderInput = document.getElementById("payment-sender-name");
+    if (senderInput) senderInput.value = "";
+    modal.classList.remove("hidden");
+}
+
+function initPaymentModalIndex() {
+    const modal = document.getElementById("payment-modal");
+    const closeBtn = document.getElementById("close-payment-modal");
+    const copyBtn = document.getElementById("copy-ref-btn");
+    const confirmBtn = document.getElementById("confirm-payment-btn");
+    const agentBadge = document.getElementById("agent-ai-quota-badge");
+    const chatBadge = document.getElementById("chat-ai-quota-badge");
+
+    if (agentBadge) {
+        agentBadge.addEventListener("click", () => {
+            if (currentAIQuota && currentAIQuota.unlimited) {
+                alert("🎉 Tài khoản của bạn đang có gói VIP không giới hạn AI!");
+            } else {
+                openPaymentModalIndex("pro");
+            }
+        });
+    }
+
+    if (chatBadge) {
+        chatBadge.addEventListener("click", () => {
+            if (currentAIQuota && currentAIQuota.unlimited) {
+                alert("🎉 Tài khoản của bạn đang có gói VIP không giới hạn AI!");
+            } else {
+                openPaymentModalIndex("pro");
+            }
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener("click", () => {
+            modal.classList.add("hidden");
+        });
+    }
+
+    if (modal) {
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) modal.classList.add("hidden");
+        });
+    }
+
+    if (copyBtn) {
+        copyBtn.addEventListener("click", () => {
+            const refText = document.getElementById("payment-ref")?.textContent || "";
+            navigator.clipboard.writeText(refText);
+            copyBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+            setTimeout(() => {
+                copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i>';
+            }, 2000);
+        });
+    }
+
+    if (confirmBtn) {
+        confirmBtn.addEventListener("click", async () => {
+            const token = localStorage.getItem("local_cp_token") || localStorage.getItem("auth_token");
+            const errorEl = document.getElementById("payment-error");
+            if (!token) {
+                alert("Vui lòng đăng nhập tài khoản trước khi xác nhận nâng cấp.");
+                modal.classList.add("hidden");
+                document.getElementById("auth-modal")?.classList.remove("hidden");
+                return;
+            }
+
+            const senderName = document.getElementById("payment-sender-name")?.value?.trim() || "";
+            if (!senderName) {
+                if (errorEl) {
+                    errorEl.textContent = "Vui lòng nhập họ và tên người chuyển khoản theo tài khoản ngân hàng.";
+                    errorEl.classList.remove("hidden");
+                    errorEl.style.color = "#f87171";
+                }
+                document.getElementById("payment-sender-name")?.focus();
+                return;
+            }
+
+            const refCode = document.getElementById("payment-ref")?.textContent || "";
+            const plan = refCode.includes("ENT") ? "enterprise" : "pro";
+
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi thông báo Dev & SuperAdmin...';
+
+            try {
+                const res = await authFetch("/api/payment/confirm", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        plan: plan,
+                        ref_code: refCode,
+                        sender_name: senderName
+                    })
+                });
+
+                const data = await res.json();
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Tôi đã chuyển khoản — Xác nhận kích hoạt ngay';
+
+                if (res.ok) {
+                    modal.classList.add("hidden");
+                    alert(`🎉 Gửi xác nhận thành công!\n\nThông báo đã được chuyển đến Dev & SuperAdmin với tên tài khoản '${data.username || state.auth.user?.username}' và tên chuyển khoản '${senderName}'.\n\nGói ${plan.toUpperCase()} (Không giới hạn AI) đã được kích hoạt thành công!`);
+                    await fetchAndRenderAIQuota();
+                } else {
+                    if (errorEl) {
+                        errorEl.textContent = data.detail || "Lỗi xác nhận thanh toán.";
+                        errorEl.classList.remove("hidden");
+                        errorEl.style.color = "#f87171";
+                    }
+                }
+            } catch (err) {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Tôi đã chuyển khoản — Xác nhận kích hoạt ngay';
+                if (errorEl) {
+                    errorEl.textContent = "Không thể kết nối máy chủ.";
+                    errorEl.classList.remove("hidden");
+                    errorEl.style.color = "#f87171";
+                }
+            }
+        });
+    }
 }

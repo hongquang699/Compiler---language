@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WORKSPACE | Tài khoản của tôi</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Modular Stylesheets -->
+    <link rel="stylesheet" href="css/style.css?v=9.0">
+    <link rel="stylesheet" href="css/glassmorphism-effects.css">
+    <link rel="stylesheet" href="css/profile.css?v=1.0">
+</head>
+
+<body class="usaco-theme" spellcheck="false">
+    <div class="app-ambient" aria-hidden="true">
+        <div class="orb orb-cyan"></div>
+        <div class="orb orb-violet"></div>
+        <div class="orb orb-emerald"></div>
+    </div>
+    <!-- Common Top Navigation Header -->
+    <header class="app-header">
+        <a class="header-left" href="landing.html" title="Về Trang chủ SaaS">
+            <div class="logo-badge">
+                <i class="fa-solid fa-code"></i>
+            </div>
+            <div class="header-title-box">
+                <span class="ide-brand">LOCAL CP</span>
+                <span class="ide-sub">Algorithm Studio</span>
+            </div>
+        </a>
+
+        <nav class="nav-tabs">
+            <a class="nav-tab" href="index.html"><i class="fa-solid fa-laptop-code"></i> <span>Code IDE</span></a>
+            <a class="nav-tab" href="problems.html"><i class="fa-solid fa-layer-group"></i> <span>Kho Bài tập</span></a>
+            <a class="nav-tab" href="contest.html"><i class="fa-solid fa-flag-checkered"></i> <span>Cuộc thi</span></a>
+            <a class="nav-tab" href="standings.html"><i class="fa-solid fa-ranking-star"></i> <span>Bảng xếp hạng</span></a>
+            <a class="nav-tab" href="submission.html"><i class="fa-solid fa-clock-rotate-left"></i> <span>Bài nộp</span></a>
+        </nav>
+
+        <div class="header-right">
+            <!-- Common User Pill -->
+            <div class="user-auth-area"></div>
+
+            <button class="btn-theme-toggle" onclick="toggleTheme(event)" title="Chuyển chế độ Sáng / Tối" style="padding:6px 12px; border-radius:12px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#fff; cursor:pointer;">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Profile Container -->
+    <main class="profile-container">
+        
+        <!-- 1. Top Bar: WORKSPACE | Title & Tabs -->
+        <div class="tmath-topbar">
+            <div>
+                <div class="tmath-workspace-sub">WORKSPACE</div>
+                <div class="tmath-workspace-title" id="tmath-workspace-heading">Tài khoản của tôi</div>
+            </div>
+
+            <div class="tmath-tab-group">
+                <button class="tmath-tab-btn active" id="tab-btn-about" onclick="window.ProfileController.switchView('about')"><i class="fa-regular fa-circle-user"></i> Giới thiệu</button>
+                <button class="tmath-tab-btn" id="tab-btn-problems" onclick="window.ProfileController.switchView('problems')"><i class="fa-solid fa-star"></i> Bài tập</button>
+                <button class="tmath-tab-btn" id="tab-btn-edit" onclick="window.ProfileController.switchView('edit')"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa tiểu sử</button>
+            </div>
+        </div>
+
+        <!-- 2. Main 2-Column Grid -->
+        <div class="tmath-grid">
+            
+            <!-- Left Profile Card (4 Mục cốt lõi) -->
+            <div class="tmath-card-left" id="profile-left-sidebar">
+                <div class="tmath-avatar-box">
+                    <img id="tmath-avatar-img" src="https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&auto=format&fit=crop&q=80" alt="avatar">
+                </div>
+
+                <div class="tmath-solved-label" id="tmath-solved-count">0 số lượng bài đã giải</div>
+
+                <div class="tmath-stat-row">
+                    <span>Xếp hạng bảng điểm:</span>
+                    <span id="tmath-rank">#1</span>
+                </div>
+
+                <div class="tmath-stat-row">
+                    <span>Tổng điểm:</span>
+                    <span id="tmath-total-score" style="color:#38bdf8;">0</span>
+                </div>
+
+                <button onclick="window.ProfileController.switchView('submissions')" class="btn-tmath-submissions">
+                    Xem các bài nộp
+                </button>
+            </div>
+
+            <!-- Right Content Views -->
+            <div class="tmath-content-right" id="profile-right-content">
+                
+                <!-- View 1: Tab Giới Thiệu & Heatmap -->
+                <div id="view-about" style="display: flex; flex-direction: column; gap: 20px;">
+                    <div class="tmath-card">
+                        <div class="tmath-card-title">Giới thiệu</div>
+                        <p class="tmath-bio-text" id="tmath-bio">Người đam mê về lịch sử Việt Nam</p>
+                    </div>
+
+                    <div class="tmath-card">
+                        <div class="tmath-heatmap-header">
+                            <div class="tmath-heatmap-title" id="tmath-heatmap-title">0 submissions in the last year</div>
+                            <div class="tmath-year-nav">
+                                <button title="Năm trước">«</button>
+                                <span>năm qua</span>
+                                <button title="Năm sau">»</button>
+                            </div>
+                        </div>
+
+                        <div class="tmath-heatmap-box">
+                            <div class="tmath-heatmap-wrap">
+                                <div class="tmath-day-labels">
+                                    <span>Chủ nhật</span>
+                                    <span>Thứ hai</span>
+                                    <span>Thứ ba</span>
+                                    <span>Thứ tư</span>
+                                    <span>Thứ năm</span>
+                                    <span>Thứ 6</span>
+                                    <span>Thứ 7</span>
+                                </div>
+                                <div class="tmath-cells-grid" id="tmath-cells-grid"></div>
+                            </div>
+
+                            <div class="tmath-heatmap-footer">
+                                <span style="font-family:'JetBrains Mono',monospace;" id="tmath-total-subs-footer">0 total submissions</span>
+                                <div class="tmath-legend">
+                                    <span>Hiển thị ít hơn</span>
+                                    <span class="tmath-legend-dot" style="background:rgba(255,255,255,0.06);"></span>
+                                    <span class="tmath-legend-dot c-1"></span>
+                                    <span class="tmath-legend-dot c-2"></span>
+                                    <span class="tmath-legend-dot c-3"></span>
+                                    <span class="tmath-legend-dot c-4"></span>
+                                    <span>Hiển thị thêm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View 2: Tab Bài Tập Đã Giải -->
+                <div id="view-problems" style="display: none;">
+                    <div class="tmath-card">
+                        <div class="tmath-card-title">
+                            <span><i class="fa-solid fa-list-check"></i> Danh Sách Bài Tập Đã Giải</span>
+                            <a href="problems.html" style="font-size:0.75rem; color:#38bdf8; text-decoration:none;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Mở Kho Bài Tập</a>
+                        </div>
+                        <div id="solved-problems-container" style="overflow-x: auto;">
+                            <p style="color:#94a3b8; font-size:0.85rem;">Đang tải danh sách bài tập...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View 3: Tab Bài Nộp -->
+                <div id="view-submissions" style="display: none;">
+                    <div class="tmath-card">
+                        <div class="tmath-card-title">
+                            <span><i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Bài Nộp Của Bạn</span>
+                            <span id="submissions-count-badge" style="font-size:0.75rem; background:rgba(37,99,235,0.2); color:#60a5fa; padding:2px 8px; border-radius:6px;">0 bài</span>
+                        </div>
+                        <div id="user-submissions-container" style="overflow-x: auto;">
+                            <p style="color:#94a3b8; font-size:0.85rem;">Đang tải danh sách bài nộp...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View 4: Tab Chỉnh Sửa Tiểu Sử (Theo Đúng Ảnh Mẫu) -->
+                <div id="view-edit" style="display: none;">
+                    <div class="tmath-card" style="display: flex; flex-direction: column; gap: 20px;">
+                        <div>
+                            <label class="form-label">Mô tả bản thân:</label>
+                            <textarea id="edit-bio-input" class="form-textarea" placeholder="Nhập mô tả hoặc tiểu sử giới thiệu của bạn..."></textarea>
+                        </div>
+
+                        <div style="padding: 16px; border-radius: 14px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06);">
+                            <div class="form-grid-row">
+                                <span class="form-label" style="margin:0;">Tên đầy đủ</span>
+                                <input type="text" id="edit-fullname-input" class="form-input" value="Võ Hồng Quang">
+                            </div>
+
+                            <div class="form-grid-row">
+                                <span class="form-label" style="margin:0;">Múi giờ:</span>
+                                <select id="edit-timezone-input" class="form-select">
+                                    <option value="Ho_Chi_Minh">Ho_Chi_Minh (UTC+7)</option>
+                                    <option value="Asia/Bangkok">Asia/Bangkok (UTC+7)</option>
+                                    <option value="UTC">UTC (UTC+0)</option>
+                                    <option value="Asia/Tokyo">Asia/Tokyo (UTC+9)</option>
+                                    <option value="America/New_York">America/New_York (UTC-5)</option>
+                                    <option value="Europe/London">Europe/London (UTC+0)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-grid-row">
+                                <span class="form-label" style="margin:0;">Ngôn ngữ:</span>
+                                <select id="edit-language-input" class="form-select">
+                                    <option value="C++17">C++17</option>
+                                    <option value="C++20">C++20 (GCC)</option>
+                                    <option value="Python 3.12">Python 3.12</option>
+                                    <option value="Java 17">Java 17 (OpenJDK)</option>
+                                    <option value="Rust 2021">Rust 2021</option>
+                                    <option value="Go 1.21">Go 1.21</option>
+                                </select>
+                            </div>
+
+                            <div class="form-grid-row">
+                                <span class="form-label" style="margin:0;">Giao diện khung viết code:</span>
+                                <select id="edit-editor-theme-input" class="form-select">
+                                    <option value="Github">Github</option>
+                                    <option value="VS Code Dark">VS Code Dark</option>
+                                    <option value="Monokai">Monokai</option>
+                                    <option value="Dracula">Dracula</option>
+                                    <option value="One Dark Pro">One Dark Pro</option>
+                                </select>
+                            </div>
+
+                            <div class="form-grid-row">
+                                <span class="form-label" style="margin:0;">Lần đổi tên cuối</span>
+                                <input type="text" id="edit-last-name-change" class="form-input" value="2026-08-26 07:25:00" readonly>
+                            </div>
+
+                            <div style="text-align: right; font-size: 0.78rem; color: #94a3b8; margin-top: 4px;">
+                                Bạn có thể cập nhật thông tin bất kỳ lúc nào
+                            </div>
+                        </div>
+
+                        <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+                            <a class="profile-action-link" onclick="window.ProfileController.changeAvatar()"><i class="fa-solid fa-image"></i> Đổi ảnh đại diện của bạn</a>
+                            <a class="profile-action-link" onclick="window.ProfileController.changePassword()"><i class="fa-solid fa-key"></i> Đổi mật khẩu của bạn</a>
+                        </div>
+
+                        <div style="display: flex; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
+                            <button class="btn-update-profile" onclick="window.ProfileController.saveProfileChanges()">
+                                <i class="fa-solid fa-floppy-disk"></i> Cập nhật profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal Xem Chi Tiết Mã Nguồn -->
+    <div class="code-modal-overlay" id="code-modal-overlay" onclick="window.ProfileController.closeCodeModal(event)">
+        <div class="code-modal" onclick="event.stopPropagation()">
+            <div class="code-modal-head">
+                <div>
+                    <h3 style="margin:0; font-size:1rem; font-weight:800; color:#fff;" id="modal-sub-title">Chi Tiết Bài Nộp #0</h3>
+                    <span style="font-size:0.75rem; color:#94a3b8;" id="modal-sub-meta">C++17 • AC • 100 Điểm</span>
+                </div>
+                <button onclick="window.ProfileController.closeCodeModal()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.2rem;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="code-modal-body">
+                <div style="font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;">Mã nguồn đã nộp:</div>
+                <pre class="code-block" id="modal-code-content">// Đang tải mã nguồn...</pre>
+                
+                <div id="modal-compiler-box" style="margin-top:16px; display:none;">
+                    <div style="font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;">Thông báo máy chấm / Compiler:</div>
+                    <pre class="code-block" style="color:#f87171; background:#18181b;" id="modal-compiler-output"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modular Script Imports -->
+    <script src="js/theme.js"></script>
+    <script src="js/glassmorphism.js"></script>
+    <script src="js/auth-nav.js"></script>
+    <script src="js/profile.js?v=1.0"></script>
+</body>
+</html>

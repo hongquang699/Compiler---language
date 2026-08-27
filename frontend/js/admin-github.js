@@ -55,11 +55,12 @@ async function checkAuthAndLoad() {
             document.getElementById("admin-login-overlay")?.classList.add("open");
             return;
         }
-        const user = await res.json();
+        const resData = await res.json();
+        const user = resData.user || resData;
         const role = (user.role || (user.is_admin ? "admin" : "user")).toLowerCase();
-        if (!user.is_admin && !["admin", "superadmin", "dev"].includes(role)) {
-            alert("Bạn không có quyền truy cập trang Sao lưu GitHub.");
-            window.location.href = "index.html";
+        if (role !== "dev" && role !== "developer") {
+            alert("⚠️ Quyền truy cập bị từ chối: Chức năng Sao lưu GitHub & Auto Push chỉ dành riêng cho tài khoản DEV.");
+            window.location.href = "admin-console.html";
             return;
         }
         document.getElementById("user-display").innerHTML = `<i class="fa-solid fa-user-shield"></i> ${escapeHtml(user.username)} (${role.toUpperCase()})`;

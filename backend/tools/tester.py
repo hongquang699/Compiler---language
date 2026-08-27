@@ -1,4 +1,5 @@
 from typing import List, Dict, Any, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from backend.tools.compiler import CppCompiler
 from backend.tools.sandbox import ProcessSandbox
 
@@ -42,7 +43,7 @@ class TestRunner:
 
     def run_tests(self, source_code: str, testcases: List[Dict[str, str]], language: str = "cpp", timeout: Optional[float] = None) -> Dict[str, Any]:
         """
-        Compiles/prepares code for the specified language (C++, Python 3, Java, Rust, Go, C) and runs tests.
+        Compiles/prepares code for the specified language (C++, Python 3, Java, Rust, Go, C) and runs tests in parallel.
         """
         # Step 1: Prepare/Compile
         comp_res = self.compiler.prepare_and_compile(source_code, language=language)
@@ -59,45 +60,28 @@ class TestRunner:
             }
 
         exe_cmd = comp_res["executable_cmd"]
-        results = []
-        overall_verdict = "AC"
-        passed_count = 0
-        total_time_ms = 0.0
-        max_mem_kb = 0.0
 
-        for i, tc in enumerate(testcases, 1):
+        def eval_single_testcase(item):
+            i, tc = item
             inp = tc.get("input", "")
             exp = tc.get("expected", "")
             exec_res = self.sandbox.execute(exe_cmd, stdin_data=inp, timeout=timeout)
-
-
             verdict = exec_res["verdict"]
             actual_out = exec_res["stdout"]
             err_out = exec_res["stderr"]
             t_ms = exec_res["execution_time_ms"]
             m_kb = exec_res["memory_used_kb"]
 
-            total_time_ms += t_ms
-            max_mem_kb = max(max_mem_kb, m_kb)
-
             if verdict == "OK":
                 if exp:
                     if self.compare_outputs(actual_out, exp):
                         verdict = "AC"
-                        passed_count += 1
                     else:
                         verdict = "WA"
                 else:
-                    # If no expected output provided, we treat valid run as OK
                     verdict = "AC"
-                    passed_count += 1
-            else:
-                pass # TLE, MLE, or RTE
 
-            if verdict != "AC" and overall_verdict == "AC":
-                overall_verdict = verdict
-
-            results.append({
+            return i, {
                 "test_id": i,
                 "input": inp,
                 "expected": exp,
@@ -107,7 +91,37 @@ class TestRunner:
                 "status_detail": exec_res["status_detail"],
                 "execution_time_ms": t_ms,
                 "memory_used_kb": m_kb
-            })
+            }
+
+        items = list(enumerate(testcases, 1))
+        results_dict = {}
+
+        if len(testcases) > 1:
+            max_workers = min(8, len(testcases))
+            with ThreadPoolExecutor(max_workers=max_workers) as pool:
+                futures = [pool.submit(eval_single_testcase, item) for item in items]
+                for f in as_completed(futures):
+                    idx, res = f.result()
+                    results_dict[idx] = res
+        else:
+            for item in items:
+                idx, res = eval_single_testcase(item)
+                results_dict[idx] = res
+
+        results = [results_dict[i] for i in range(1, len(testcases) + 1)]
+        overall_verdict = "AC"
+        passed_count = 0
+        total_time_ms = 0.0
+        max_mem_kb = 0.0
+
+        for r in results:
+            v = r["verdict"]
+            if v == "AC":
+                passed_count += 1
+            elif overall_verdict == "AC":
+                overall_verdict = v
+            total_time_ms += r["execution_time_ms"]
+            max_mem_kb = max(max_mem_kb, r["memory_used_kb"])
 
         return {
             "overall_verdict": overall_verdict,

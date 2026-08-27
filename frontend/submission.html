@@ -13,234 +13,22 @@
     
     <!-- Monaco Editor Loader -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
-    <script src="js/theme.js"></script>
-    <script src="js/auth-nav.js"></script>
+    
+    <!-- Modular Stylesheets -->
     <link rel="stylesheet" href="css/arena.css?v=5.0">
-    <style>
-        .submit-container-card {
-            background: var(--arena-card);
-            border: 1px solid var(--arena-border);
-            border-radius: 16px;
-            padding: 32px 36px;
-            box-shadow: var(--arena-shadow);
-            max-width: 1040px;
-            margin: 0 auto 30px;
-            transition: all 0.3s ease;
-        }
-
-        .submit-header-kicker {
-            font-size: 0.72rem;
-            font-weight: 800;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--arena-text-sub);
-            margin-bottom: 4px;
-        }
-
-        .submit-header-title {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: var(--arena-text-main);
-            margin-bottom: 16px;
-        }
-
-        .submit-divider {
-            height: 1px;
-            background: var(--arena-border);
-            margin-bottom: 24px;
-        }
-
-        .submit-form-group {
-            margin-bottom: 20px;
-        }
-
-        .submit-label {
-            display: block;
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: var(--arena-text-main);
-            margin-bottom: 8px;
-        }
-
-        .submit-select-wrapper {
-            position: relative;
-            max-width: 420px;
-        }
-
-        .submit-select {
-            width: 100%;
-            padding: 10px 38px 10px 14px;
-            border-radius: 10px;
-            border: 1px solid var(--arena-border);
-            background: var(--arena-card);
-            color: var(--arena-text-main);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.88rem;
-            font-weight: 600;
-            cursor: pointer;
-            appearance: none;
-            outline: none;
-            transition: all 0.2s ease;
-            box-shadow: var(--arena-shadow-sm);
-        }
-
-        .submit-select:focus {
-            border-color: var(--arena-primary);
-            box-shadow: 0 0 0 3px var(--arena-primary-glow);
-        }
-
-        .submit-select-icon {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--arena-text-sub);
-            pointer-events: none;
-            font-size: 0.8rem;
-        }
-
-        /* IDE Code Editor Box (Matching Reference Image) */
-        .ide-editor-container {
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            background: #0b1220;
-            overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-            margin-bottom: 26px;
-            position: relative;
-            transition: all 0.25s ease;
-        }
-
-        .ide-editor-container.fullscreen {
-            position: fixed;
-            top: 16px;
-            left: 16px;
-            right: 16px;
-            bottom: 16px;
-            z-index: 99999;
-            margin: 0;
-            border-radius: 16px;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
-        }
-
-        .ide-editor-toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 16px;
-            background: #080d18;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        .ide-tab-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.76rem;
-            font-weight: 700;
-            color: #94a3b8;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .btn-ide-expand {
-            background: none;
-            border: none;
-            color: #64748b;
-            cursor: pointer;
-            font-size: 0.9rem;
-            padding: 4px 6px;
-            border-radius: 6px;
-            transition: all 0.15s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn-ide-expand:hover {
-            color: #22d3ee;
-            background: rgba(34, 211, 238, 0.1);
-        }
-
-        .monaco-submission-host {
-            width: 100%;
-            height: 340px;
-        }
-        .ide-editor-container.fullscreen .monaco-submission-host {
-            height: calc(100vh - 80px);
-        }
-
-        .ide-statusbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 14px;
-            background: #080d18;
-            border-top: 1px solid #1e293b;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: #64748b;
-        }
-
-        .ide-status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #a855f7;
-            box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
-            display: inline-block;
-        }
-
-        /* Wide Blue Submit Button */
-        .btn-big-submit {
-            display: block;
-            width: 100%;
-            padding: 14px 28px;
-            background: #2563eb;
-            color: #ffffff;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 800;
-            letter-spacing: 0.02em;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .btn-big-submit:hover {
-            background: #1d4ed8;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 22px rgba(37, 99, 235, 0.45);
-        }
-        .btn-big-submit:active {
-            transform: scale(0.98);
-        }
-
-        /* Result Verdict Box */
-        .verdict-box {
-            margin-top: 24px;
-            padding: 20px 24px;
-            border-radius: 12px;
-            background: var(--arena-tab-hover);
-            border: 1px solid var(--arena-border);
-            display: none;
-            animation: fadeInUp 0.35s ease;
-        }
-        .verdict-box.show {
-            display: block;
-        }
-        .verdict-ac {
-            border-color: #86efac;
-            background: rgba(34, 197, 94, 0.1);
-            color: #16a34a;
-        }
-        .verdict-wa {
-            border-color: #fca5a5;
-            background: rgba(239, 68, 68, 0.1);
-            color: #dc2626;
-        }
-    </style>
+    <link rel="stylesheet" href="css/submission.css?v=1.0">
+    <link rel="stylesheet" href="css/glassmorphism-effects.css">
+    <script src="js/theme.js"></script>
+    <script src="js/glassmorphism.js"></script>
 </head>
-<body>
+<body class="usaco-theme">
+    <!-- Ambient Animated Mesh Background -->
+    <div class="app-ambient" aria-hidden="true">
+        <div class="orb orb-cyan"></div>
+        <div class="orb orb-violet"></div>
+        <div class="orb orb-emerald"></div>
+        <div class="mesh-grid"></div>
+    </div>
     <!-- Top Full-Width Header Bar -->
     <header class="site-header">
         <a class="brand" href="index.html">
@@ -248,9 +36,10 @@
         </a>
         <nav class="top-nav">
             <a href="index.html">Trang chủ</a>
-            <a class="active" href="problems.html">Kho bài tập</a>
+            <a href="problems.html">Kho bài tập</a>
             <a href="contest.html">Cuộc thi</a>
             <a href="standings.html">Bảng xếp hạng</a>
+            <a class="active" href="submission.html">Nộp bài</a>
         </nav>
         <div style="display: flex; gap: 10px; align-items: center;">
             <div class="user-auth-area"></div>
@@ -264,285 +53,124 @@
     </header>
 
     <div class="arena">
+
         <!-- Breadcrumb Navigation -->
-        <nav class="breadcrumb" style="max-width: 1040px; margin: 0 auto 16px;">
+        <nav class="breadcrumb">
             <a href="index.html"><i class="fa-solid fa-house"></i> Trang chủ</a>
             <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
             <a href="problems.html">Kho bài tập</a>
             <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
-            <a href="problem.html">Bài 001 · Tổng hai số</a>
-            <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
-            <span>Nộp bài</span>
+            <span>Nộp bài giải</span>
         </nav>
 
-        <!-- Submission Main Card -->
-        <main class="submit-container-card">
-            <div class="submit-header-kicker">BÀI NỘP</div>
-            <h1 class="submit-header-title">Gửi giải pháp của bạn</h1>
+        <!-- Main Submission Form Container -->
+        <section class="submit-container-card">
+            
+            <!-- Card Header -->
+            <div class="submit-header-kicker">SUBMISSION DESK</div>
+            <h1 class="submit-header-title">Nộp bài giải thuật toán</h1>
             <div class="submit-divider"></div>
 
-            <!-- Programming Language Field -->
-            <div class="submit-form-group">
-                <label class="submit-label" for="lang-select">Ngôn ngữ lập trình</label>
-                <div class="submit-select-wrapper">
-                    <select id="lang-select" class="submit-select" onchange="changeLanguage(this.value)">
-                        <option value="cpp">C++17 (g++17 14.2.0)</option>
-                        <option value="cpp20">C++20 (g++20 14.2.0)</option>
-                        <option value="python">Python 3 (Python 3.12)</option>
-                        <option value="java">Java 17 (OpenJDK 17)</option>
-                        <option value="c">C11 (gcc 14.2.0)</option>
-                        <option value="pascal">Pascal (Free Pascal 3.2.2)</option>
-                    </select>
-                    <i class="fa-solid fa-chevron-down submit-select-icon"></i>
-                </div>
-            </div>
-
-            <!-- IDE Code Editor Box (Matching Screenshot 100%) -->
-            <div class="ide-editor-container" id="ide-container">
-                <div class="ide-editor-toolbar">
-                    <div class="ide-tab-badge">
-                        <i class="fa-solid fa-code" style="color: #22d3ee;"></i>
-                        <span id="tab-filename">solution.cpp</span>
-                    </div>
-                    <button class="btn-ide-expand" onclick="toggleFullscreen()" title="Toàn màn hình">
-                        <i class="fa-solid fa-expand" id="expand-icon"></i>
-                    </button>
-                </div>
+            <form id="submission-form" onsubmit="event.preventDefault(); submitSolution();">
                 
-                <!-- Monaco Editor Mount Point -->
-                <div id="monaco-submit-editor" class="monaco-submission-host"></div>
-
-                <!-- Status Bar with Cursor and Purple AI Dot -->
-                <div class="ide-statusbar">
-                    <div>
-                        <span id="cursor-pos">Ln 1, Col 1</span> &nbsp;·&nbsp; <span id="ide-lang-label">C++17</span> &nbsp;·&nbsp; UTF-8
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span>Local CP Engine</span>
-                        <span class="ide-status-dot" title="Local-Ai Ready"></span>
+                <!-- 1. Select Problem (Đề bài) -->
+                <div class="submit-form-group">
+                    <label class="submit-label" for="problem-select">
+                        <i class="fa-solid fa-book-bookmark" style="color: var(--arena-primary); margin-right: 6px;"></i>
+                        Chọn bài tập
+                    </label>
+                    <div class="submit-select-wrapper">
+                        <select id="problem-select" class="submit-select">
+                            <option value="p1">P001 · Tổng hai số nguyên lớn (A + B Problem)</option>
+                            <option value="p2">P002 · Tìm dãy con liên tiếp có tổng lớn nhất</option>
+                            <option value="p3">P003 · Đường đi ngắn nhất đồ thị trọng số dương (Dijkstra)</option>
+                            <option value="p4">P004 · Bài toán Balo 0/1 (Knapsack Problem)</option>
+                            <option value="p5">P005 · Đếm số hoán vị hợp lệ (Combinatorics)</option>
+                            <option value="p6">P006 · Truy vấn tổng đoạn trên cây Segment Tree</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down submit-select-icon"></i>
                     </div>
                 </div>
-            </div>
 
-            <!-- Big Blue Submit Button -->
-            <button class="btn-big-submit" id="btn-submit" onclick="submitSolution()">
-                Nộp bài!
-            </button>
+                <!-- 2. Select Language (Ngôn ngữ) -->
+                <div class="submit-form-group">
+                    <label class="submit-label" for="lang-select">
+                        <i class="fa-solid fa-code" style="color: #a855f7; margin-right: 6px;"></i>
+                        Ngôn ngữ lập trình
+                    </label>
+                    <div class="submit-select-wrapper">
+                        <select id="lang-select" class="submit-select" onchange="changeLanguage(this.value)">
+                            <option value="python" selected>Python 3 (Python 3.12+ Runtime)</option>
+                            <option value="cpp">C++17 (g++ · Chuẩn thi đấu CP)</option>
+                            <option value="c">C (gcc)</option>
+                            <option value="java">Java (OpenJDK · Main class)</option>
+                            <option value="go">Go (golang 1.21+)</option>
+                            <option value="rust">Rust (rustc 2021)</option>
+                            <option value="javascript">JavaScript (Node.js LTS)</option>
+                            <option value="typescript">TypeScript (Node / ts-node)</option>
+                            <option value="csharp">C# (.NET / csc)</option>
+                            <option value="pascal">Pascal (Free Pascal / FPC)</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down submit-select-icon"></i>
+                    </div>
+                </div>
 
-            <!-- Real-time Verdict Status Output -->
-            <div class="verdict-box" id="verdict-box">
+                <!-- 3. Monaco IDE Code Editor -->
+                <div class="submit-form-group">
+                    <label class="submit-label">
+                        <i class="fa-solid fa-laptop-code" style="color: #22d3ee; margin-right: 6px;"></i>
+                        Mã nguồn giải pháp
+                    </label>
+
+                    <div id="ide-container" class="ide-editor-container">
+                        <!-- Top Toolbar of IDE Box -->
+                        <div class="ide-editor-toolbar">
+                            <div class="ide-tab-badge">
+                                <i class="fa-solid fa-file-code" style="color: #38bdf8;"></i>
+                                <span id="tab-filename">solution.cpp</span>
+                            </div>
+                            <button type="button" class="btn-ide-expand" onclick="toggleFullscreen()" title="Mở rộng / Toàn màn hình">
+                                <i id="expand-icon" class="fa-solid fa-expand"></i>
+                            </button>
+                        </div>
+
+                        <!-- Monaco Editor Mount Container -->
+                        <div id="monaco-submit-editor" class="monaco-submission-host"></div>
+
+                        <!-- Bottom Status Bar -->
+                        <div class="ide-statusbar">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="ide-status-dot"></span>
+                                <span id="ide-lang-label">C++17 (GCC 11.2)</span>
+                            </div>
+                            <div id="cursor-pos">Ln 1, Col 1</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Big Submit Button -->
+                <button type="submit" id="btn-submit" class="btn-big-submit">
+                    Nộp bài!
+                </button>
+
+            </form>
+
+            <!-- Result Box -->
+            <div id="verdict-box" class="verdict-box">
                 <div id="verdict-content"></div>
             </div>
-        </main>
+
+        </section>
 
         <!-- Footer -->
         <footer class="footer">
-            <span>&copy; 2026 <strong>Local CP Studio</strong> — Nền tảng luyện tập thuật toán thi đấu.</span>
+            <span>&copy; 2026 <strong>Local CP Studio</strong> — Nền tảng Competitive Programming và thi đấu thuật toán.</span>
         </footer>
     </div>
 
-    <script>
-        let editorInstance = null;
-
-        const TEMPLATES = {
-            cpp: `#include <bits/stdc++.h>
-
-using namespace std;
-
-int main() {
-    ios_base::sync_with_stdio(0);
-    cin.tie(0); cout.tie(0);
-    return 0;
-}`,
-            cpp20: `#include <iostream>
-#include <vector>
-#include <algorithm>
-
-using namespace std;
-
-int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(nullptr);
-    return 0;
-}`,
-            python: `import sys
-
-def main():
-    # Đọc dữ liệu từ stdin và in kết quả ra stdout
-    pass
-
-if __name__ == '__main__':
-    main()`,
-            java: `import java.util.Scanner;
-
-public class Main {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        // Xử lý bài toán tại đây
-    }
-}`,
-            c: `#include <stdio.h>
-
-int main() {
-    // Nhập xuất chuẩn
-    return 0;
-}`,
-            pascal: `program Solution;
-begin
-  { Nhập xuất dữ liệu }
-end.`
-        };
-
-        const MONACO_LANG_MAP = {
-            cpp: "cpp",
-            cpp20: "cpp",
-            python: "python",
-            java: "java",
-            c: "c",
-            pascal: "pascal"
-        };
-
-        const FILE_EXT_MAP = {
-            cpp: "solution.cpp",
-            cpp20: "solution.cpp",
-            python: "solution.py",
-            java: "Main.java",
-            c: "solution.c",
-            pascal: "solution.pas"
-        };
-
-        function initMonaco() {
-            if (window.require) {
-                require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
-                require(['vs/editor/editor.main'], function () {
-                    monaco.editor.defineTheme("cp-aurora", {
-                        base: "vs-dark",
-                        inherit: true,
-                        rules: [
-                            { token: "comment", foreground: "64748b", fontStyle: "italic" },
-                            { token: "keyword", foreground: "22d3ee" },
-                            { token: "string", foreground: "86efac" },
-                            { token: "number", foreground: "fbbf24" },
-                            { token: "type", foreground: "a78bfa" },
-                            { token: "identifier", foreground: "e2e8f0" }
-                        ],
-                        colors: {
-                            "editor.background": "#0b1220",
-                            "editor.foreground": "#e2e8f0",
-                            "editorLineNumber.foreground": "#475569",
-                            "editorLineNumber.activeForeground": "#94a3b8",
-                            "editor.selectionBackground": "#164e6388",
-                            "editor.lineHighlightBackground": "#1e293b55",
-                            "editorCursor.foreground": "#22d3ee",
-                            "editorGutter.background": "#0b1220"
-                        }
-                    });
-
-                    const host = document.getElementById('monaco-submit-editor');
-                    editorInstance = monaco.editor.create(host, {
-                        value: TEMPLATES.cpp,
-                        language: "cpp",
-                        theme: "cp-aurora",
-                        fontSize: 14,
-                        fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-                        fontLigatures: true,
-                        automaticLayout: true,
-                        tabSize: 4,
-                        insertSpaces: true,
-                        lineNumbers: "on",
-                        renderLineHighlight: "all",
-                        cursorBlinking: "smooth",
-                        smoothScrolling: true,
-                        padding: { top: 12, bottom: 12 },
-                        minimap: { enabled: false }
-                    });
-
-                    editorInstance.onDidChangeCursorPosition((e) => {
-                        document.getElementById('cursor-pos').textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
-                    });
-
-                    // Ctrl+Enter hotkey to submit
-                    editorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-                        submitSolution();
-                    });
-                });
-            }
-        }
-
-        function changeLanguage(langKey) {
-            if (!editorInstance) return;
-            const monacoLang = MONACO_LANG_MAP[langKey] || "cpp";
-            document.getElementById('tab-filename').textContent = FILE_EXT_MAP[langKey] || "solution.cpp";
-            document.getElementById('ide-lang-label').textContent = document.getElementById('lang-select').options[document.getElementById('lang-select').selectedIndex].text;
-
-            const model = editorInstance.getModel();
-            if (model) {
-                monaco.editor.setModelLanguage(model, monacoLang);
-            }
-            if (confirm('Tải mã nguồn mẫu mặc định cho ngôn ngữ này?')) {
-                editorInstance.setValue(TEMPLATES[langKey] || '');
-            }
-        }
-
-        function toggleFullscreen() {
-            const container = document.getElementById('ide-container');
-            const icon = document.getElementById('expand-icon');
-            container.classList.toggle('fullscreen');
-            if (container.classList.contains('fullscreen')) {
-                icon.className = 'fa-solid fa-compress';
-            } else {
-                icon.className = 'fa-solid fa-expand';
-            }
-            if (editorInstance) {
-                setTimeout(() => editorInstance.layout(), 100);
-            }
-        }
-
-        async function submitSolution() {
-            if (!editorInstance) return;
-            const code = editorInstance.getValue().trim();
-            const btn = document.getElementById('btn-submit');
-            const verdictBox = document.getElementById('verdict-box');
-            const verdictContent = document.getElementById('verdict-content');
-
-            if (!code) {
-                alert('Vui lòng nhập mã nguồn bài giải trước khi nộp!');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang chấm bài...';
-            verdictBox.className = 'verdict-box show';
-            verdictContent.innerHTML = `
-                <div style="display:flex; align-items:center; gap:12px; font-weight:700; color:var(--arena-primary);">
-                    <i class="fa-solid fa-spinner fa-spin" style="font-size:1.2rem;"></i>
-                    <span>Máy chấm Local CP đang biên dịch và chạy các bộ test case...</span>
-                </div>
-            `;
-
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.innerHTML = 'Nộp bài!';
-                verdictBox.className = 'verdict-box show verdict-ac';
-                verdictContent.innerHTML = `
-                    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap;">
-                        <div>
-                            <div style="display:flex; align-items:center; gap:8px; font-size:1.15rem; font-weight:800; color:#16a34a; margin-bottom:4px;">
-                                <i class="fa-solid fa-circle-check"></i> CHẤP NHẬN (ACCEPTED · 100/100)
-                            </div>
-                            <p style="font-size:0.86rem; color:var(--arena-text-muted); margin:0;">
-                                Thời gian: <strong>0.012s</strong> &nbsp;·&nbsp; Bộ nhớ: <strong>1.4 MB</strong> &nbsp;·&nbsp; Vượt qua <strong>10/10</strong> test cases.
-                            </p>
-                        </div>
-                        <a href="standings.html" class="btn-back-ide" style="padding:7px 14px; font-size:0.82rem;">
-                            <i class="fa-solid fa-ranking-star"></i> Xem Bảng xếp hạng
-                        </a>
-                    </div>
-                `;
-            }, 1200);
-        }
-
-        document.addEventListener('DOMContentLoaded', initMonaco);
-    </script>
+    <!-- Modular Script Imports -->
+    <script src="js/theme.js"></script>
+    <script src="js/auth-nav.js"></script>
+    <script src="js/submission.js?v=1.0"></script>
 </body>
 </html>

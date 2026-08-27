@@ -1,7 +1,7 @@
 import html
 import re
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Set
 
 
 DEFAULT_ALLOWED_EXTENSIONS = {
@@ -22,7 +22,34 @@ DEFAULT_ALLOWED_EXTENSIONS = {
     ".jpeg",
 }
 
-# SQL Injection patterns (regex with word boundary where applicable)
+# Honeypot decoy paths that indicate scanning / hacking behavior
+HONEYPOT_PATHS: Set[str] = {
+    "/wp-admin",
+    "/wp-login.php",
+    "/wp-content",
+    "/xmlrpc.php",
+    "/.env",
+    "/.env.local",
+    "/.env.production",
+    "/.git/config",
+    "/.git/HEAD",
+    "/config.json",
+    "/actuator",
+    "/actuator/health",
+    "/actuator/env",
+    "/phpmyadmin",
+    "/pma",
+    "/shell.php",
+    "/eval",
+    "/debug/pprof",
+    "/debug/vars",
+    "/api/v1/system/exec",
+    "/.aws/credentials",
+    "/.ssh/id_rsa",
+    "/server-status",
+}
+
+# SQL Injection patterns
 SQLI_PATTERNS = [
     r"(\bunion\s+(all\s+)?select\b)",
     r"(\bselect\b.+\bfrom\b.+\bwhere\b)",
@@ -70,6 +97,33 @@ CMD_INJECTION_PATTERNS = [
 ]
 CMD_REGEX = re.compile("|".join(CMD_INJECTION_PATTERNS), re.IGNORECASE)
 
+# SSRF (Server-Side Request Forgery) patterns in query parameters or payload URLs
+SSRF_PATTERNS = [
+    r"https?://(127\.0\.0\.1|localhost|0\.0\.0\.0|169\.254\.169\.254|metadata\.google\.internal)",
+    r"https?://(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)",
+    r"file:///",
+    r"gopher://",
+    r"dict://",
+]
+SSRF_REGEX = re.compile("|".join(SSRF_PATTERNS), re.IGNORECASE)
+
+# SSTI (Server-Side Template Injection) patterns
+SSTI_PATTERNS = [
+    r"(\{\{.*?__(class|mro|subclasses|globals|builtins)__.*?\}\})",
+    r"(\$\{.*?T\(java\..*?\).*?\})",
+    r"(<\%.*?Runtime\.getRuntime.*?\%>)",
+]
+SSTI_REGEX = re.compile("|".join(SSTI_PATTERNS), re.IGNORECASE)
+
+# LFI / RFI (Local / Remote File Inclusion) patterns
+LFI_PATTERNS = [
+    r"(\.\./\.\./|\.\.\\\.\.\\)",
+    r"(/etc/(passwd|shadow|hosts|issue))",
+    r"(c:[\\/]windows[\\/]system32)",
+    r"(php://(filter|input|data))",
+]
+LFI_REGEX = re.compile("|".join(LFI_PATTERNS), re.IGNORECASE)
+
 
 def detect_sqli(payload: str) -> bool:
     """Returns True if SQL injection payload is detected."""
@@ -97,6 +151,35 @@ def detect_command_injection(payload: str) -> bool:
     if not payload or not isinstance(payload, str):
         return False
     return bool(CMD_REGEX.search(payload))
+
+
+def detect_ssrf(payload: str) -> bool:
+    """Returns True if SSRF pattern is detected."""
+    if not payload or not isinstance(payload, str):
+        return False
+    return bool(SSRF_REGEX.search(payload))
+
+
+def detect_ssti(payload: str) -> bool:
+    """Returns True if SSTI pattern is detected."""
+    if not payload or not isinstance(payload, str):
+        return False
+    return bool(SSTI_REGEX.search(payload))
+
+
+def detect_lfi_rfi(payload: str) -> bool:
+    """Returns True if LFI / RFI pattern is detected."""
+    if not payload or not isinstance(payload, str):
+        return False
+    return bool(LFI_REGEX.search(payload))
+
+
+def is_honeypot_path(path: str) -> bool:
+    """Returns True if the requested path is an intentional Honeypot decoy trap."""
+    if not path or not isinstance(path, str):
+        return False
+    normalized = path.strip().lower()
+    return any(normalized == hp or normalized.startswith(hp + "/") or hp in normalized for hp in HONEYPOT_PATHS)
 
 
 def sanitize_html(text: str) -> str:

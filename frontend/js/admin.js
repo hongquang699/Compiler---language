@@ -23,10 +23,16 @@ const views = {
     overview: "Tổng quan hệ thống",
     contests: "Quản lý Cuộc thi ClueOJ",
     problems: "Kho Bài tập & Quản lý Testcases",
+    submissions: "Quản lý Bài nộp & Kết quả Chấm điểm",
+    github: "Sao lưu GitHub & Auto Push Studio",
     members: "Thành viên & Tài khoản",
     security: "Bảo mật & Kiểm soát IP",
     monitoring: "Giám sát Máy chấm",
-    system: "Cấu hình & Hệ thống"
+    system: "Cấu hình & Hệ thống",
+    anticheat_monitor: "Giám sát Hệ thống Chống Gian lận (Dev Only)",
+    web_monitor: "Radar Giám Sát Web & Điểm Rủi Ro IP (Dev Only)",
+    bot_actions: "Trung Tâm Tác Chiến & Nhật Ký Bot Sentinel (Dev Only)",
+    data_storage: "Giám sát Lưu trữ Dữ liệu & Nginx"
 };
 
 let currentUser = null;
@@ -35,7 +41,11 @@ function roleBadge(role, isAdmin) {
     const r = (role || "").toLowerCase();
     if (r === "dev") return '<span class="badge dev"><i class="fa-solid fa-code"></i> DEV</span>';
     if (r === "superadmin") return '<span class="badge superadmin"><i class="fa-solid fa-crown"></i> SUPERADMIN</span>';
-    if (r === "admin" || isAdmin) return '<span class="badge admin"><i class="fa-solid fa-user-shield"></i> ADMIN</span>';
+    if (r === "admin" || (isAdmin && r !== "pro" && r !== "enterprise" && r !== "dev" && r !== "superadmin")) return '<span class="badge admin"><i class="fa-solid fa-user-shield"></i> ADMIN</span>';
+    if (r === "pro") return '<span class="badge pro"><i class="fa-solid fa-bolt"></i> PRO</span>';
+    if (r === "enterprise") return '<span class="badge enterprise"><i class="fa-solid fa-building-columns"></i> ENTERPRISE</span>';
+    if (r === "contestant") return '<span class="badge contestant"><i class="fa-solid fa-trophy"></i> CONTESTANT</span>';
+    if (r === "moderator") return '<span class="badge moderator"><i class="fa-solid fa-shield"></i> MODERATOR</span>';
     return '<span class="badge user"><i class="fa-solid fa-user"></i> USER</span>';
 }
 
@@ -67,8 +77,8 @@ function applyRoleLayout(user) {
         bannerDesc.textContent = "Toàn quyền điều khiển: Giám sát 5 Máy chấm Judge, Cấu hình Mô hình AI, Nhật ký Bảo mật & Quản trị Hệ thống.";
         bannerTag.innerHTML = roleBadge("dev", true);
 
-        showNavButtons(["overview", "contests", "problems", "github", "members", "security", "monitoring", "system"]);
-        showElements(["card-stat-blocked", "card-role-breakdown", "card-ai-model-overview", "btn-quick-model-switch", "card-system-model-config", "card-github-backup", "reset-system"]);
+        showNavButtons(["overview", "contests", "problems", "external_problems", "submissions", "github", "members", "security", "monitoring", "system", "anticheat_monitor", "web_monitor", "bot_actions", "data_storage"]);
+        showElements(["card-stat-blocked", "card-role-breakdown", "card-ai-model-overview", "btn-quick-model-switch", "card-system-model-config", "reset-system"]);
         document.getElementById("members-panel-title").textContent = "Thành viên & Quản lý Toàn quyền";
         document.getElementById("members-panel-desc").textContent = "Phân quyền vai trò, Khóa/Mở khóa và Xóa tài khoản vĩnh viễn (Chế độ Dev Master).";
     } else if (level === 8 || role === "superadmin") {
@@ -79,9 +89,9 @@ function applyRoleLayout(user) {
         bannerDesc.textContent = "Không gian Tổng Quản trị: Quản lý Cuộc thi, Phân quyền Thí sinh, Khóa tài khoản & Kiểm soát An ninh IP.";
         bannerTag.innerHTML = roleBadge("superadmin", true);
 
-        showNavButtons(["overview", "contests", "problems", "github", "members", "security", "system"]);
+        showNavButtons(["overview", "contests", "problems", "external_problems", "submissions", "members", "security", "system"]);
         showElements(["card-stat-blocked", "card-role-breakdown"]);
-        hideElements(["btn-quick-model-switch", "card-system-model-config", "card-github-backup", "reset-system"]);
+        hideElements(["btn-quick-model-switch", "card-system-model-config", "reset-system"]);
         document.getElementById("members-panel-title").textContent = "Quản lý Thành viên & Phân quyền";
         document.getElementById("members-panel-desc").textContent = "Đổi vai trò thành viên, Khóa/Mở khóa và quản lý địa chỉ IP thí sinh.";
     } else {
@@ -92,11 +102,11 @@ function applyRoleLayout(user) {
         bannerDesc.textContent = "Không gian Ban Chuyên môn: Tạo Cuộc thi ClueOJ, Nạp bài tập (init.yml), AI sinh testcase & Theo dõi thí sinh.";
         bannerTag.innerHTML = roleBadge("admin", true);
 
-        showNavButtons(["overview", "contests", "problems", "github", "members"]);
+        showNavButtons(["overview", "contests", "problems", "external_problems", "submissions", "members"]);
         document.getElementById("members-panel-title").textContent = "Danh sách Thí sinh";
         document.getElementById("members-panel-desc").textContent = "Xem danh sách thí sinh và số bài đã nộp (Chế độ Giám thị - Chỉ xem).";
 
-        hideElements(["card-stat-blocked", "card-role-breakdown", "btn-quick-model-switch", "card-system-model-config", "card-github-backup", "reset-system"]);
+        hideElements(["card-stat-blocked", "card-role-breakdown", "btn-quick-model-switch", "card-system-model-config", "reset-system"]);
     }
 }
 
@@ -317,28 +327,49 @@ async function loadOverview() {
 }
 
 // ── 2. JUDGES ──────────────────────────────────────────────────────────────
+let cachedJudgesData = [];
+
 async function loadJudges() {
     const res = await request("/api/admin/judges");
     if (!res.ok) return;
     const data = await res.json();
+    cachedJudgesData = data.judges || [];
     const isDev = userLevel(currentUser) >= 9;
-    document.getElementById("judges-table").innerHTML = data.judges.map(judge => {
+    document.getElementById("judges-table").innerHTML = cachedJudgesData.map(judge => {
         const uptime = Math.max(0, Math.floor((Date.now() - new Date(judge.started_at).getTime()) / 1000));
-        return `<tr>
-            <td><strong>${escapeHtml(judge.name)}</strong><br><small style="opacity:.6;">${escapeHtml(judge.id)}</small></td>
-            <td><span class="judge-status ${judge.status}"><i></i>${escapeHtml(judge.status)}</span></td>
-            <td>${escapeHtml(judge.compiler)}</td>
-            <td>${judge.languages.map(escapeHtml).join(", ")}</td>
-            <td>${judge.timeout_seconds}s / ${judge.memory_limit_mb} MB</td>
+        const activeText = judge.active_jobs > 0 ? `<span style="color:#22c55e; font-weight:700;"><i class="fa-solid fa-spinner fa-spin"></i> ${judge.active_jobs} đang chạy</span>` : `<span style="color:var(--text-secondary);">Rảnh rỗi</span>`;
+        const langsPill = (judge.languages || []).map(l => `<span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(34,211,238,0.1); color:var(--accent-cyan); font-family:var(--font-code);">${l}</span>`).join(" ");
+        return `<tr style="cursor:pointer;" onclick="openJudgeDetailModal('${judge.id}')">
             <td>
-                <span class="judge-uptime">${Math.floor(uptime/3600)}h ${Math.floor(uptime/60)%60}m ${uptime%60}s</span>
-                <small>${judge.last_job_at ? `Job: ${new Date(judge.last_job_at).toLocaleTimeString("vi-VN")}` : "Chưa có job"}</small>
-                ${isDev ? `<button class="admin-button judge-toggle" data-judge-id="${judge.id}" data-enabled="${judge.enabled}" style="margin-top:4px;">${judge.enabled ? "Tắt Node" : "Bật Node"}</button>` : ""}
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-server" style="color:var(--accent-cyan);"></i>
+                    <div>
+                        <strong style="color:var(--text-bright);">${escapeHtml(judge.name)}</strong>
+                        <small style="display:block; opacity:.6; font-family:var(--font-code);">${escapeHtml(judge.id)}</small>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <span class="judge-status ${judge.status}"><i></i>${escapeHtml(judge.status.toUpperCase())}</span>
+                <div style="font-size:0.75rem; margin-top:2px;">${activeText}</div>
+            </td>
+            <td><code style="font-size:0.78rem; color:var(--text-primary);">${escapeHtml(judge.compiler)}</code></td>
+            <td><div style="display:flex; gap:4px; flex-wrap:wrap;">${langsPill}</div></td>
+            <td><strong style="color:var(--accent-cyan); font-family:var(--font-code);">${judge.timeout_seconds}s</strong> / ${judge.memory_limit_mb} MB</td>
+            <td onclick="event.stopPropagation()">
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <span class="judge-uptime" style="font-size:0.75rem;"><i class="fa-solid fa-stopwatch"></i> ${Math.floor(uptime/3600)}h ${Math.floor(uptime/60)%60}m ${uptime%60}s</span>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn-icon" onclick="openJudgeDetailModal('${judge.id}')" title="Xem chi tiết & Benchmark"><i class="fa-solid fa-circle-info"></i> Chi tiết</button>
+                        ${isDev ? `<button class="admin-button judge-toggle" data-judge-id="${judge.id}" data-enabled="${judge.enabled}" style="padding:4px 8px; font-size:0.72rem;">${judge.enabled ? "⏹ Tắt" : "▶ Bật"}</button>` : ""}
+                    </div>
+                </div>
             </td>
         </tr>`;
     }).join("");
 
-    document.querySelectorAll(".judge-toggle").forEach(btn => btn.addEventListener("click", async () => {
+    document.querySelectorAll(".judge-toggle").forEach(btn => btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
         btn.disabled = true;
         const enabled = btn.dataset.enabled !== "true";
         await request(`/api/admin/judges/${btn.dataset.judgeId}/toggle?enabled=${enabled}`, { method: "POST" });
@@ -346,6 +377,88 @@ async function loadJudges() {
     }));
     document.getElementById("judges-checked").textContent = `Kiểm tra lúc ${new Date(data.checked_at).toLocaleString("vi-VN")}`;
 }
+
+let activeBenchmarkJudgeId = null;
+
+window.openJudgeDetailModal = function(judgeId) {
+    const judge = cachedJudgesData.find(j => j.id === judgeId);
+    if (!judge) return;
+    activeBenchmarkJudgeId = judgeId;
+
+    const uptime = Math.max(0, Math.floor((Date.now() - new Date(judge.started_at).getTime()) / 1000));
+    const totalJobs = (judge.completed_jobs || 0) + (judge.failed_jobs || 0);
+    const successRate = totalJobs > 0 ? ((judge.completed_jobs / totalJobs) * 100).toFixed(1) : "100.0";
+
+    document.getElementById("judge-detail-title").innerHTML = `<i class="fa-solid fa-server" style="color:var(--accent-cyan);"></i> Chi tiết Máy chấm: ${escapeHtml(judge.name)} [${judge.id}]`;
+    document.getElementById("judge-benchmark-result").hidden = true;
+
+    document.getElementById("judge-detail-body").innerHTML = `
+        <div class="stat-grid" style="grid-template-columns:repeat(3, 1fr); margin-bottom:16px;">
+            <div class="stat-card">
+                <small>TRẠNG THÁI RUNTIME</small>
+                <strong style="font-size:1.2rem; color:${judge.status === 'online' ? '#22c55e' : '#ef4444'};">${judge.status.toUpperCase()}</strong>
+            </div>
+            <div class="stat-card">
+                <small>ĐANG XỬ LÝ (ACTIVE)</small>
+                <strong style="font-size:1.4rem; color:var(--accent-cyan);">${judge.active_jobs || 0} jobs</strong>
+            </div>
+            <div class="stat-card">
+                <small>TỶ LỆ THÀNH CÔNG (AC)</small>
+                <strong style="font-size:1.4rem; color:#4ade80;">${successRate}%</strong>
+            </div>
+        </div>
+
+        <div class="admin-card" style="margin-bottom:12px; padding:16px;">
+            <h4 style="color:var(--text-bright); margin-bottom:10px; font-size:0.9rem;"><i class="fa-solid fa-microchip" style="color:var(--accent-cyan);"></i> Thông số Kỹ thuật &amp; Compiler Path</h4>
+            <table style="width:100%; font-size:0.82rem; border-collapse:collapse;">
+                <tr><td style="color:var(--text-secondary); padding:4px 0; width:170px;">Trình biên dịch C++:</td><td><code style="color:var(--accent-cyan); font-family:var(--font-code);">${escapeHtml(judge.compiler)} -std=c++17 -O2 -pipe</code></td></tr>
+                <tr><td style="color:var(--text-secondary); padding:4px 0;">Giới hạn Sandbox:</td><td style="font-family:var(--font-code);">${judge.timeout_seconds} giây CPU / ${judge.memory_limit_mb} MB RAM</td></tr>
+                <tr><td style="color:var(--text-secondary); padding:4px 0;">Đường dẫn Sandbox:</td><td><code style="font-size:0.76rem; color:var(--text-secondary);">${escapeHtml(judge.sandbox_path)}</code></td></tr>
+                <tr><td style="color:var(--text-secondary); padding:4px 0;">Ngôn ngữ hỗ trợ:</td><td>${(judge.languages || []).map(l => `<span class="badge user" style="margin-right:4px;">${l}</span>`).join('')}</td></tr>
+                <tr><td style="color:var(--text-secondary); padding:4px 0;">Tổng số Jobs đã chấm:</td><td style="font-family:var(--font-code);">${judge.completed_jobs || 0} AC / ${judge.failed_jobs || 0} Failed</td></tr>
+                <tr><td style="color:var(--text-secondary); padding:4px 0;">Uptime:</td><td style="font-family:var(--font-code);">${Math.floor(uptime/3600)} giờ ${Math.floor(uptime/60)%60} phút ${uptime%60} giây</td></tr>
+            </table>
+        </div>
+    `;
+
+    document.getElementById("judge-detail-modal-overlay").classList.add("open");
+};
+
+window.closeJudgeDetailModal = function() {
+    document.getElementById("judge-detail-modal-overlay").classList.remove("open");
+};
+
+document.getElementById("btn-run-judge-benchmark")?.addEventListener("click", async () => {
+    if (!activeBenchmarkJudgeId) return;
+    const btn = document.getElementById("btn-run-judge-benchmark");
+    const resBox = document.getElementById("judge-benchmark-result");
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang biên dịch &amp; đo độ trễ...';
+
+    try {
+        const res = await request(`/api/admin/judges/${activeBenchmarkJudgeId}/benchmark`, { method: "POST" });
+        const data = await res.json();
+        resBox.hidden = false;
+        if (data.success) {
+            resBox.innerHTML = `<div style="padding:10px; border-radius:8px; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#4ade80;">
+                <i class="fa-solid fa-circle-check"></i> Benchmark THÀNH CÔNG! <br>
+                • Tổng độ trễ (Latency): <strong>${data.latency_ms}ms</strong> <br>
+                • Thời gian biên dịch C++ (Compile Time): <strong>${data.compile_time_ms}ms</strong> <br>
+                • Máy chấm phản hồi hoàn hảo!
+            </div>`;
+        } else {
+            resBox.innerHTML = `<div style="padding:10px; border-radius:8px; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#f87171;">
+                <i class="fa-solid fa-circle-xmark"></i> Benchmark THẤT BẠI: ${escapeHtml(data.verdict || "Error")}
+            </div>`;
+        }
+    } catch {
+        resBox.hidden = false;
+        resBox.innerHTML = `<div style="color:#f87171;"><i class="fa-solid fa-circle-xmark"></i> Lỗi kết nối benchmark.</div>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-stopwatch"></i> ⚡ Chạy Benchmark Kiểm tra Tốc độ Máy chấm';
+    }
+});
 
 // ── 3. MONITORING (DEV ONLY) ───────────────────────────────────────────────
 async function loadMonitoring() {
@@ -526,10 +639,312 @@ document.getElementById("detail-overlay")?.addEventListener("click", e => {
         document.getElementById("detail-overlay").classList.remove("open");
 });
 
-// ── 5. SECURITY (SUPERADMIN & DEV) ─────────────────────────────────────────
+// ── 5. SECURITY & SENTINEL DEFENSE BOT (SUPERADMIN & DEV) ─────────────────
+let activeAntiCheatReport = null;
+
 async function loadSecurity() {
-    await Promise.all([loadBlockedIps(), loadSecurityEvents()]);
+    await Promise.all([
+        loadSentinelStatus(),
+        loadAntiCheatContests(),
+        loadAntiCheatReports(),
+        loadSentinelActions(),
+        loadHoneypotLogs(),
+        loadThreatScores(),
+        loadBlockedIps(),
+        loadSecurityEvents()
+    ]);
 }
+
+async function loadSentinelStatus() {
+    try {
+        const res = await request("/api/admin/security/sentinel/status");
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        document.getElementById("sentinel-stat-mitigated").textContent = data.threats_mitigated || 0;
+        document.getElementById("sentinel-stat-honeypot").textContent = data.honeypot_triggers_total || 0;
+        document.getElementById("sentinel-stat-bans").textContent = data.active_bans_count || 0;
+        document.getElementById("sentinel-stat-unsafe-code").textContent = data.unsafe_codes_blocked || 0;
+        document.getElementById("sentinel-stat-killed").textContent = data.sessions_killed || 0;
+
+        const modeSel = document.getElementById("sentinel-mode-select");
+        if (modeSel) modeSel.value = data.mode || "autonomous";
+
+        const badge = document.getElementById("sentinel-mode-badge");
+        if (badge) {
+            if (data.mode === "strict") {
+                badge.className = "badge locked";
+                badge.innerHTML = '<i class="fa-solid fa-lock"></i> STRICT LOCKDOWN';
+            } else if (data.mode === "monitoring") {
+                badge.className = "badge user";
+                badge.innerHTML = '<i class="fa-solid fa-eye"></i> MONITORING ONLY';
+            } else {
+                badge.className = "badge dev";
+                badge.innerHTML = '<i class="fa-solid fa-robot"></i> AUTONOMOUS DEFENSE';
+            }
+        }
+    } catch (e) {
+        console.error("Lỗi tải Sentinel status:", e);
+    }
+}
+
+document.getElementById("btn-save-sentinel-mode")?.addEventListener("click", async () => {
+    const mode = document.getElementById("sentinel-mode-select").value;
+    const res = await request("/api/admin/security/sentinel/mode", {
+        method: "POST",
+        body: JSON.stringify({ mode })
+    });
+    const j = await res.json();
+    showAlert(res.ok ? j.message : j.detail, res.ok ? "info" : "danger");
+    loadSentinelStatus();
+});
+
+document.getElementById("btn-manual-killswitch")?.addEventListener("click", async () => {
+    const target = prompt("Nhập User ID hoặc IP cần hủy toàn bộ token phiên làm việc:");
+    if (!target) return;
+    const res = await request("/api/admin/security/sentinel/execute-skill", {
+        method: "POST",
+        body: JSON.stringify({ skill_name: "session_killswitch", target: target.trim() })
+    });
+    const j = await res.json();
+    showAlert(res.ok ? j.message : j.detail, res.ok ? "info" : "danger");
+    loadSentinelStatus();
+    loadSentinelActions();
+});
+
+document.getElementById("btn-strict-lockdown")?.addEventListener("click", async () => {
+    if (!confirm("KÍCH HOẠT CHẾ ĐỘ PHÒNG THỦ NGHIÊM NGẶT (Strict Lockdown)? Hệ thống sẽ siết rate-limit và khóa ngay mọi request có điểm nguy cơ!")) return;
+    const res = await request("/api/admin/security/sentinel/execute-skill", {
+        method: "POST",
+        body: JSON.stringify({ skill_name: "emergency_lockdown" })
+    });
+    const j = await res.json();
+    showAlert(res.ok ? j.message : j.detail, res.ok ? "info" : "danger");
+    loadSentinelStatus();
+});
+
+async function loadSentinelActions() {
+    try {
+        const res = await request("/api/admin/security/sentinel/actions?limit=50");
+        if (!res.ok) return;
+        const { actions } = await res.json();
+        const tbody = document.getElementById("sentinel-actions-tbody");
+        if (!tbody) return;
+        tbody.innerHTML = (actions && actions.length)
+            ? actions.map(a => `<tr>
+                <td style="font-size:.74rem; font-family:var(--font-code); color:var(--text-secondary);">${new Date(a.created_at).toLocaleString("vi-VN")}</td>
+                <td><span class="badge ${a.action_type.includes('CRITICAL') ? 'locked' : a.action_type.includes('KILLSWITCH') ? 'warn' : 'dev'}">${escapeHtml(a.action_type)}</span></td>
+                <td><code style="font-size:.76rem; color:var(--accent-cyan);">${escapeHtml(a.target_ip || (a.target_user_id ? 'User #' + a.target_user_id : 'System'))}</code></td>
+                <td style="font-size:.76rem; color:var(--text-secondary); max-width:260px; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(a.details || a.reason)}">${escapeHtml(a.reason || '')} ${a.details ? '<small>(' + escapeHtml(a.details) + ')</small>' : ''}</td>
+            </tr>`).join("")
+            : `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-secondary);">Chưa có hành động phòng vệ nào gần đây.</td></tr>`;
+    } catch (e) {
+        console.error("Lỗi tải Sentinel actions:", e);
+    }
+}
+
+async function loadHoneypotLogs() {
+    try {
+        const res = await request("/api/admin/security/honeypot/logs?limit=50");
+        if (!res.ok) return;
+        const { logs } = await res.json();
+        const tbody = document.getElementById("honeypot-logs-table");
+        if (!tbody) return;
+        tbody.innerHTML = (logs && logs.length)
+            ? logs.map(l => `<tr>
+                <td style="font-size:.74rem; font-family:var(--font-code); color:var(--text-secondary);">${new Date(l.created_at).toLocaleString("vi-VN")}</td>
+                <td><span class="ip-badge">${escapeHtml(l.ip)}</span></td>
+                <td><code style="font-size:.72rem;">${escapeHtml(l.method)}</code></td>
+                <td><span style="color:#f59e0b; font-family:var(--font-code); font-size:.76rem;">${escapeHtml(l.path)}</span></td>
+                <td><span class="badge locked" style="font-size:0.7rem;">${escapeHtml(l.action_taken || 'AUTO_BAN')}</span></td>
+            </tr>`).join("")
+            : `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-secondary);">Chưa có tin tặc hay scanner nào sập bẫy Honeypot.</td></tr>`;
+    } catch (e) {
+        console.error("Lỗi tải Honeypot logs:", e);
+    }
+}
+
+async function loadThreatScores() {
+    try {
+        const res = await request("/api/admin/security/threat-scores?limit=50");
+        if (!res.ok) return;
+        const { threat_scores } = await res.json();
+        const tbody = document.getElementById("threat-scores-table");
+        if (!tbody) return;
+        tbody.innerHTML = (threat_scores && threat_scores.length)
+            ? threat_scores.map(t => {
+                const isCrit = t.score >= 100;
+                const isWarn = t.score >= 30;
+                const scoreColor = isCrit ? "#f87171" : isWarn ? "#fb923c" : "#34d399";
+                return `<tr>
+                    <td><span class="ip-badge">${escapeHtml(t.ip)}</span></td>
+                    <td><strong style="color:${scoreColor}; font-family:var(--font-code); font-size:.9rem;">${t.score} pts</strong></td>
+                    <td style="text-align:center; font-family:var(--font-code); font-size:.8rem;">${t.violation_count}</td>
+                    <td style="font-size:.76rem; color:var(--text-secondary);">${escapeHtml(t.last_violation || 'N/A')}</td>
+                    <td style="text-align:right;">
+                        <button class="btn-icon" onclick="resetThreatScore('${escapeHtml(t.ip)}')" title="Xóa điểm nguy cơ"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+                    </td>
+                </tr>`;
+            }).join("")
+            : `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-secondary);">Tất cả IP kết nối đều có chỉ số an toàn tốt.</td></tr>`;
+    } catch (e) {
+        console.error("Lỗi tải Threat scores:", e);
+    }
+}
+
+async function resetThreatScore(ip) {
+    if (!confirm(`Xóa điểm nguy cơ cho IP ${ip}?`)) return;
+    const res = await request(`/api/admin/security/threat-scores/${encodeURIComponent(ip)}`, { method: "DELETE" });
+    const j = await res.json();
+    showAlert(res.ok ? j.message : j.detail, res.ok ? "info" : "danger");
+    loadThreatScores();
+    loadSentinelStatus();
+}
+
+// ── ANTI-CHEAT & PLAGIARISM INSPECTOR ──────────────────────────────────────
+async function loadAntiCheatContests() {
+    try {
+        const res = await request("/api/admin/competitions");
+        if (!res.ok) return;
+        const contests = await res.json();
+        const select = document.getElementById("anticheat-contest-select");
+        if (!select) return;
+        select.innerHTML = '<option value="">Chọn cuộc thi để quét...</option>' +
+            (contests || []).map(c => `<option value="${c.id}">${escapeHtml(c.title)} (ID: ${c.id})</option>`).join("");
+    } catch (e) {
+        console.error("Lỗi tải danh sách contest cho Anti-Cheat:", e);
+    }
+}
+
+async function loadAntiCheatReports(competitionId = null) {
+    try {
+        const url = competitionId ? `/api/admin/security/anti-cheat/reports?competition_id=${competitionId}` : "/api/admin/security/anti-cheat/reports";
+        const res = await request(url);
+        if (!res.ok) return;
+        const { reports } = await res.json();
+        const tbody = document.getElementById("anticheat-reports-tbody");
+        if (!tbody) return;
+        tbody.innerHTML = (reports && reports.length)
+            ? reports.map(r => {
+                let badgeClass = "badge user";
+                if (r.verdict === "PLAGIARISM_FLAGGED" || r.verdict === "DISQUALIFIED") badgeClass = "badge locked";
+                else if (r.verdict === "SUSPICIOUS" || r.verdict === "FLAGGED") badgeClass = "badge admin";
+                
+                const scoreColor = r.similarity_score >= 80 ? "#f87171" : r.similarity_score >= 50 ? "#fb923c" : "#34d399";
+                return `<tr>
+                    <td style="font-family:var(--font-code); font-size:.78rem;">#${r.id}</td>
+                    <td>
+                        <strong style="color:var(--accent-cyan); font-size:0.85rem;">${escapeHtml(r.username_1)}</strong>
+                        <small style="display:block; color:var(--text-secondary); font-family:var(--font-code);">Sub #${r.submission_id_1}</small>
+                    </td>
+                    <td>
+                        <strong style="color:#f472b6; font-size:0.85rem;">${escapeHtml(r.username_2)}</strong>
+                        <small style="display:block; color:var(--text-secondary); font-family:var(--font-code);">Sub #${r.submission_id_2}</small>
+                    </td>
+                    <td style="text-align:center;">
+                        <strong style="color:${scoreColor}; font-family:var(--font-code); font-size:1rem;">${r.similarity_score}%</strong>
+                        <small style="display:block; color:var(--text-secondary); font-size:0.7rem;">${r.matched_tokens || 0} tokens trùng</small>
+                    </td>
+                    <td style="text-align:center;"><span class="${badgeClass}">${escapeHtml(r.verdict)}</span></td>
+                    <td style="text-align:right;">
+                        <button class="btn-icon" onclick="openAntiCheatComparisonModal(${r.id})" style="background:rgba(168,85,247,0.15); color:#c084fc; border-color:#a855f7;">
+                            <i class="fa-solid fa-code-compare"></i> Đối chiếu Code
+                        </button>
+                    </td>
+                </tr>`;
+            }).join("")
+            : `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-secondary);">Chưa có báo cáo vi phạm. Hãy chọn cuộc thi và nhấn "Quét Gian Lận".</td></tr>`;
+    } catch (e) {
+        console.error("Lỗi tải Anti-Cheat reports:", e);
+    }
+}
+
+document.getElementById("btn-run-anticheat-scan")?.addEventListener("click", async () => {
+    const contestId = document.getElementById("anticheat-contest-select").value;
+    if (!contestId) { showAlert("Vui lòng chọn cuộc thi để quét gian lận.", "danger"); return; }
+    const threshold = parseFloat(document.getElementById("anticheat-threshold-input").value) || 60;
+    
+    showAlert("Đang chạy thuật toán Token Winnowing quét gian lận toàn bộ bài nộp...", "info");
+    const res = await request(`/api/admin/security/anti-cheat/scan/${contestId}`, {
+        method: "POST",
+        body: JSON.stringify({ threshold })
+    });
+    const j = await res.json();
+    if (res.ok) {
+        showAlert(`Hoàn tất quét: Phát hiện ${j.flagged_count} cặp bài nộp có tỷ lệ trùng khớp >= ${threshold}%.`, j.flagged_count > 0 ? "danger" : "info");
+        loadAntiCheatReports(contestId);
+    } else {
+        showAlert(j.detail || "Không thể quét gian lận.", "danger");
+    }
+});
+
+async function openAntiCheatComparisonModal(reportId) {
+    try {
+        const res = await request("/api/admin/security/anti-cheat/reports");
+        const { reports } = await res.json();
+        const report = (reports || []).find(r => r.id === reportId);
+        if (!report) { showAlert("Không tìm thấy báo cáo gian lận.", "danger"); return; }
+        
+        activeAntiCheatReport = report;
+        document.getElementById("anticheat-modal-report-id").textContent = report.id;
+        
+        const scoreBadge = document.getElementById("anticheat-modal-score-badge");
+        const scoreColor = report.similarity_score >= 80 ? "#f87171" : report.similarity_score >= 50 ? "#fb923c" : "#34d399";
+        scoreBadge.innerHTML = `<span style="color:${scoreColor}; background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:8px; border:1px solid ${scoreColor};">Độ tương đồng: ${report.similarity_score}%</span>`;
+
+        document.getElementById("anticheat-user-a").textContent = report.username_1;
+        document.getElementById("anticheat-sub-a-meta").textContent = `Submission #${report.submission_id_1}`;
+        document.getElementById("anticheat-code-a").textContent = "Đang tải mã nguồn...";
+
+        document.getElementById("anticheat-user-b").textContent = report.username_2;
+        document.getElementById("anticheat-sub-b-meta").textContent = `Submission #${report.submission_id_2}`;
+        document.getElementById("anticheat-code-b").textContent = "Đang tải mã nguồn...";
+
+        document.getElementById("anticheat-modal-overlay").classList.add("open");
+
+        // Fetch both submission details
+        const [subA, subB] = await Promise.all([
+            request(`/api/user/submissions/${report.submission_id_1}`).then(r => r.json()).catch(() => null),
+            request(`/api/user/submissions/${report.submission_id_2}`).then(r => r.json()).catch(() => null),
+        ]);
+
+        if (subA && subA.code) document.getElementById("anticheat-code-a").textContent = subA.code;
+        else document.getElementById("anticheat-code-a").textContent = "/* Không thể tải mã nguồn bài nộp A */";
+
+        if (subB && subB.code) document.getElementById("anticheat-code-b").textContent = subB.code;
+        else document.getElementById("anticheat-code-b").textContent = "/* Không thể tải mã nguồn bài nộp B */";
+
+    } catch (e) {
+        showAlert("Lỗi tải chi tiết đối chiếu: " + e.message, "danger");
+    }
+}
+
+function closeAntiCheatModal() {
+    document.getElementById("anticheat-modal-overlay").classList.remove("open");
+    activeAntiCheatReport = null;
+}
+
+async function submitAntiCheatVerdict(verdict) {
+    if (!activeAntiCheatReport) return;
+    const res = await request("/api/admin/security/anti-cheat/verdict", {
+        method: "POST",
+        body: JSON.stringify({ report_id: activeAntiCheatReport.id, verdict })
+    });
+    const j = await res.json();
+    showAlert(res.ok ? `Đã cập nhật phán quyết thành '${verdict}'.` : j.detail, res.ok ? "info" : "danger");
+    closeAntiCheatModal();
+    loadAntiCheatReports();
+}
+
+document.getElementById("btn-verdict-disqualify")?.addEventListener("click", () => submitAntiCheatVerdict("DISQUALIFIED"));
+document.getElementById("btn-verdict-flagged")?.addEventListener("click", () => submitAntiCheatVerdict("FLAGGED"));
+document.getElementById("btn-verdict-clean")?.addEventListener("click", () => submitAntiCheatVerdict("CLEAN"));
+
+document.getElementById("refresh-sentinel-actions")?.addEventListener("click", loadSentinelActions);
+document.getElementById("refresh-honeypot")?.addEventListener("click", loadHoneypotLogs);
+document.getElementById("refresh-threats")?.addEventListener("click", loadThreatScores);
+document.getElementById("refresh-blocked")?.addEventListener("click", loadBlockedIps);
+document.getElementById("refresh-events")?.addEventListener("click", loadSecurityEvents);
 
 async function loadBlockedIps() {
     const res = await request("/api/admin/security/blocked-ips");
@@ -542,13 +957,18 @@ async function loadBlockedIps() {
             <td style="font-size:.78rem;">${new Date(b.blocked_until).toLocaleString("vi-VN")}</td>
             <td><button class="btn-icon" data-unblock="${escapeHtml(b.ip)}"><i class="fa-solid fa-lock-open"></i> Mở chặn</button></td>
           </tr>`).join("")
-        : `<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);padding:12px;">Không có IP nào đang bị chặn.</td></tr>`;
+        : `<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);padding:36px 16px;">
+            <i class="fa-solid fa-shield-check" style="font-size:2.2rem;color:#4ade80;margin-bottom:10px;opacity:0.85;display:block;"></i>
+            <strong style="color:#fff;display:block;margin-bottom:4px;">Không có IP nào đang bị chặn</strong>
+            <span style="font-size:0.8rem;">Tường lửa và hệ thống bảo mật đang hoạt động an toàn.</span>
+          </td></tr>`;
     document.querySelectorAll("[data-unblock]").forEach(btn => btn.addEventListener("click", async () => {
         const ip = btn.dataset.unblock;
         if (!confirm(`Mở chặn IP ${ip}?`)) return;
         const res = await request(`/api/admin/security/blocked-ips/${encodeURIComponent(ip)}`, { method: "DELETE" });
         showAlert((await res.json()).message);
         loadBlockedIps();
+        loadSentinelStatus();
     }));
 }
 
@@ -565,7 +985,11 @@ async function loadSecurityEvents() {
             <td style="color:${e.status_code >= 400 ? "#f87171" : "#4ade80"};font-weight:700;font-family:var(--font-code);">${e.status_code}</td>
             <td style="font-size:.72rem;">${escapeHtml(e.reason || "—")}</td>
           </tr>`).join("")
-        : `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:12px;">Chưa có sự kiện bảo mật.</td></tr>`;
+        : `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:36px 16px;">
+            <i class="fa-solid fa-clipboard-check" style="font-size:2.2rem;color:var(--accent-cyan);margin-bottom:10px;opacity:0.85;display:block;"></i>
+            <strong style="color:#fff;display:block;margin-bottom:4px;">Chưa có sự kiện bảo mật</strong>
+            <span style="font-size:0.8rem;">Toàn bộ lượt truy cập máy chủ đều hợp lệ.</span>
+          </td></tr>`;
 }
 
 document.getElementById("block-ip-btn")?.addEventListener("click", async () => {
@@ -577,7 +1001,268 @@ document.getElementById("block-ip-btn")?.addEventListener("click", async () => {
     showAlert(res.ok ? `Đã chặn IP ${ip} trong 60 phút.` : j.detail, res.ok ? "info" : "danger");
     document.getElementById("block-ip-input").value = "";
     loadBlockedIps();
+    loadSentinelStatus();
 });
+
+// ── 5.1 DEV-ONLY: ANTI-CHEAT MASTER MONITOR ────────────────────────────────
+async function loadAntiCheatMonitor() {
+    try {
+        const res = await request("/api/dev/anticheat-monitor/stats");
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            showAlert(errData.detail || "Không có quyền truy cập trang Giám sát Chống Gian lận DEV.", "danger");
+            return;
+        }
+        const data = await res.json();
+        
+        document.getElementById("dev-ac-stat-total").textContent = data.total_reports || 0;
+        document.getElementById("dev-ac-stat-flagged").textContent = data.flagged_count || 0;
+        document.getElementById("dev-ac-stat-dq").textContent = data.disqualified_count || 0;
+        document.getElementById("dev-ac-stat-clean").textContent = data.clean_count || 0;
+
+        // Render Contest Breakdown Table
+        const contestTbody = document.getElementById("dev-ac-contest-breakdown-tbody");
+        if (contestTbody) {
+            contestTbody.innerHTML = (data.contest_breakdown && data.contest_breakdown.length)
+                ? data.contest_breakdown.map(c => `<tr>
+                    <td><strong style="color:var(--text-bright);">${escapeHtml(c.title || 'Cuộc thi #' + c.competition_id)}</strong></td>
+                    <td style="text-align:center; font-family:var(--font-code);">${c.report_count || 0}</td>
+                    <td style="text-align:center; font-family:var(--font-code); color:${(c.avg_similarity || 0) >= 60 ? '#f87171' : '#34d399'};">${(c.avg_similarity || 0).toFixed(1)}%</td>
+                    <td style="text-align:center;"><span class="badge ${c.dq_count > 0 ? 'locked' : 'user'}">${c.dq_count || 0} bài</span></td>
+                </tr>`).join("")
+                : `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-secondary);">Chưa có dữ liệu kỳ thi.</td></tr>`;
+        }
+
+        // Render Full Reports Table
+        const fullTbody = document.getElementById("dev-ac-full-reports-tbody");
+        if (fullTbody) {
+            fullTbody.innerHTML = (data.recent_reports && data.recent_reports.length)
+                ? data.recent_reports.map(r => {
+                    let badgeClass = "badge user";
+                    if (r.verdict === "PLAGIARISM_FLAGGED" || r.verdict === "DISQUALIFIED") badgeClass = "badge locked";
+                    else if (r.verdict === "SUSPICIOUS" || r.verdict === "FLAGGED") badgeClass = "badge admin";
+                    const scoreColor = r.similarity_score >= 80 ? "#f87171" : r.similarity_score >= 50 ? "#fb923c" : "#34d399";
+
+                    return `<tr>
+                        <td style="font-family:var(--font-code); font-size:.78rem;">#${r.id}</td>
+                        <td style="font-size:.8rem; color:var(--text-secondary);">Comp #${r.competition_id}</td>
+                        <td><strong style="color:var(--accent-cyan); font-size:0.85rem;">${escapeHtml(r.username_1)}</strong> <small>(#${r.submission_id_1})</small></td>
+                        <td><strong style="color:#f472b6; font-size:0.85rem;">${escapeHtml(r.username_2)}</strong> <small>(#${r.submission_id_2})</small></td>
+                        <td style="text-align:center;"><strong style="color:${scoreColor}; font-family:var(--font-code); font-size:.95rem;">${r.similarity_score}%</strong></td>
+                        <td style="text-align:center;"><span class="${badgeClass}">${escapeHtml(r.verdict)}</span></td>
+                        <td style="font-size:.74rem; color:var(--text-secondary); white-space:nowrap;">${new Date(r.created_at).toLocaleString("vi-VN")}</td>
+                        <td style="text-align:right;">
+                            <button class="btn-icon" onclick="openAntiCheatComparisonModal(${r.id})" style="background:rgba(168,85,247,0.15); color:#c084fc; border-color:#a855f7;">
+                                <i class="fa-solid fa-code-compare"></i> Đối chiếu
+                            </button>
+                        </td>
+                    </tr>`;
+                }).join("")
+                : `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-secondary);">Chưa phát hiện hành vi gian lận nào trong toàn bộ hệ thống.</td></tr>`;
+        }
+
+    } catch (e) {
+        console.error("Lỗi tải Anti-Cheat Monitor:", e);
+    }
+}
+
+document.getElementById("btn-refresh-dev-anticheat")?.addEventListener("click", loadAntiCheatMonitor);
+
+let devWebMonitorInterval = null;
+
+// ── 5.2 DEV-ONLY: WEB SECURITY & SENTINEL BOT MONITOR ──────────────────────
+async function loadWebSecurityMonitor() {
+    try {
+        const res = await request("/api/dev/web-monitor/telemetry");
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            showAlert(errData.detail || "Không có quyền truy cập trang Giám sát Web & Sentinel Bot DEV.", "danger");
+            return;
+        }
+        const data = await res.json();
+
+        // 0. Update Bot Master Switch UI
+        const isBotActive = data.bot_active !== false;
+        const toggleInput = document.getElementById("dev-bot-master-toggle");
+        const statusIndicator = document.getElementById("dev-bot-status-indicator");
+        const statusText = document.getElementById("dev-bot-status-text");
+        const slider = document.getElementById("dev-bot-slider");
+        const knob = document.getElementById("dev-bot-knob");
+
+        if (toggleInput && !toggleInput._isUserInteracting) {
+            toggleInput.checked = isBotActive;
+        }
+        if (statusIndicator) {
+            statusIndicator.style.background = isBotActive ? "#10b981" : "#f87171";
+            statusIndicator.style.boxShadow = isBotActive ? "0 0 12px #10b981" : "0 0 12px #f87171";
+        }
+        if (statusText) {
+            statusText.textContent = isBotActive ? "BOT ĐANG CHẠY LIÊN TỤC 24/7" : "BOT ĐÃ TẠM DỪNG";
+            statusText.style.color = isBotActive ? "#34d399" : "#f87171";
+        }
+        if (slider) {
+            slider.style.background = isBotActive ? "#10b981" : "rgba(239, 68, 68, 0.4)";
+            slider.style.boxShadow = isBotActive ? "0 0 12px rgba(16,185,129,0.5)" : "0 0 12px rgba(239,68,68,0.3)";
+        }
+        if (knob) {
+            knob.style.left = isBotActive ? "26px" : "4px";
+        }
+
+        // 1. Render Real-time Terminal TTY Logs & Live Action Stream
+        const terminalBox = document.getElementById("dev-web-terminal-logs");
+        if (terminalBox && data.action_stream && data.action_stream.length) {
+            const lines = data.action_stream.slice(0, 20).map(a => {
+                const isBan = a.action_type.includes("BAN");
+                const isKill = a.action_type.includes("KILLSWITCH") || a.action_type.includes("LOCKED");
+                const isHoneypot = a.action_type.includes("HONEYPOT") || a.action_type.includes("ESCALATION");
+                const tagColor = isBan ? "#f87171" : isKill ? "#fb923c" : isHoneypot ? "#c084fc" : "#22d3ee";
+                const target = a.target_ip || (a.target_user_id ? "USER#" + a.target_user_id : "SYS");
+                return `<div style="margin-bottom:3px;"><span style="color:#64748b;">[${new Date(a.created_at).toLocaleTimeString("vi-VN")}]</span> <strong style="color:${tagColor};">[${escapeHtml(a.action_type)}]</strong> <span style="color:#f8fafc;">${escapeHtml(target)}</span> &gt;&gt; <span style="color:#94a3b8;">${escapeHtml(a.reason || '')}</span> ${a.details ? '<span style="color:#64748b;">(' + escapeHtml(a.details) + ')</span>' : ''}</div>`;
+            }).join("");
+            terminalBox.innerHTML = lines;
+        }
+
+        const streamTbody = document.getElementById("dev-web-action-stream-tbody");
+        if (streamTbody) {
+            streamTbody.innerHTML = (data.action_stream && data.action_stream.length)
+                ? data.action_stream.map(a => `<tr>
+                    <td style="font-size:.74rem; font-family:var(--font-code); color:var(--text-secondary); white-space:nowrap;">${new Date(a.created_at).toLocaleString("vi-VN")}</td>
+                    <td><span class="badge ${a.action_type.includes('BAN') ? 'locked' : a.action_type.includes('KILLSWITCH') ? 'warn' : 'dev'}">${escapeHtml(a.action_type)}</span></td>
+                    <td><code style="color:var(--accent-cyan); font-size:.78rem;">${escapeHtml(a.target_ip || (a.target_user_id ? 'User #' + a.target_user_id : 'System'))}</code></td>
+                    <td style="font-size:.76rem; color:var(--text-secondary); max-width:280px; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(a.details || a.reason)}">${escapeHtml(a.reason || '')} ${a.details ? '<small>(' + escapeHtml(a.details) + ')</small>' : ''}</td>
+                </tr>`).join("")
+                : `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-secondary);">Chưa có hành động phản xạ nào từ Bot.</td></tr>`;
+        }
+
+        // 2. Render Locked Users List
+        const lockedTbody = document.getElementById("dev-web-locked-users-tbody");
+        if (lockedTbody) {
+            lockedTbody.innerHTML = (data.locked_users && data.locked_users.length)
+                ? data.locked_users.map(u => `<tr>
+                    <td style="font-family:var(--font-code); font-size:.8rem;">#${u.id}</td>
+                    <td><strong style="color:#f87171;">${escapeHtml(u.username)}</strong></td>
+                    <td style="font-size:.78rem; color:var(--text-secondary);">${escapeHtml(u.email || '—')}</td>
+                    <td><span class="badge ${u.role === 'admin' ? 'admin' : 'user'}">${escapeHtml(u.role)}</span></td>
+                    <td style="text-align:right;">
+                        <button class="btn-icon" onclick="devQuickUnlock(${u.id})" style="color:#34d399; border-color:#10b981;"><i class="fa-solid fa-lock-open"></i> Mở khóa</button>
+                    </td>
+                </tr>`).join("")
+                : `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-secondary);">Không có tài khoản nào bị khóa.</td></tr>`;
+        }
+
+        // 3. Render Monitored Entities Radar Table
+        const radarTbody = document.getElementById("dev-web-monitored-entities-tbody");
+        if (radarTbody) {
+            radarTbody.innerHTML = (data.monitored_entities && data.monitored_entities.length)
+                ? data.monitored_entities.map(e => {
+                    const isCrit = e.score >= 100;
+                    const isWarn = e.score >= 30;
+                    const scoreColor = isCrit ? "#f87171" : isWarn ? "#fb923c" : "#34d399";
+                    const isDev = (e.role || "").toLowerCase() === "dev";
+
+                    return `<tr>
+                        <td><span class="ip-badge">${escapeHtml(e.ip)}</span></td>
+                        <td>${e.username ? '<strong style="color:var(--text-bright);">' + escapeHtml(e.username) + '</strong>' : '<span style="color:var(--text-secondary);">Khách / Scanner</span>'}</td>
+                        <td><span class="badge ${isDev ? 'dev' : e.role === 'superadmin' ? 'superadmin' : e.role === 'admin' ? 'admin' : 'user'}">${isDev ? '🛡️ DEV (IMMUNE)' : escapeHtml(e.role || 'Guest')}</span></td>
+                        <td style="text-align:center;"><strong style="color:${scoreColor}; font-family:var(--font-code);">${e.score} pts</strong></td>
+                        <td style="text-align:center; font-family:var(--font-code);">${e.violation_count || 0}</td>
+                        <td style="font-size:.76rem; color:var(--text-secondary); max-width:180px; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(e.last_violation || 'N/A')}</td>
+                        <td style="text-align:center;">
+                            ${isDev ? '<span class="badge dev" style="background:rgba(168,85,247,0.15); color:#c084fc; border-color:#a855f7;">🛡️ IMMUNE</span>' : (e.is_banned ? '<span class="badge locked">BANNED IP</span>' : e.is_locked ? '<span class="badge locked">LOCKED ACC</span>' : '<span class="badge user" style="background:rgba(16,185,129,0.15); color:#34d399; border-color:#10b981;">SAFE</span>')}
+                        </td>
+                        <td style="text-align:right;">
+                            ${isDev ? '<span style="color:var(--accent-cyan); font-size:0.75rem;">Miễn trừ</span>' : `
+                                <div style="display:inline-flex; gap:6px;">
+                                    <button class="btn-icon danger" onclick="devDirectBanEntity('${escapeHtml(e.ip)}', ${e.user_id || 'null'})" title="Khóa ngay"><i class="fa-solid fa-ban"></i></button>
+                                    <button class="btn-icon" onclick="devDirectUnbanEntity('${escapeHtml(e.ip)}', ${e.user_id || 'null'})" title="Mở khóa"><i class="fa-solid fa-rotate-left"></i></button>
+                                </div>
+                            `}
+                        </td>
+                    </tr>`;
+                }).join("")
+                : `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-secondary);">Chưa có entity nào vi phạm. Mọi kết nối đều an toàn.</td></tr>`;
+        }
+
+    } catch (e) {
+        console.error("Lỗi tải Web Monitor Telemetry:", e);
+    }
+}
+
+document.getElementById("btn-refresh-dev-web-monitor")?.addEventListener("click", loadWebSecurityMonitor);
+document.getElementById("btn-refresh-dev-bot-actions")?.addEventListener("click", loadWebSecurityMonitor);
+
+document.getElementById("btn-clear-terminal-logs")?.addEventListener("click", () => {
+    const terminalBox = document.getElementById("dev-web-terminal-logs");
+    if (terminalBox) terminalBox.innerHTML = '<div style="color:var(--text-muted);">[SYSTEM] Màn hình console đã được xóa sạch. Đang đợi sự kiện tiếp theo...</div>';
+});
+
+document.getElementById("dev-bot-master-toggle")?.addEventListener("change", async (e) => {
+    const active = e.target.checked;
+    e.target._isUserInteracting = true;
+    try {
+        const res = await request("/api/dev/web-monitor/toggle-bot", {
+            method: "POST",
+            body: JSON.stringify({ active })
+        });
+        const j = await res.json();
+        showAlert(res.ok ? j.message : (j.detail || "Lỗi thay đổi trạng thái Bot"), res.ok ? (active ? "info" : "warn") : "danger");
+        loadWebSecurityMonitor();
+    } catch (err) {
+        showAlert("Lỗi kết nối tới máy chủ.", "danger");
+    } finally {
+        setTimeout(() => { e.target._isUserInteracting = false; }, 1500);
+    }
+});
+
+document.getElementById("btn-dev-direct-ban")?.addEventListener("click", async () => {
+    const val = document.getElementById("dev-ban-target-input").value.trim();
+    if (!val) { showAlert("Vui lòng nhập IP hoặc User ID cần khóa khẩn cấp.", "danger"); return; }
+    if (!confirm(`Khóa khẩn cấp đối tượng '${val}'?`)) return;
+    
+    const isId = /^\d+$/.test(val);
+    const body = isId ? { user_id: parseInt(val), reason: "Dev Direct Emergency Ban" } : { ip: val, reason: "Dev Direct Emergency Ban" };
+    const res = await request("/api/dev/web-monitor/ban-user", { method: "POST", body: JSON.stringify(body) });
+    const j = await res.json();
+    showAlert(res.ok ? j.message : j.detail, res.ok ? "info" : "danger");
+    document.getElementById("dev-ban-target-input").value = "";
+    loadWebSecurityMonitor();
+});
+
+document.getElementById("btn-dev-direct-unban")?.addEventListener("click", async () => {
+    const val = document.getElementById("dev-ban-target-input").value.trim();
+    if (!val) { showAlert("Vui lòng nhập IP hoặc User ID cần mở khóa.", "danger"); return; }
+    const isId = /^\d+$/.test(val);
+    const body = isId ? { user_id: parseInt(val) } : { ip: val };
+    const res = await request("/api/dev/web-monitor/unban", { method: "POST", body: JSON.stringify(body) });
+    const j = await res.json();
+    showAlert(res.ok ? j.message : j.detail, res.ok ? "info" : "danger");
+    document.getElementById("dev-ban-target-input").value = "";
+    loadWebSecurityMonitor();
+});
+
+window.devQuickUnlock = async function(userId) {
+    if (!confirm(`Mở khóa cho tài khoản User #${userId}?`)) return;
+    const res = await request("/api/dev/web-monitor/unban", { method: "POST", body: JSON.stringify({ user_id: userId }) });
+    const j = await res.json();
+    showAlert(res.ok ? j.message : j.detail, res.ok ? "info" : "danger");
+    loadWebSecurityMonitor();
+};
+
+window.devDirectBanEntity = async function(ip, userId) {
+    if (!confirm(`Khóa đối tượng IP '${ip}' / User #${userId}?`)) return;
+    const res = await request("/api/dev/web-monitor/ban-user", { method: "POST", body: JSON.stringify({ ip: ip || null, user_id: userId || null, reason: "Dev Table Direct Action" }) });
+    const j = await res.json();
+    showAlert(res.ok ? j.message : j.detail, res.ok ? "info" : "danger");
+    loadWebSecurityMonitor();
+};
+
+window.devDirectUnbanEntity = async function(ip, userId) {
+    if (!confirm(`Mở khóa đối tượng IP '${ip}' / User #${userId}?`)) return;
+    const res = await request("/api/dev/web-monitor/unban", { method: "POST", body: JSON.stringify({ ip: ip || null, user_id: userId || null }) });
+    const j = await res.json();
+    showAlert(res.ok ? j.message : j.detail, res.ok ? "info" : "danger");
+    loadWebSecurityMonitor();
+};
 
 // ── 6. CONTESTS ────────────────────────────────────────────────────────────
 async function loadContests() {
@@ -605,6 +1290,8 @@ async function loadContests() {
         document.getElementById("contest-end").value = item.ends_at ? item.ends_at.slice(0, 16) : "";
         document.getElementById("contest-statement").value = item.statement;
         document.getElementById("contest-problems").value = JSON.stringify(item.problems || [], null, 2);
+        contestSelectedProblems = item.problems || [];
+        renderContestSelectedChips();
         const delBtn = document.getElementById("delete-contest-btn");
         if (delBtn) delBtn.style.display = "inline-flex";
     }));
@@ -619,6 +1306,8 @@ window.quickDeleteContest = async function(contestId, contestTitle) {
             document.getElementById("contest-form").reset();
             document.getElementById("contest-id").value = "";
             document.getElementById("contest-problems").value = "[]";
+            contestSelectedProblems = [];
+            renderContestSelectedChips();
             document.getElementById("delete-contest-btn").style.display = "none";
         }
         loadContests();
@@ -643,47 +1332,210 @@ let allBankProblems = [];
 let currentEditingProblem = null;
 let latestAITests = [];
 
+let bankSelectedProbIds = new Set();
+
 async function loadProblemsBank() {
     const res = await request("/api/admin/problems");
     if (!res.ok) return;
     allBankProblems = await res.json();
+    populateProblemContestFilter();
     renderProblemsBank();
+}
+
+function populateProblemContestFilter() {
+    const sel = document.getElementById("problem-contest-filter");
+    if (!sel) return;
+    const currentVal = sel.value || "all";
+    const contests = new Map();
+    allBankProblems.forEach(p => {
+        if (p.contest_title) {
+            contests.set(p.competition_id || p.contest_title, p.contest_title);
+        }
+    });
+    let html = '<option value="all">Tất cả Cuộc thi / Kho</option>';
+    contests.forEach((title, id) => {
+        html += `<option value="${id}">${escapeHtml(title)}</option>`;
+    });
+    sel.innerHTML = html;
+    sel.value = currentVal;
 }
 
 function renderProblemsBank() {
     const q = (document.getElementById("problem-bank-search")?.value || "").trim().toLowerCase();
+    const statusFilter = document.getElementById("problem-status-filter")?.value || "all";
+    const contestFilter = document.getElementById("problem-contest-filter")?.value || "all";
     const tbody = document.getElementById("problems-bank-tbody");
     if (!tbody) return;
-    const filtered = allBankProblems.filter(p => 
-        (p.title || "").toLowerCase().includes(q) || 
-        (p.code || "").toLowerCase().includes(q) ||
-        (p.contest_title || "").toLowerCase().includes(q)
-    );
+
+    // Calculate metric stats
+    const totalCount = allBankProblems.length;
+    const hiddenCount = allBankProblems.filter(p => p.is_hidden).length;
+    const activeCount = totalCount - hiddenCount;
+    let totalTests = 0;
+    allBankProblems.forEach(p => { totalTests += (p.test_count || 0); });
+
+    const elTotal = document.getElementById("prob-stat-total");
+    const elActive = document.getElementById("prob-stat-active");
+    const elHidden = document.getElementById("prob-stat-hidden");
+    const elTests = document.getElementById("prob-stat-tests");
+    if (elTotal) elTotal.textContent = totalCount.toLocaleString("vi-VN");
+    if (elActive) elActive.textContent = activeCount.toLocaleString("vi-VN");
+    if (elHidden) elHidden.textContent = hiddenCount.toLocaleString("vi-VN");
+    if (elTests) elTests.textContent = totalTests.toLocaleString("vi-VN");
+
+    const filtered = allBankProblems.filter(p => {
+        const isHidden = Boolean(p.is_hidden);
+        if (statusFilter === "active" && isHidden) return false;
+        if (statusFilter === "hidden" && !isHidden) return false;
+
+        if (contestFilter !== "all") {
+            if (String(p.competition_id) !== String(contestFilter) && String(p.contest_title) !== String(contestFilter)) {
+                return false;
+            }
+        }
+
+        if (q) {
+            const title = (p.title || "").toLowerCase();
+            const code = (p.code || "").toLowerCase();
+            const contest = (p.contest_title || "").toLowerCase();
+            if (!title.includes(q) && !code.includes(q) && !contest.includes(q)) return false;
+        }
+        return true;
+    });
+
     if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-secondary);">Không tìm thấy bài tập nào.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:35px; color:var(--text-secondary);"><i class="fa-solid fa-magnifying-glass" style="font-size:1.4rem; color:#64748b; margin-bottom:8px; display:block;"></i> Không tìm thấy bài tập nào khớp với bộ lọc.</td></tr>';
+        updateBankSelectedCount();
         return;
     }
-    tbody.innerHTML = filtered.map(p => `
-        <tr>
-            <td><strong style="color:var(--accent-cyan); font-family:var(--font-code); font-size:1rem;">${escapeHtml(p.code || 'A')}</strong></td>
-            <td>
-                <div style="font-weight:700; color:var(--text-bright); font-size:0.92rem;">${escapeHtml(p.title || 'Không tiêu đề')}</div>
-                <small style="color:var(--text-secondary);">${escapeHtml((p.statement || '').slice(0, 80))}...</small>
-            </td>
-            <td><span style="font-size:0.8rem; color:var(--text-secondary);"><i class="fa-solid fa-flag-checkered" style="font-size:0.75rem; color:var(--accent-cyan);"></i> ${escapeHtml(p.contest_title || 'Kho tự do')}</span></td>
-            <td style="text-align:center;"><span class="badge user" style="color:var(--accent-cyan); font-weight:700;">${p.points ?? 100}p</span></td>
-            <td style="text-align:center; font-family:var(--font-code); font-size:0.8rem; color:var(--text-secondary);">${p.time_limit ?? 1.0}s / ${p.memory_limit ?? 256}MB</td>
-            <td style="text-align:center;"><span class="badge admin">${p.test_count ?? 0} tests</span></td>
-            <td style="text-align:right; white-space:nowrap;">
-                <button class="btn-icon" onclick="openEditProblemModal(${p.id})" title="Chỉnh sửa Đề bài"><i class="fa-solid fa-pen"></i> Sửa</button>
-                <button class="btn-icon" style="border-color:rgba(168,85,247,0.4); color:#c084fc;" onclick="openTestModal(${p.id})" title="Quản lý Testcases"><i class="fa-solid fa-vial"></i> Tests</button>
-                <button class="btn-icon danger" onclick="deleteProblem(${p.id})" title="Xóa Bài tập"><i class="fa-solid fa-trash"></i></button>
-            </td>
-        </tr>
-    `).join("");
+
+    tbody.innerHTML = filtered.map(p => {
+        const isHidden = Boolean(p.is_hidden);
+        const isChecked = bankSelectedProbIds.has(p.id);
+        const statusBadge = isHidden 
+            ? '<span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); font-weight:700;"><i class="fa-solid fa-eye-slash"></i> TẠM ẨN</span>'
+            : '<span class="badge" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); font-weight:700;"><i class="fa-solid fa-eye"></i> HIỂN THỊ</span>';
+
+        const toggleBtnIcon = isHidden ? "fa-solid fa-eye" : "fa-solid fa-eye-slash";
+        const toggleBtnTitle = isHidden ? "Mở hiển thị bài tập cho thí sinh" : "Tạm ẩn bài tập không cho thí sinh thấy";
+        const toggleBtnStyle = isHidden ? "color:#34d399; border-color:rgba(52,211,153,0.35);" : "color:#f59e0b; border-color:rgba(245,158,11,0.35);";
+
+        return `
+            <tr style="${isHidden ? 'opacity:0.75; background:rgba(245,158,11,0.02);' : ''}">
+                <td style="text-align:center;">
+                    <input type="checkbox" class="prob-row-cb" data-id="${p.id}" ${isChecked ? 'checked' : ''} onchange="toggleBankProbSelect(${p.id}, this.checked)" style="cursor:pointer; transform:scale(1.15);">
+                </td>
+                <td><strong style="color:var(--accent-cyan); font-family:var(--font-code); font-size:0.95rem;">${escapeHtml(p.code || 'A')}</strong></td>
+                <td>
+                    <div style="font-weight:700; color:var(--text-bright); font-size:0.92rem; display:flex; align-items:center; gap:8px;">
+                        ${escapeHtml(p.title || 'Không tiêu đề')}
+                    </div>
+                    <small style="color:var(--text-secondary);">${escapeHtml((p.statement || '').slice(0, 80))}...</small>
+                </td>
+                <td><span style="font-size:0.8rem; color:var(--text-secondary);"><i class="fa-solid fa-flag-checkered" style="font-size:0.75rem; color:var(--accent-cyan);"></i> ${escapeHtml(p.contest_title || 'Kho tự do')}</span></td>
+                <td style="text-align:center;">${statusBadge}</td>
+                <td style="text-align:center; font-family:var(--font-code); font-size:0.8rem;">
+                    <span style="color:var(--accent-cyan); font-weight:700;">${p.points ?? 100}p</span> · <span style="color:var(--text-secondary);">${p.time_limit ?? 1.0}s / ${p.memory_limit ?? 256}MB</span>
+                </td>
+                <td style="text-align:center;"><span class="badge admin" style="font-weight:700;">${p.test_count ?? 0} tests</span></td>
+                <td style="text-align:right; white-space:nowrap;">
+                    <button class="btn-icon" style="${toggleBtnStyle}" onclick="toggleProblemVisibility(${p.id})" title="${toggleBtnTitle}"><i class="${toggleBtnIcon}"></i> ${isHidden ? 'Hiện' : 'Ẩn'}</button>
+                    <button class="btn-icon" style="border-color:rgba(56,189,248,0.4); color:#38bdf8;" onclick="openViewTestCasesModal('${p.code || p.id}')" title="Xem chi tiết bộ Test Cases"><i class="fa-solid fa-vial-circle-check"></i> Tests (${p.test_count ?? 0})</button>
+                    <button class="btn-icon" onclick="openEditProblemModal(${p.id})" title="Chỉnh sửa Đề bài"><i class="fa-solid fa-pen"></i> Sửa</button>
+                    <button class="btn-icon" style="border-color:rgba(168,85,247,0.4); color:#c084fc;" onclick="openTestModal(${p.id})" title="Chỉnh sửa / AI sinh tests"><i class="fa-solid fa-wand-magic-sparkles"></i> Sửa Tests</button>
+                    <button class="btn-icon danger" onclick="deleteProblem(${p.id})" title="Xóa Bài tập"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+
+    updateBankSelectedCount();
 }
 
+window.toggleBankProbSelect = function(id, isChecked) {
+    if (isChecked) bankSelectedProbIds.add(id);
+    else bankSelectedProbIds.delete(id);
+    updateBankSelectedCount();
+};
+
+document.getElementById("prob-bank-master-cb")?.addEventListener("change", function() {
+    const checked = this.checked;
+    document.querySelectorAll(".prob-row-cb").forEach(cb => {
+        cb.checked = checked;
+        const id = parseInt(cb.getAttribute("data-id"));
+        if (checked) bankSelectedProbIds.add(id);
+        else bankSelectedProbIds.delete(id);
+    });
+    updateBankSelectedCount();
+});
+
+function updateBankSelectedCount() {
+    const el = document.getElementById("prob-selected-count-badge");
+    if (el) el.innerHTML = `Chọn: <strong style="color:#38bdf8;">${bankSelectedProbIds.size}</strong> bài`;
+}
+
+window.toggleProblemVisibility = async function(probId) {
+    try {
+        const res = await request(`/api/admin/problems/${probId}/toggle-visibility`, { method: "POST" });
+        if (!res.ok) throw new Error("Không thể thay đổi trạng thái ẩn/hiện.");
+        const data = await res.json();
+        
+        // Update local object
+        const found = allBankProblems.find(p => p.id === probId);
+        if (found) found.is_hidden = data.data.is_hidden;
+        
+        renderProblemsBank();
+        showAlert(`✓ ${data.message}`, "success");
+    } catch (err) {
+        showAlert(`Lỗi: ${err.message}`, "danger");
+    }
+};
+
+window.bulkActionProblems = async function(action) {
+    if (bankSelectedProbIds.size === 0) {
+        showAlert("Vui lòng tích chọn ít nhất 1 bài tập để thực hiện thao tác.", "warning");
+        return;
+    }
+    const actionText = action === "hide" ? "TẠM ẨN" : (action === "unhide" ? "HIỂN THỊ" : "XÓA VĨNH VIỄN");
+    if (!confirm(`XÁC NHẬN: Bạn có chắc chắn muốn ${actionText} ${bankSelectedProbIds.size} bài tập đã chọn?`)) return;
+
+    try {
+        const res = await request("/api/admin/problems/bulk-action", {
+            method: "POST",
+            body: JSON.stringify({
+                problem_ids: Array.from(bankSelectedProbIds),
+                action: action
+            })
+        });
+        if (!res.ok) throw new Error("Thao tác hàng loạt thất bại.");
+        const data = await res.json();
+        showAlert(`✓ Đã ${actionText.toLowerCase()} thành công ${data.affected} bài tập!`, "success");
+        bankSelectedProbIds.clear();
+        document.getElementById("prob-bank-master-cb").checked = false;
+        loadProblemsBank();
+    } catch (err) {
+        showAlert(`Lỗi: ${err.message}`, "danger");
+    }
+};
+
+window.insertStatementTemplate = function(type) {
+    const txtArea = document.getElementById("edit-prob-statement");
+    if (!txtArea) return;
+    let template = "";
+    if (type === "io") {
+        template = "\n\n### Đầu vào (Input)\n- Dòng 1: Ghi số nguyên `n`\n- Dòng 2: Ghi `n` số nguyên cách nhau bởi dấu cách\n\n### Đầu ra (Output)\n- In ra kết quả bài toán trên một dòng duy nhất.";
+    } else if (type === "sample") {
+        template = "\n\n### Ví dụ (Example)\n**Ví dụ 1:**\n```\nInput:\n5\n1 2 3 4 5\n\nOutput:\n15\n```\n*Giải thích: 1 + 2 + 3 + 4 + 5 = 15.*";
+    } else if (type === "constraints") {
+        template = "\n\n### Ràng buộc (Constraints)\n- $1 \\le n \\le 10^5$\n- $-10^9 \\le A_i \\le 10^9$\n- Giới hạn thời gian: `1.0s` | Bộ nhớ: `256MB`";
+    }
+    txtArea.value += template;
+    txtArea.focus();
+};
+
 document.getElementById("problem-bank-search")?.addEventListener("input", renderProblemsBank);
+document.getElementById("problem-status-filter")?.addEventListener("change", renderProblemsBank);
+document.getElementById("problem-contest-filter")?.addEventListener("change", renderProblemsBank);
 
 async function populateContestSelect(selectedId = null) {
     const sel = document.getElementById("edit-prob-contest");
@@ -701,7 +1553,8 @@ window.openCreateBankProblemModal = async function() {
     document.getElementById("edit-prob-points").value = "100";
     document.getElementById("edit-prob-tl").value = "1.0";
     document.getElementById("edit-prob-ml").value = "256";
-    document.getElementById("problem-modal-title").textContent = "Tạo Bài tập mới trong Kho";
+    document.getElementById("edit-prob-hidden").checked = false;
+    document.getElementById("problem-modal-title").innerHTML = '<i class="fa-solid fa-plus-circle"></i> Tạo Bài tập mới trong Kho';
     await populateContestSelect();
     document.getElementById("problem-modal-overlay").classList.add("open");
 };
@@ -719,7 +1572,8 @@ window.openEditProblemModal = async function(probId) {
     document.getElementById("edit-prob-tl").value = p.time_limit ?? 1.0;
     document.getElementById("edit-prob-ml").value = p.memory_limit ?? 256;
     document.getElementById("edit-prob-statement").value = p.statement || "";
-    document.getElementById("problem-modal-title").textContent = `Chỉnh sửa Bài tập: ${p.title}`;
+    document.getElementById("edit-prob-hidden").checked = Boolean(p.is_hidden);
+    document.getElementById("problem-modal-title").innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa Đề bài: [${escapeHtml(p.code)}] ${escapeHtml(p.title)}`;
     await populateContestSelect(p.competition_id);
     document.getElementById("problem-modal-overlay").classList.add("open");
 };
@@ -738,14 +1592,15 @@ document.getElementById("problem-edit-form")?.addEventListener("submit", async e
         time_limit: parseFloat(document.getElementById("edit-prob-tl").value || "1.0"),
         memory_limit: parseInt(document.getElementById("edit-prob-ml").value || "256"),
         statement: document.getElementById("edit-prob-statement").value,
-        competition_id: parseInt(document.getElementById("edit-prob-contest").value || "1")
+        competition_id: parseInt(document.getElementById("edit-prob-contest").value || "1"),
+        is_hidden: document.getElementById("edit-prob-hidden").checked
     };
     const res = await request(id ? `/api/admin/problems/${id}` : "/api/admin/problems", {
         method: id ? "PUT" : "POST",
         body: JSON.stringify(body)
     });
     if (res.ok) {
-        showAlert(id ? "Đã cập nhật bài tập thành công!" : "Đã tạo bài tập mới thành công!", "info");
+        showAlert(id ? "✓ Đã cập nhật đề bài thành công!" : "✓ Đã tạo bài tập mới thành công!", "success");
         closeProblemModal();
         loadProblemsBank();
     } else {
@@ -755,10 +1610,12 @@ document.getElementById("problem-edit-form")?.addEventListener("submit", async e
 });
 
 window.deleteProblem = async function(probId) {
-    if (!confirm("XÁC NHẬN: Bạn có chắc chắn muốn xóa bài tập này cùng toàn bộ testcases?")) return;
+    const found = allBankProblems.find(p => p.id === probId);
+    const title = found ? `[${found.code}] ${found.title}` : `bài tập #${probId}`;
+    if (!confirm(`XÁC NHẬN XÓA: Bạn có chắc chắn muốn xóa vĩnh viễn ${title} cùng toàn bộ test cases liên quan?`)) return;
     const res = await request(`/api/admin/problems/${probId}`, { method: "DELETE" });
     if (res.ok) {
-        showAlert("Đã xóa bài tập thành công!", "info");
+        showAlert("✓ Đã xóa bài tập thành công!", "success");
         loadProblemsBank();
     } else {
         const j = await res.json();
@@ -920,24 +1777,406 @@ document.getElementById("btn-apply-ai-tests")?.addEventListener("click", () => {
     showAlert(`Đã nạp ${latestAITests.length} testcases vào form. Hãy nhấn 'Lưu Toàn Bộ Tests' để cập nhật vào cơ sở dữ liệu!`, "info");
 });
 
+let allSubmissionsData = [];
+
+async function loadSubmissions() {
+    try {
+        const res = await request("/api/admin/submissions?limit=100");
+        if (!res.ok) return;
+        allSubmissionsData = await res.json();
+        renderSubmissionsTable();
+    } catch (e) {
+        console.error("Lỗi tải danh sách bài nộp:", e);
+    }
+}
+
+function renderSubmissionsTable() {
+    const q = (document.getElementById("sub-search-input")?.value || "").trim().toLowerCase();
+    const verdictFilter = document.getElementById("sub-verdict-filter")?.value || "";
+    const langFilter = document.getElementById("sub-lang-filter")?.value || "";
+
+    const tbody = document.getElementById("submissions-tbody");
+    if (!tbody) return;
+
+    const filtered = allSubmissionsData.filter(s => {
+        const matchQ = !q || String(s.id).includes(q) || (s.username || "").toLowerCase().includes(q) || (s.competition_title || "").toLowerCase().includes(q);
+        const matchV = !verdictFilter || (s.verdict || "").toUpperCase() === verdictFilter;
+        const matchL = !langFilter || (s.language || "").toLowerCase().includes(langFilter);
+        return matchQ && matchV && matchL;
+    });
+
+    if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-secondary);">Không tìm thấy bài nộp nào phù hợp.</td></tr>';
+        const cntEl = document.getElementById("submissions-count");
+        if (cntEl) cntEl.textContent = `Tổng số 0 / ${allSubmissionsData.length} bài nộp.`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(s => {
+        let vBadge = `<span class="badge admin">${escapeHtml(s.verdict || "PENDING")}</span>`;
+        const v = (s.verdict || "").toUpperCase();
+        if (v === "AC") vBadge = `<span style="color:#22c55e; font-weight:700;"><i class="fa-solid fa-circle-check"></i> AC</span>`;
+        else if (v === "WA") vBadge = `<span style="color:#ef4444; font-weight:700;"><i class="fa-solid fa-circle-xmark"></i> WA</span>`;
+        else if (v === "TLE") vBadge = `<span style="color:#f59e0b; font-weight:700;"><i class="fa-solid fa-clock"></i> TLE</span>`;
+        else if (v === "CE") vBadge = `<span style="color:#3b82f6; font-weight:700;"><i class="fa-solid fa-code"></i> CE</span>`;
+        else if (v === "RTE") vBadge = `<span style="color:#a855f7; font-weight:700;"><i class="fa-solid fa-bug"></i> RTE</span>`;
+
+        const dt = s.created_at ? new Date(s.created_at).toLocaleString("vi-VN") : "--";
+        const lang = s.language || "cpp";
+        const execTime = s.execution_time_ms != null ? `${s.execution_time_ms}ms` : "--";
+        const memKb = s.memory_kb != null ? `${s.memory_kb} KB` : "--";
+
+        return `<tr style="cursor:pointer;" onclick="openSubmissionModal(${s.id})">
+            <td><strong style="color:var(--accent-cyan); font-family:var(--font-code);">#${s.id}</strong></td>
+            <td><strong>${escapeHtml(s.username || "Thí sinh")}</strong></td>
+            <td>${escapeHtml(s.competition_title || "Bài tập")}</td>
+            <td style="text-align:center;"><span style="font-size:0.75rem; padding:2px 8px; border-radius:4px; background:rgba(34,211,238,0.1); color:var(--accent-cyan); font-family:var(--font-code);">${escapeHtml(lang)}</span></td>
+            <td style="text-align:center;">${vBadge}</td>
+            <td style="text-align:center; font-weight:700; font-family:var(--font-code); color:var(--text-bright);">${s.score || 0}</td>
+            <td style="text-align:center; font-family:var(--font-code); color:var(--text-secondary);">${execTime}</td>
+            <td style="text-align:center; font-family:var(--font-code); color:var(--text-secondary);">${memKb}</td>
+            <td style="font-size:0.8rem; color:var(--text-secondary);">${dt}</td>
+            <td style="text-align:center;" onclick="event.stopPropagation()">
+                <button class="btn-icon" onclick="openSubmissionModal(${s.id})" title="Xem Mã nguồn &amp; Chi tiết"><i class="fa-solid fa-code"></i> Xem Code</button>
+            </td>
+        </tr>`;
+    }).join("");
+
+    const cntEl = document.getElementById("submissions-count");
+    if (cntEl) cntEl.textContent = `Hiển thị ${filtered.length} / ${allSubmissionsData.length} bài nộp.`;
+}
+
+window.openSubmissionModal = function(subId) {
+    const sub = allSubmissionsData.find(s => s.id === subId);
+    if (!sub) return;
+
+    document.getElementById("sub-modal-id").textContent = sub.id;
+    document.getElementById("sub-modal-meta").innerHTML = `
+        <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.85rem; color:var(--text-secondary); background:rgba(0,0,0,0.3); padding:10px 14px; border-radius:8px; border:1px solid var(--border-color);">
+            <div>Thí sinh: <strong style="color:var(--text-bright);">${escapeHtml(sub.username || "Thí sinh")}</strong></div>
+            <div>Cuộc thi: <strong style="color:var(--text-bright);">${escapeHtml(sub.competition_title || "Bài tập")}</strong></div>
+            <div>Ngôn ngữ: <strong style="color:var(--accent-cyan);">${escapeHtml(sub.language || "cpp")}</strong></div>
+            <div>Verdict: <strong style="color:${sub.verdict === 'AC' ? '#22c55e' : '#ef4444'};">${escapeHtml(sub.verdict || "PENDING")}</strong></div>
+            <div>Điểm: <strong>${sub.score || 0}</strong></div>
+            <div>Thời gian: <strong>${sub.execution_time_ms || 0}ms</strong></div>
+            <div>Bộ nhớ: <strong>${sub.memory_kb || 0} KB</strong></div>
+        </div>
+    `;
+
+    document.getElementById("sub-modal-code").textContent = sub.code || "// Không có mã nguồn lưu trữ cho bài nộp này.";
+
+    const compilerBox = document.getElementById("sub-modal-compiler-box");
+    const compilerOut = document.getElementById("sub-modal-compiler-out");
+    if (sub.compiler_output) {
+        compilerBox.hidden = false;
+        compilerOut.textContent = sub.compiler_output;
+    } else {
+        compilerBox.hidden = true;
+    }
+
+    document.getElementById("submission-detail-modal-overlay").classList.add("open");
+};
+
+window.closeSubmissionModal = function() {
+    document.getElementById("submission-detail-modal-overlay").classList.remove("open");
+};
+
+document.getElementById("sub-search-input")?.addEventListener("input", renderSubmissionsTable);
+document.getElementById("sub-verdict-filter")?.addEventListener("change", renderSubmissionsTable);
+document.getElementById("sub-lang-filter")?.addEventListener("change", renderSubmissionsTable);
+document.getElementById("refresh-submissions")?.addEventListener("click", loadSubmissions);
+
 document.querySelectorAll(".admin-nav,[data-go]").forEach(btn => btn.addEventListener("click", () => {
     const view = btn.dataset.view || btn.dataset.go;
+    const role = (currentUser?.role || "").toLowerCase();
+    const level = currentUser ? userLevel(currentUser) : 0;
+
+    if (view === "github" || view === "anticheat_monitor" || view === "web_monitor" || view === "bot_actions" || view === "data_storage") {
+        if (role !== "dev" && level < 9) {
+            showAlert("Chỉ tài khoản DEV mới có quyền truy cập trang quản trị đặc quyền này.", "danger");
+            return;
+        }
+    }
     document.querySelectorAll(".admin-view").forEach(p => p.classList.toggle("active", p.dataset.viewPanel === view));
     document.querySelectorAll(".admin-nav").forEach(n => n.classList.toggle("active", n.dataset.view === view));
     document.getElementById("page-title").textContent = views[view] || "Control Center";
+    
+    // Manage real-time auto-polling for web_monitor & bot_actions
+    if (devWebMonitorInterval) {
+        clearInterval(devWebMonitorInterval);
+        devWebMonitorInterval = null;
+    }
+
     if (view === "overview") loadOverview();
-    if (view === "monitoring") loadMonitoring();
+    if (view === "monitoring") { loadJudges(); loadMonitoring(); }
+    if (view === "submissions") loadSubmissions();
+    if (view === "github") loadGitHubConfig();
     if (view === "members") loadMembers();
     if (view === "security") loadSecurity();
     if (view === "contests") loadContests();
     if (view === "problems") loadProblemsBank();
+    if (view === "anticheat_monitor") loadAntiCheatMonitor();
+    if (view === "data_storage") loadStorageStats();
+    if (view === "web_monitor" || view === "bot_actions") {
+        loadWebSecurityMonitor();
+        devWebMonitorInterval = setInterval(loadWebSecurityMonitor, 3000);
+    }
 }));
+
+// ── CONTEST PROBLEMS BUILDER & PROBLEM BANK PICKER ────────────────────────
+let contestSelectedProblems = [];
+let modalAllBankProblems = [];
+let modalSelectedCodes = new Set();
+
+function renderContestSelectedChips() {
+    const container = document.getElementById("contest-selected-chips-list");
+    const countEl = document.getElementById("contest-selected-count");
+    const jsonArea = document.getElementById("contest-problems");
+    if (countEl) countEl.textContent = contestSelectedProblems.length;
+
+    if (!container) return;
+
+    if (contestSelectedProblems.length === 0) {
+        container.innerHTML = `<div style="color: #64748b; font-size: 0.8rem; font-style: italic; text-align: center; padding: 16px;">Chưa chọn bài tập nào. Bấm nút "Chọn bài từ Kho bài tập" ở trên để tích chọn bài.</div>`;
+        if (jsonArea) jsonArea.value = "[]";
+        return;
+    }
+
+    container.innerHTML = contestSelectedProblems.map((p, idx) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(30,41,59,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:8px 12px; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                <span style="font-family:var(--font-code); font-weight:800; color:#38bdf8; font-size:0.8rem; background:rgba(56,189,248,0.1); padding:2px 8px; border-radius:6px;">${p.code || 'P' + (idx+1)}</span>
+                <span style="font-size:0.84rem; font-weight:600; color:#f8fafc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(p.title || '')}">${escapeHtml(p.title || '')}</span>
+                ${p.chapter_title ? `<span style="font-size:0.72rem; color:#94a3b8; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">${escapeHtml(p.chapter_title)}</span>` : ''}
+                <span style="font-size:0.72rem; color:#a78bfa;"><i class="fa-solid fa-vial"></i> ${(p.tests || []).length} tests</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:0.75rem; color:#94a3b8; display:flex; align-items:center; gap:4px;">
+                    Điểm: <input type="number" value="${p.points || 100}" onchange="updateContestProblemPoints(${idx}, this.value)" style="width:60px; padding:3px 6px; font-size:0.78rem; background:#0f172a; border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:#fbbf24; text-align:right;">
+                </label>
+                <button type="button" onclick="removeContestProblem(${idx})" style="background:none; border:none; color:#ef4444; font-size:0.9rem; cursor:pointer; padding:4px 6px;" title="Gỡ bài này khỏi cuộc thi"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+    `).join("");
+
+    if (jsonArea) {
+        jsonArea.value = JSON.stringify(contestSelectedProblems, null, 2);
+    }
+}
+
+window.updateContestProblemPoints = function(idx, val) {
+    if (contestSelectedProblems[idx]) {
+        contestSelectedProblems[idx].points = parseInt(val) || 100;
+        const jsonArea = document.getElementById("contest-problems");
+        if (jsonArea) jsonArea.value = JSON.stringify(contestSelectedProblems, null, 2);
+    }
+};
+
+window.removeContestProblem = function(idx) {
+    contestSelectedProblems.splice(idx, 1);
+    renderContestSelectedChips();
+};
+
+document.getElementById("clear-all-contest-problems-btn")?.addEventListener("click", () => {
+    if (contestSelectedProblems.length === 0) return;
+    if (confirm("Bạn có chắc muốn xóa tất cả các bài tập đã chọn khỏi cuộc thi này?")) {
+        contestSelectedProblems = [];
+        renderContestSelectedChips();
+    }
+});
+
+async function openProblemPickerModal() {
+    const modal = document.getElementById("problem-picker-modal");
+    if (!modal) return;
+    modal.style.display = "flex";
+
+    // Initialize selected codes from current contestSelectedProblems
+    modalSelectedCodes = new Set((contestSelectedProblems || []).map(p => (p.code || '').toUpperCase()));
+    updateModalSelectedCountBadge();
+
+    // Fetch problem bank if not loaded
+    if (modalAllBankProblems.length === 0) {
+        try {
+            const res = await request("/api/problem-bank?limit=300");
+            const data = await res.json();
+            modalAllBankProblems = data.problems || [];
+
+            // Populate chapter dropdown
+            const chapSelect = document.getElementById("modal-chapter-filter");
+            if (chapSelect && chapSelect.options.length <= 1) {
+                const chaptersMap = new Map();
+                modalAllBankProblems.forEach(p => {
+                    if (p.chapter_num && !chaptersMap.has(p.chapter_num)) {
+                        chaptersMap.set(p.chapter_num, p.chapter_title || `Chương ${p.chapter_num}`);
+                    }
+                });
+                [...chaptersMap.entries()].sort((a,b) => a[0] - b[0]).forEach(([num, title]) => {
+                    const opt = document.createElement("option");
+                    opt.value = num;
+                    opt.textContent = `${title}`;
+                    chapSelect.appendChild(opt);
+                });
+            }
+        } catch (err) {
+            console.error("Lỗi tải kho bài tập cho modal:", err);
+            showAlert("Không thể tải danh sách bài tập từ kho.", "danger");
+        }
+    }
+
+    renderModalProblemTable();
+}
+
+function closeProblemPickerModal() {
+    const modal = document.getElementById("problem-picker-modal");
+    if (modal) modal.style.display = "none";
+}
+
+function updateModalSelectedCountBadge() {
+    const badge = document.getElementById("modal-selected-count-badge");
+    if (badge) badge.textContent = modalSelectedCodes.size;
+}
+
+function getFilteredModalProblems() {
+    const chapSelect = document.getElementById("modal-chapter-filter");
+    const searchInput = document.getElementById("modal-problem-search");
+    const chapFilter = chapSelect ? parseInt(chapSelect.value) || 0 : 0;
+    const searchStr = (searchInput ? searchInput.value.trim() : "").toLowerCase();
+
+    return modalAllBankProblems.filter(p => {
+        if (chapFilter > 0 && p.chapter_num !== chapFilter) return false;
+        if (searchStr) {
+            const matchTitle = (p.title || "").toLowerCase().includes(searchStr);
+            const matchCode = (p.code || "").toLowerCase().includes(searchStr);
+            const matchChap = (p.chapter_title || "").toLowerCase().includes(searchStr);
+            if (!matchTitle && !matchCode && !matchChap) return false;
+        }
+        return true;
+    });
+}
+
+function renderModalProblemTable() {
+    const tbody = document.getElementById("modal-problems-tbody");
+    if (!tbody) return;
+
+    const filtered = getFilteredModalProblems();
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;"><i class="fa-solid fa-magnifying-glass" style="font-size:1.5rem; margin-bottom:8px; display:block;"></i>Không tìm thấy bài tập phù hợp</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(p => {
+        const codeUpper = (p.code || "").toUpperCase();
+        const isChecked = modalSelectedCodes.has(codeUpper);
+        return `
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+                <td style="padding:10px 8px; text-align:center;">
+                    <input type="checkbox" class="modal-problem-cb" data-code="${codeUpper}" ${isChecked ? 'checked' : ''} onchange="toggleModalProblemSelection('${codeUpper}', this.checked)" style="cursor:pointer; transform:scale(1.15);">
+                </td>
+                <td style="padding:10px 8px; font-family:var(--font-code); font-weight:700; color:#38bdf8;">${p.code}</td>
+                <td style="padding:10px 8px; font-weight:600; color:#f8fafc;">${escapeHtml(p.title || '')}</td>
+                <td style="padding:10px 8px; font-size:0.78rem; color:#94a3b8;">${escapeHtml(p.chapter_title || '')}</td>
+                <td style="padding:10px 8px; font-size:0.8rem; color:#a78bfa;"><i class="fa-solid fa-vial"></i> ${p.test_count || 3} tests</td>
+                <td style="padding:10px 8px; font-size:0.8rem; color:#fbbf24; text-align:right; font-weight:700;">100 pts</td>
+            </tr>
+        `;
+    }).join("");
+
+    updateModalSelectedCountBadge();
+}
+
+window.toggleModalProblemSelection = function(codeUpper, isChecked) {
+    if (isChecked) {
+        modalSelectedCodes.add(codeUpper);
+    } else {
+        modalSelectedCodes.delete(codeUpper);
+    }
+    updateModalSelectedCountBadge();
+};
+
+async function applySelectedProblemsToContest() {
+    if (modalSelectedCodes.size === 0) {
+        if (!confirm("Bạn chưa tích chọn bài tập nào. Bạn có muốn làm trống danh sách bài tập của cuộc thi?")) return;
+        contestSelectedProblems = [];
+        renderContestSelectedChips();
+        closeProblemPickerModal();
+        return;
+    }
+
+    showAlert("Đang nạp dữ liệu chi tiết các bài tập đã chọn...");
+    
+    // Map selected codes to full problem definitions
+    const newSelected = [];
+    for (const code of modalSelectedCodes) {
+        const found = modalAllBankProblems.find(p => (p.code || '').toUpperCase() === code);
+        if (found) {
+            let fullTests = found.tests || [];
+            let fullStatement = found.statement || '';
+            if (!fullTests.length || !fullStatement) {
+                try {
+                    const res = await request(`/api/problem-bank/${found.code}`);
+                    if (res.ok) {
+                        const detail = await res.json();
+                        fullTests = detail.tests || [];
+                        fullStatement = detail.statement || '';
+                    }
+                } catch (e) {
+                    console.error("Lỗi nạp chi tiết bài:", e);
+                }
+            }
+
+            newSelected.push({
+                code: found.code,
+                title: found.title,
+                chapter_title: found.chapter_title,
+                points: 100,
+                statement: fullStatement,
+                tests: fullTests
+            });
+        }
+    }
+
+    contestSelectedProblems = newSelected;
+    renderContestSelectedChips();
+    closeProblemPickerModal();
+    showAlert(`Đã thêm thành công ${contestSelectedProblems.length} bài tập vào cuộc thi!`, "info");
+}
+
+document.getElementById("open-problem-picker-btn")?.addEventListener("click", openProblemPickerModal);
+document.getElementById("close-problem-picker-modal")?.addEventListener("click", closeProblemPickerModal);
+document.getElementById("modal-cancel-btn")?.addEventListener("click", closeProblemPickerModal);
+document.getElementById("modal-apply-btn")?.addEventListener("click", applySelectedProblemsToContest);
+document.getElementById("modal-chapter-filter")?.addEventListener("change", renderModalProblemTable);
+document.getElementById("modal-problem-search")?.addEventListener("input", renderModalProblemTable);
+
+document.getElementById("modal-select-all-btn")?.addEventListener("click", () => {
+    const filtered = getFilteredModalProblems();
+    filtered.forEach(p => modalSelectedCodes.add((p.code || '').toUpperCase()));
+    renderModalProblemTable();
+});
+
+document.getElementById("modal-deselect-all-btn")?.addEventListener("click", () => {
+    const filtered = getFilteredModalProblems();
+    filtered.forEach(p => modalSelectedCodes.delete((p.code || '').toUpperCase()));
+    renderModalProblemTable();
+});
+
+document.getElementById("modal-master-checkbox")?.addEventListener("change", (e) => {
+    const filtered = getFilteredModalProblems();
+    if (e.target.checked) {
+        filtered.forEach(p => modalSelectedCodes.add((p.code || '').toUpperCase()));
+    } else {
+        filtered.forEach(p => modalSelectedCodes.delete((p.code || '').toUpperCase()));
+    }
+    renderModalProblemTable();
+});
 
 document.getElementById("member-search")?.addEventListener("input", loadMembers);
 document.getElementById("new-contest")?.addEventListener("click", () => {
     document.getElementById("contest-form").reset();
     document.getElementById("contest-id").value = "";
     document.getElementById("contest-problems").value = "[]";
+    contestSelectedProblems = [];
+    renderContestSelectedChips();
     const delBtn = document.getElementById("delete-contest-btn");
     if (delBtn) delBtn.style.display = "none";
 });
@@ -1121,6 +2360,380 @@ document.getElementById("run-health-check")?.addEventListener("click", async () 
     showAlert(res.ok ? "Đã kiểm tra sức khỏe 5 Judge Workers." : j.detail, res.ok ? "info" : "danger");
     await loadMonitoring();
 });
+
+// ── MOUSE DRAG & WHEEL SCROLL ENGINE (Di nút chuột kéo trang lên/xuống) ──
+(function initGlobalDragScroll() {
+    let isDragging = false;
+    let startY = 0;
+    let initialScrollY = 0;
+    let activeContainer = null;
+    let startContainerY = 0;
+    let startContainerScrollY = 0;
+
+    document.addEventListener("mousedown", (e) => {
+        if (e.target.closest("button, a, input, select, textarea, .admin-nav, .judge-toggle, .btn-icon")) return;
+
+        const tableWrap = e.target.closest(".admin-table-wrap, .detail-modal, pre");
+        if (tableWrap) {
+            activeContainer = tableWrap;
+            isDragging = true;
+            startContainerY = e.clientY;
+            startContainerScrollY = tableWrap.scrollTop;
+            tableWrap.style.cursor = "grabbing";
+            return;
+        }
+
+        isDragging = true;
+        activeContainer = null;
+        startY = e.clientY;
+        initialScrollY = window.scrollY;
+        document.body.style.cursor = "grabbing";
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        if (activeContainer) {
+            const dy = e.clientY - startContainerY;
+            activeContainer.scrollTop = startContainerScrollY - dy;
+        } else {
+            const dy = e.clientY - startY;
+            window.scrollTo(0, initialScrollY - dy);
+        }
+    });
+
+    const stopDrag = () => {
+        if (isDragging) {
+            isDragging = false;
+            document.body.style.cursor = "";
+            if (activeContainer) {
+                activeContainer.style.cursor = "";
+                activeContainer = null;
+            }
+        }
+    };
+
+    document.addEventListener("mouseup", stopDrag);
+    document.addEventListener("mouseleave", stopDrag);
+})();
+
+// ── DATA STORAGE & BACKUP CONTROLLER ──────────────────────────────────────
+async function loadStorageStats() {
+    try {
+        const res = await fetch("/api/admin/storage/stats", {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("Failed to load storage stats");
+        const data = await res.json();
+
+        // Update metric cards
+        const dbSizeEl = document.getElementById("storage-db-size");
+        const dbMetaEl = document.getElementById("storage-db-meta");
+        if (dbSizeEl) dbSizeEl.textContent = `${data.database.size_mb} MB`;
+        if (dbMetaEl) {
+            const c = data.database.counts || {};
+            dbMetaEl.textContent = `${c.users || 0} users · ${c.submissions || 0} bài nộp · ${c.problem_tests || 0} tests`;
+        }
+
+        const probSizeEl = document.getElementById("storage-problems-size");
+        const probMetaEl = document.getElementById("storage-problems-meta");
+        if (probSizeEl) probSizeEl.textContent = `${data.problem_bank.size_mb} MB`;
+        if (probMetaEl) probMetaEl.textContent = `${data.problem_bank.problems_count} bài tập · ${data.problem_bank.tests_count} tests (${data.problem_bank.chapters_count} chuyên đề)`;
+
+        const mediaSizeEl = document.getElementById("storage-media-size");
+        const mediaMetaEl = document.getElementById("storage-media-meta");
+        if (mediaSizeEl) mediaSizeEl.textContent = `${data.media.size_mb} MB`;
+        if (mediaMetaEl) mediaMetaEl.textContent = `${data.media.avatars_count} avatar · ${data.media.images_count} ảnh bài tập`;
+
+        const diskFreeEl = document.getElementById("storage-disk-free");
+        const backupMetaEl = document.getElementById("storage-backup-meta");
+        if (diskFreeEl) diskFreeEl.textContent = `${data.disk.free_gb} GB`;
+        if (backupMetaEl) backupMetaEl.textContent = `${data.backups.total_backups} bản sao lưu (${data.backups.size_mb} MB)`;
+
+        // Update directory breakdown table
+        const breakdownTbody = document.getElementById("storage-breakdown-tbody");
+        if (breakdownTbody) {
+            const rows = [
+                { name: "data/memory.db", type: "SQLite Database chính", size: `${data.database.size_mb} MB`, icon: "fa-database", color: "#34d399" },
+                { name: "data/python_300_kids/", type: "Kho 300 đề bài & 9.000 tests", size: `${data.problem_bank.size_mb} MB`, icon: "fa-folder-tree", color: "#60a5fa" },
+                { name: "data/media/", type: "Ảnh đại diện & File upload", size: `${data.media.size_mb} MB`, icon: "fa-images", color: "#fbbf24" },
+                { name: "data/sandbox/", type: "Vùng cô lập thực thi code", size: `${data.sandbox.size_mb} MB`, icon: "fa-flask", color: "#f472b6" },
+                { name: "backups/", type: "Tệp nén sao lưu định kỳ", size: `${data.backups.size_mb} MB`, icon: "fa-box-archive", color: "#c084fc" },
+                { name: "logs/", type: "Nhật ký Nginx & Backend", size: `${data.logs.size_mb} MB`, icon: "fa-file-lines", color: "#94a3b8" }
+            ];
+            breakdownTbody.innerHTML = rows.map(r => `
+                <tr>
+                    <td>
+                        <span style="font-family:var(--font-code); font-size:0.84rem; display:inline-flex; align-items:center; gap:8px;">
+                            <i class="fa-solid ${r.icon}" style="color:${r.color};"></i> ${r.name}
+                        </span>
+                    </td>
+                    <td style="color:var(--text-secondary); font-size:0.82rem;">${r.type}</td>
+                    <td style="text-align:right; font-family:var(--font-code); font-weight:700; color:var(--text-bright);">${r.size}</td>
+                </tr>
+            `).join("");
+        }
+
+        // Update backups table
+        renderBackupTable(data.backups.items);
+    } catch (err) {
+        console.error("Storage stats error:", err);
+    }
+}
+
+function renderBackupTable(items) {
+    const tbody = document.getElementById("storage-backups-tbody");
+    const badge = document.getElementById("storage-backups-count-badge");
+    if (badge) badge.textContent = `${items ? items.length : 0} bản sao lưu`;
+    if (!tbody) return;
+
+    if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:24px;">Chưa có bản sao lưu nào. Bấm "Tạo Bản Sao Lưu Ngay" ở trên để sao lưu.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = items.map(b => `
+        <tr>
+            <td>
+                <span style="font-family:var(--font-code); font-size:0.84rem; font-weight:600; color:#60a5fa; display:inline-flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-file-zipper" style="color:#c084fc;"></i> ${escapeHtml(b.filename)}
+                </span>
+            </td>
+            <td style="font-family:var(--font-code); font-size:0.82rem; color:var(--text-secondary);">${escapeHtml(b.created_at)}</td>
+            <td style="text-align:right; font-family:var(--font-code); font-weight:700; color:#34d399;">${b.size_mb} MB</td>
+            <td style="text-align:center;">
+                <div style="display:flex; justify-content:center; gap:8px;">
+                    <a href="/api/admin/storage/backups/${encodeURIComponent(b.filename)}/download?token=${encodeURIComponent(token)}" 
+                       target="_blank" 
+                       class="admin-button" 
+                       style="padding:4px 10px; font-size:0.75rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                        <i class="fa-solid fa-download"></i> Tải về
+                    </a>
+                    <button type="button" 
+                            onclick="deleteBackup('${escapeHtml(b.filename)}')" 
+                            class="admin-button danger" 
+                            style="padding:4px 10px; font-size:0.75rem;">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join("");
+}
+
+async function createManualBackup() {
+    const btn = document.getElementById("btn-create-backup-now");
+    if (!btn) return;
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang sao lưu...`;
+
+    try {
+        const res = await fetch("/api/admin/storage/backup", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showAlert(`✓ ${data.message}`, "success");
+            loadStorageStats();
+        } else {
+            showAlert(`Lỗi sao lưu: ${data.detail || data.message || "Không xác định"}`, "danger");
+        }
+    } catch (err) {
+        showAlert(`Lỗi mạng khi tạo sao lưu: ${err.message}`, "danger");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+}
+
+async function deleteBackup(filename) {
+    if (!confirm(`Bạn có chắc chắn muốn xóa bản sao lưu "${filename}" không?`)) return;
+    try {
+        const res = await fetch(`/api/admin/storage/backups/${encodeURIComponent(filename)}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showAlert(`✓ ${data.message}`, "success");
+            loadStorageStats();
+        } else {
+            showAlert(`Lỗi xóa: ${data.detail || "Không thể xóa file"}`, "danger");
+        }
+    } catch (err) {
+        showAlert(`Lỗi: ${err.message}`, "danger");
+    }
+}
+
+document.getElementById("btn-refresh-storage")?.addEventListener("click", loadStorageStats);
+document.getElementById("btn-create-backup-now")?.addEventListener("click", createManualBackup);
+
+// ── TEST CASES INSPECTOR MODAL CONTROLLER ─────────────────────────────────
+let inspectorCurrentProblem = null;
+let inspectorAllTests = [];
+
+window.openViewTestCasesModal = async function(problemRef) {
+    const modal = document.getElementById("view-testcases-modal-overlay");
+    if (!modal) return;
+
+    // Reset UI
+    document.getElementById("tc-inspector-code").textContent = String(problemRef).toUpperCase();
+    document.getElementById("tc-inspector-prob-title").textContent = "Đang tải dữ liệu...";
+    document.getElementById("tc-inspector-total-badge").textContent = "...";
+    document.getElementById("tc-inspector-showing-count").textContent = "...";
+    document.getElementById("tc-inspector-cards-container").innerHTML = `
+        <div style="text-align:center; padding: 50px 20px; color: var(--text-secondary);">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.8rem; color: #38bdf8; margin-bottom: 12px; display: block;"></i>
+            Đang nạp bộ test cases từ máy chủ...
+        </div>
+    `;
+    modal.classList.add("open");
+
+    try {
+        const res = await request(`/api/admin/problems/${encodeURIComponent(problemRef)}/tests`);
+        if (!res.ok) throw new Error("Không thể tải test cases.");
+        const data = await res.json();
+        inspectorCurrentProblem = data;
+        inspectorAllTests = data.tests || [];
+
+        document.getElementById("tc-inspector-code").textContent = data.code || problemRef;
+        document.getElementById("tc-inspector-prob-title").textContent = data.title || "";
+        document.getElementById("tc-inspector-total-badge").textContent = `${inspectorAllTests.length} Test Cases`;
+        
+        renderInspectorTestCards();
+    } catch (err) {
+        document.getElementById("tc-inspector-cards-container").innerHTML = `
+            <div style="text-align:center; padding: 40px 20px; color: #f87171;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.8rem; margin-bottom: 10px; display: block;"></i>
+                ${escapeHtml(err.message || "Lỗi nạp test cases")}
+            </div>
+        `;
+    }
+};
+
+window.closeTestCasesInspectorModal = function() {
+    document.getElementById("view-testcases-modal-overlay")?.classList.remove("open");
+};
+
+function renderInspectorTestCards() {
+    const container = document.getElementById("tc-inspector-cards-container");
+    if (!container) return;
+
+    const q = (document.getElementById("tc-inspector-search")?.value || "").trim().toLowerCase();
+    const filter = document.getElementById("tc-inspector-filter")?.value || "all";
+
+    const filtered = inspectorAllTests.filter((t, idx) => {
+        const isSample = idx < 2 || t.is_sample;
+        if (filter === "samples" && !isSample) return false;
+        if (filter === "hidden" && isSample) return false;
+
+        if (q) {
+            const inp = String(t.input || "").toLowerCase();
+            const exp = String(t.expected || "").toLowerCase();
+            const idxStr = String(idx + 1);
+            if (!inp.includes(q) && !exp.includes(q) && !idxStr.includes(q)) return false;
+        }
+        return true;
+    });
+
+    const showingEl = document.getElementById("tc-inspector-showing-count");
+    if (showingEl) showingEl.textContent = filtered.length;
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding: 40px 20px; color: var(--text-secondary);">
+                <i class="fa-solid fa-magnifying-glass" style="font-size: 1.5rem; margin-bottom: 10px; display: block; color: #64748b;"></i>
+                Không tìm thấy test case nào khớp với từ khóa tìm kiếm.
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = filtered.map((t, i) => {
+        const originalIdx = inspectorAllTests.indexOf(t) + 1;
+        const isSample = originalIdx <= 2 || t.is_sample;
+        const badgeColor = isSample ? "#34d399" : "#a78bfa";
+        const badgeBg = isSample ? "rgba(52,211,153,0.15)" : "rgba(167,139,250,0.15)";
+        const badgeBorder = isSample ? "rgba(52,211,153,0.3)" : "rgba(167,139,250,0.3)";
+        const badgeText = isSample ? "TEST MẪU (SAMPLE)" : `TEST ẨN #${originalIdx}`;
+
+        return `
+            <div class="test-card-item" style="background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);">
+                <!-- Card Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-family: var(--font-code); font-weight: 800; color: #f8fafc; font-size: 0.95rem;">Test #${originalIdx}</span>
+                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; font-weight: 700; background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder};">
+                            ${badgeText}
+                        </span>
+                        <span style="font-size: 0.75rem; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25); padding: 2px 8px; border-radius: 6px; font-weight: 600;">
+                            ${t.points || 3} pts
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" class="btn-icon" onclick="copySingleTestInput('${escapeHtml(encodeURIComponent(t.input || ''))}')" style="padding: 3px 8px; font-size: 0.75rem;" title="Sao chép Input">
+                            <i class="fa-solid fa-copy"></i> Copy In
+                        </button>
+                        <button type="button" class="btn-icon" onclick="copySingleTestExpected('${escapeHtml(encodeURIComponent(t.expected || ''))}')" style="padding: 3px 8px; font-size: 0.75rem;" title="Sao chép Expected Output">
+                            <i class="fa-solid fa-copy"></i> Copy Out
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Input & Output Grid -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; display: flex; justify-content: space-between;">
+                            <span><i class="fa-solid fa-arrow-right-to-bracket" style="color: #38bdf8;"></i> Input Data</span>
+                            <span style="font-family: var(--font-code); color: #64748b;">${(t.input || '').length} chars</span>
+                        </div>
+                        <pre style="margin: 0; background: #030712; color: #38bdf8; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.8rem; max-height: 140px; overflow: auto; white-space: pre-wrap; word-break: break-all;">${escapeHtml(t.input || '(Trống)')}</pre>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; display: flex; justify-content: space-between;">
+                            <span><i class="fa-solid fa-arrow-right-from-bracket" style="color: #34d399;"></i> Expected Output</span>
+                            <span style="font-family: var(--font-code); color: #64748b;">${(t.expected || '').length} chars</span>
+                        </div>
+                        <pre style="margin: 0; background: #030712; color: #34d399; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.8rem; max-height: 140px; overflow: auto; white-space: pre-wrap; word-break: break-all;">${escapeHtml(t.expected || '(Trống)')}</pre>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+window.copyAllTestCasesJSON = function() {
+    if (!inspectorAllTests.length) {
+        showAlert("Không có test case nào để sao chép.", "warning");
+        return;
+    }
+    const jsonStr = JSON.stringify(inspectorAllTests, null, 2);
+    navigator.clipboard.writeText(jsonStr).then(() => {
+        showAlert(`✓ Đã sao chép toàn bộ ${inspectorAllTests.length} test cases (JSON) vào clipboard!`, "success");
+    }).catch(() => {
+        showAlert("Không thể truy cập Clipboard.", "danger");
+    });
+};
+
+window.copySingleTestInput = function(encodedInp) {
+    const raw = decodeURIComponent(encodedInp);
+    navigator.clipboard.writeText(raw).then(() => {
+        showAlert("✓ Đã sao chép Input!", "success");
+    });
+};
+
+window.copySingleTestExpected = function(encodedExp) {
+    const raw = decodeURIComponent(encodedExp);
+    navigator.clipboard.writeText(raw).then(() => {
+        showAlert("✓ Đã sao chép Expected Output!", "success");
+    });
+};
+
+document.getElementById("tc-inspector-search")?.addEventListener("input", renderInspectorTestCards);
+document.getElementById("tc-inspector-filter")?.addEventListener("change", renderInspectorTestCards);
 
 // ── INITIAL BOOT ──────────────────────────────────────────────────────────
 checkAuthAndLoad();

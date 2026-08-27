@@ -1,0 +1,409 @@
+/**
+ * ============================================================================
+ * LOCAL CP STUDIO — GLOBAL GLASSMORPHISM, SMOOTH HOVER & SOFT SHADOWS SYSTEM
+ * Áp dụng toàn diện lên trang web chính (index, profile, standings, submissions, admin)
+ * ============================================================================
+ */
+
+/* ── 1. GLOBAL BACKGROUND & AURORA AMBIENT GLOW ── */
+body {
+  background-color: #030712 !important;
+  color: #f1f5f9 !important;
+}
+
+.app-ambient {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+.app-ambient .orb {
+  position: absolute !important;
+  border-radius: 50% !important;
+  filter: blur(140px) !important;
+  opacity: 0.45 !important;
+  animation-timing-function: ease-in-out !important;
+  animation-iteration-count: infinite !important;
+}
+
+.app-ambient .orb-cyan {
+  top: -10% !important;
+  left: -5% !important;
+  width: 600px !important;
+  height: 600px !important;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.45) 0%, rgba(6, 182, 212, 0) 70%) !important;
+  animation: floatOrb 12s ease-in-out infinite alternate !important;
+}
+
+.app-ambient .orb-violet {
+  top: 35% !important;
+  right: -10% !important;
+  width: 650px !important;
+  height: 650px !important;
+  background: radial-gradient(circle, rgba(147, 51, 234, 0.4) 0%, rgba(147, 51, 234, 0) 70%) !important;
+  animation: floatOrbReverse 15s ease-in-out infinite alternate !important;
+}
+
+.app-ambient .orb-emerald {
+  bottom: -15% !important;
+  left: 30% !important;
+  width: 700px !important;
+  height: 700px !important;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, rgba(99, 102, 241, 0) 70%) !important;
+  animation: floatOrb 18s ease-in-out infinite alternate !important;
+}
+
+@keyframes floatOrb {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-35px) scale(1.08); }
+  100% { transform: translateY(20px) scale(0.95); }
+}
+
+@keyframes floatOrbReverse {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(35px) rotate(8deg); }
+  100% { transform: translateY(-25px) rotate(-6deg); }
+}
+
+/* ── 2. GLASS PANELS & CARDS (FROSTED GLASS EFFECT) ── */
+.glass-panel,
+.app-header,
+.top-bar,
+.tmath-topbar,
+.tmath-card,
+.admin-card,
+.admin-sidebar,
+.admin-topbar,
+.panel,
+.editor-panel,
+.ai-panel,
+.modal-content,
+.detail-modal,
+.problem-card,
+.stat-card,
+.nav-menu,
+.card,
+.card-problem,
+.standings-card,
+.auth-card-modal {
+  background: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.16) !important;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative !important;
+}
+
+/* ── 3. SMOOTH HOVER & SOFT SHADOWS (NÂNG NHẸ & BÓNG MỜ SOFT GLOW) ── */
+.glass-hover,
+.problem-card:hover,
+.stat-card:hover,
+.card:hover,
+.card-problem:hover,
+.admin-card:hover,
+.tmath-card:hover,
+.feature-box:hover,
+.interactive-card:hover {
+  transform: translateY(-3px) scale(1.006) !important;
+  background: rgba(15, 23, 42, 0.75) !important;
+  border-color: rgba(99, 102, 241, 0.45) !important;
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5),
+              0 0 25px -4px rgba(99, 102, 241, 0.28),
+              inset 0 1px 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+/* ── 4. DYNAMIC MOUSE SPOTLIGHT (QUẦNG SÁNG BÁM CON TRỎ CHUỘT) ── */
+[data-glass-spotlight] {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+[data-glass-spotlight]::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: -1px !important;
+  background: radial-gradient(
+    380px circle at var(--mouse-x, -999px) var(--mouse-y, -999px),
+    rgba(99, 102, 241, 0.22),
+    transparent 75%
+  ) !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  transition: opacity 0.3s ease !important;
+  z-index: 1 !important;
+  border-radius: inherit !important;
+}
+
+[data-glass-spotlight]:hover::before {
+  opacity: 1 !important;
+}
+
+/* ── 5. GLASS BUTTONS & SHINE SWEEP EFFECT ── */
+.glass-btn,
+.btn,
+.btn-primary,
+.btn-secondary,
+.action-btn,
+.admin-button,
+.btn-tmath-submissions,
+.prob-nav-btn,
+button.run-btn {
+  position: relative !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  cursor: pointer !important;
+}
+
+.glass-btn:hover,
+.btn:hover,
+.btn-primary:hover,
+.action-btn:hover,
+.admin-button:hover,
+.btn-tmath-submissions:hover,
+button.run-btn:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 10px 25px -4px rgba(99, 102, 241, 0.4),
+              0 0 16px rgba(99, 102, 241, 0.25),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+.glass-btn:active,
+.btn:active,
+.btn-primary:active,
+.admin-button:active,
+button.run-btn:active {
+  transform: translateY(0) scale(0.98) !important;
+}
+
+/* Tia sáng quét qua nút bấm góc 60 độ */
+.glass-btn::after,
+.btn-primary::after,
+.admin-button.primary::after,
+.btn-tmath-submissions::after,
+button.run-btn::after {
+  content: '' !important;
+  position: absolute !important;
+  top: -50% !important;
+  left: -50% !important;
+  width: 200% !important;
+  height: 200% !important;
+  background: linear-gradient(
+    60deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.28) 50%,
+    transparent 70%
+  ) !important;
+  transform: rotate(30deg) translateX(-100%) !important;
+  transition: transform 0.75s cubic-bezier(0.19, 1, 0.22, 1) !important;
+  pointer-events: none !important;
+}
+
+.glass-btn:hover::after,
+.btn-primary:hover::after,
+.admin-button.primary:hover::after,
+.btn-tmath-submissions:hover::after,
+button.run-btn:hover::after {
+  transform: rotate(30deg) translateX(100%) !important;
+}
+
+/* ── 6. HEADER & TOPBAR GLASS SYSTEM ── */
+.app-header,
+.tmath-topbar,
+.prob-page-header,
+.admin-topbar {
+  background: rgba(15, 23, 42, 0.7) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3) !important;
+  z-index: 100 !important;
+}
+
+/* ── 7. USER PILL WITH GLASS & AVATAR ── */
+.user-pill-glass {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 4px 12px 4px 5px !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
+}
+
+.user-pill-glass:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(99, 102, 241, 0.5) !important;
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+.user-pill-avatar {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #1e1b4b !important;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.4) !important;
+}
+
+.user-pill-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.user-pill-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: #34d399 !important;
+  box-shadow: 0 0 8px #34d399 !important;
+  animation: pulseDot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.25); }
+}
+
+/* ── 8. GLASS INPUTS & TEXTAREAS ── */
+input[type="text"],
+input[type="search"],
+input[type="number"],
+input[type="password"],
+input[type="email"],
+select,
+textarea {
+  background: rgba(15, 23, 42, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 10px !important;
+  color: #f1f5f9 !important;
+  backdrop-filter: blur(12px) !important;
+  transition: all 0.2s ease !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(99, 102, 241, 0.6) !important;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  outline: none !important;
+}
+
+/* ── 9. GLASS TABLES & BADGES ── */
+.tmath-table,
+.admin-table-wrap table {
+  border-collapse: separate !important;
+  border-spacing: 0 4px !important;
+}
+
+.tmath-table tr,
+.admin-table-wrap tr {
+  transition: all 0.2s ease !important;
+  border-radius: 8px !important;
+}
+
+.tmath-table tbody tr:hover,
+.admin-table-wrap tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  transform: scale(1.003) !important;
+}
+
+.badge-verdict {
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid transparent !important;
+  font-weight: 700 !important;
+}
+
+.badge-verdict.ac {
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #34d399 !important;
+  border-color: rgba(52, 211, 153, 0.35) !important;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.15) !important;
+}
+
+.badge-verdict.wa {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #f87171 !important;
+  border-color: rgba(248, 113, 113, 0.35) !important;
+  box-shadow: 0 0 10px rgba(248, 113, 113, 0.15) !important;
+}
+
+/* ── 10. UI/UX PRO MAX VIBRANT ANIMATIONS & ACCENTS ── */
+.text-gradient-neon {
+  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #f472b6 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+.text-gradient-cyan-indigo {
+  background: linear-gradient(135deg, #06b6d4 0%, #6366f1 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+.neon-glow-cyan {
+  box-shadow: 0 0 25px -3px rgba(6, 182, 212, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.neon-glow-indigo {
+  box-shadow: 0 0 25px -3px rgba(99, 102, 241, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.neon-glow-pink {
+  box-shadow: 0 0 25px -3px rgba(236, 72, 153, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.glass-hover-magnetic {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease !important;
+}
+
+.glass-hover-magnetic:hover {
+  transform: translateY(-6px) scale(1.015) !important;
+  border-color: rgba(99, 102, 241, 0.45) !important;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45), 0 0 25px rgba(99, 102, 241, 0.25) !important;
+}
+
+@keyframes pulseGlowSoft {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.4));
+    opacity: 0.85;
+  }
+  50% {
+    filter: drop-shadow(0 0 24px rgba(236, 72, 153, 0.75));
+    opacity: 1;
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulseGlowSoft 4s ease-in-out infinite !important;
+}
+

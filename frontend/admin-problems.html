@@ -3,248 +3,376 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Kho Bài tập &amp; AI Testcases Studio | ClueOJ Admin</title>
+    <title>Kho Đề Bài &amp; AI Testcases Studio | ClueOJ Control Center</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="js/theme.js"></script>
-    <link rel="stylesheet" href="css/style.css?v=7.0">
+    <link rel="stylesheet" href="css/style.css?v=11.0">
     <link rel="stylesheet" href="css/admin.css?v=11.0">
+    <link rel="stylesheet" href="css/glassmorphism-effects.css">
+    <script src="js/glassmorphism.js"></script>
     <style>
-        .prob-page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 28px;
-            background: linear-gradient(180deg, rgba(8, 16, 35, 0.98), rgba(4, 9, 20, 0.95));
-            border-bottom: 1px solid var(--border-color);
-            backdrop-filter: blur(20px);
-            position: sticky;
-            top: 0;
-            z-index: 100;
+        :root {
+            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-code: 'JetBrains Mono', 'Fira Code', monospace;
+            --bg-deep: #020617;
+            --card-glass: rgba(15, 23, 42, 0.65);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #38bdf8;
+            --accent-purple: #c084fc;
+            --accent-emerald: #34d399;
+            --accent-amber: #fbbf24;
+            --accent-rose: #fb7185;
+            --text-bright: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-dim: #64748b;
         }
-        .prob-nav-tabs {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .prob-nav-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 10px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.82rem;
-            font-weight: 600;
-            border: 1px solid transparent;
-            transition: all 0.2s ease;
-        }
-        .prob-nav-btn:hover {
-            color: var(--text-bright);
-            background: rgba(34, 211, 238, 0.08);
-            border-color: rgba(34, 211, 238, 0.2);
-        }
-        .prob-nav-btn.active {
-            color: #fff;
-            background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(168, 85, 247, 0.18));
-            border-color: rgba(34, 211, 238, 0.4);
-            box-shadow: 0 4px 16px rgba(34, 211, 238, 0.12);
+        * { box-sizing: border-box; }
+        body { font-family: var(--font-main); background: var(--bg-deep); color: #f1f5f9; margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; }
+
+        /* AMBIENT */
+        .ambient-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+        .ambient-bg .orb { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.25; animation: orbFloat 20s ease-in-out infinite alternate; }
+        .ambient-bg .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, #0ea5e9, transparent 70%); top: -15%; left: -10%; animation-duration: 18s; }
+        .ambient-bg .orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, #a855f7, transparent 70%); top: 30%; right: -8%; animation-duration: 22s; animation-delay: -4s; }
+        .ambient-bg .orb-3 { width: 450px; height: 450px; background: radial-gradient(circle, #10b981, transparent 70%); bottom: -10%; left: 30%; animation-duration: 25s; animation-delay: -8s; }
+        .ambient-bg .orb-4 { width: 350px; height: 350px; background: radial-gradient(circle, #f59e0b, transparent 70%); top: 55%; left: 10%; animation-duration: 20s; animation-delay: -12s; opacity: 0.12; }
+        @keyframes orbFloat { 0% { transform: translate(0, 0) scale(1); } 33% { transform: translate(40px, -30px) scale(1.05); } 66% { transform: translate(-20px, 40px) scale(0.95); } 100% { transform: translate(30px, 20px) scale(1.02); } }
+        .ambient-bg .grid-mesh { position: absolute; inset: 0; background-image: linear-gradient(rgba(56,189,248,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,0.03) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%); }
+        .page-content { position: relative; z-index: 1; }
+
+        /* ANIMATIONS */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+        @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(56,189,248,0.15); } 50% { box-shadow: 0 0 35px rgba(56,189,248,0.3); } }
+        @keyframes borderGlow { 0%, 100% { border-color: rgba(56,189,248,0.3); } 50% { border-color: rgba(168,85,247,0.4); } }
+        .animate-in { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .animate-in-delay-1 { animation-delay: 0.08s; }
+        .animate-in-delay-2 { animation-delay: 0.16s; }
+        .animate-in-delay-3 { animation-delay: 0.24s; }
+        .animate-in-delay-4 { animation-delay: 0.32s; }
+        .animate-in-delay-5 { animation-delay: 0.40s; }
+
+        /* HEADER */
+        .header-glass { position: sticky; top: 0; z-index: 200; background: rgba(2,6,23,0.82); backdrop-filter: blur(24px) saturate(200%); -webkit-backdrop-filter: blur(24px) saturate(200%); border-bottom: 1px solid rgba(255,255,255,0.06); box-shadow: 0 4px 30px rgba(0,0,0,0.5), 0 0 1px rgba(56,189,248,0.15); padding: 0 28px; height: 60px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+        .brand-group { display: flex; align-items: center; gap: 18px; }
+        .brand-link { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px; padding: 7px 16px; border-radius: 12px; background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(168,85,247,0.12)); border: 1px solid rgba(56,189,248,0.2); transition: all 0.35s cubic-bezier(0.4,0,0.2,1); animation: pulse-glow 4s ease-in-out infinite; }
+        .brand-link:hover { transform: translateY(-2px); border-color: var(--accent-cyan); box-shadow: 0 0 30px rgba(56,189,248,0.35), 0 8px 20px rgba(0,0,0,0.3); }
+        .brand-link .pro-tag { font-size: 0.65rem; background: linear-gradient(135deg, #0ea5e9, #38bdf8); color: #020617; padding: 2px 7px; border-radius: 5px; font-weight: 800; letter-spacing: 0.5px; }
+        .nav-tabs { display: flex; align-items: center; gap: 3px; background: rgba(15,23,42,0.5); padding: 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .nav-tab { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 9px; font-size: 0.8rem; font-weight: 600; color: var(--text-dim); text-decoration: none; transition: all 0.25s cubic-bezier(0.4,0,0.2,1); white-space: nowrap; }
+        .nav-tab:hover { color: var(--text-bright); background: rgba(255,255,255,0.06); }
+        .nav-tab.active { color: var(--accent-cyan); background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.2); box-shadow: 0 0 12px rgba(56,189,248,0.1); }
+        .nav-tab.active i { text-shadow: 0 0 8px rgba(56,189,248,0.6); }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .user-chip { display: inline-flex; align-items: center; gap: 8px; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.2); color: var(--accent-cyan); padding: 7px 14px; border-radius: 10px; font-weight: 600; font-size: 0.8rem; transition: all 0.2s ease; }
+        .user-chip:hover { background: rgba(56,189,248,0.14); border-color: rgba(56,189,248,0.35); }
+        .ide-link { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary); transition: all 0.25s ease; text-decoration: none; }
+        .ide-link:hover { transform: translateY(-1px); background: rgba(255,255,255,0.08); color: var(--text-bright); border-color: rgba(255,255,255,0.2); }
+
+        /* HERO */
+        .hero-wrapper { max-width: 1520px; margin: 28px auto 0; padding: 0 24px; }
+        .hero-card { background: linear-gradient(135deg, rgba(15,23,42,0.8) 0%, rgba(30,27,75,0.35) 40%, rgba(6,78,59,0.15) 70%, rgba(15,23,42,0.8) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 22px; padding: 28px 34px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; backdrop-filter: blur(20px); position: relative; overflow: hidden; animation: borderGlow 6s ease-in-out infinite; }
+        .hero-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #0ea5e9, #a855f7, #10b981, #f59e0b, #0ea5e9); background-size: 200% 100%; animation: shimmer 4s linear infinite; }
+        .hero-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(56,189,248,0.3), rgba(168,85,247,0.3), transparent); }
+        .hero-kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 0.7rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent-cyan); background: rgba(56,189,248,0.08); padding: 4px 14px; border-radius: 20px; border: 1px solid rgba(56,189,248,0.2); }
+        .hero-title { font-size: 2rem; font-weight: 800; letter-spacing: -0.7px; margin: 8px 0; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 40%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .version-pill { font-size: 0.68rem; font-weight: 700; color: var(--accent-emerald); background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.25); padding: 4px 12px; border-radius: 20px; -webkit-text-fill-color: initial; text-shadow: 0 0 10px rgba(52,211,153,0.3); }
+        .hero-desc { font-size: 0.86rem; color: var(--text-secondary); margin: 0; max-width: 720px; line-height: 1.6; }
+
+        /* STATS */
+        .stats-row { max-width: 1520px; margin: 20px auto 0; padding: 0 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        @media (max-width: 1100px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) { .stats-row { grid-template-columns: 1fr; } }
+        .stat-card { background: var(--card-glass); border: 1px solid var(--border-glass); border-radius: 16px; padding: 20px 22px; display: flex; align-items: center; gap: 18px; backdrop-filter: blur(16px); transition: all 0.35s cubic-bezier(0.4,0,0.2,1); position: relative; overflow: hidden; }
+        .stat-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.15); box-shadow: 0 16px 40px rgba(0,0,0,0.4); }
+        .stat-card:hover .stat-icon { transform: scale(1.1); }
+        .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; transition: all 0.3s ease; }
+        .stat-icon.cyan { background: rgba(56,189,248,0.1); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); box-shadow: 0 0 20px rgba(56,189,248,0.12); }
+        .stat-icon.emerald { background: rgba(52,211,153,0.1); color: #34d399; border: 1px solid rgba(52,211,153,0.25); box-shadow: 0 0 20px rgba(52,211,153,0.12); }
+        .stat-icon.amber { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); box-shadow: 0 0 20px rgba(245,158,11,0.12); }
+        .stat-icon.purple { background: rgba(168,85,247,0.1); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); box-shadow: 0 0 20px rgba(168,85,247,0.12); }
+        .stat-label { font-size: 0.73rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 4px; }
+        .stat-value { font-size: 1.8rem; font-weight: 800; font-family: var(--font-code); line-height: 1.1; }
+
+        /* COMMAND BAR */
+        .cmd-wrapper { max-width: 1520px; margin: 18px auto 0; padding: 0 24px; }
+        .cmd-bar { background: rgba(15,23,42,0.65); border: 1px solid var(--border-glass); border-radius: 16px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; backdrop-filter: blur(16px); }
+        .cmd-filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex: 1; }
+        .search-box { position: relative; min-width: 260px; flex: 1; max-width: 420px; }
+        .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.82rem; transition: color 0.2s; }
+        .search-input { width: 100%; box-sizing: border-box; background: rgba(2,6,23,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px 10px 38px; font-size: 0.83rem; color: var(--text-bright); font-family: var(--font-main); transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+        .search-input:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 20px rgba(56,189,248,0.2), 0 0 40px rgba(56,189,248,0.05); background: rgba(2,6,23,0.9); }
+        .search-box:focus-within i { color: var(--accent-cyan); }
+        .filter-select { background: rgba(2,6,23,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px; font-size: 0.82rem; color: var(--text-bright); font-family: var(--font-main); cursor: pointer; transition: all 0.3s ease; }
+        .filter-select:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 15px rgba(56,189,248,0.2); }
+        .bulk-group { display: flex; align-items: center; gap: 8px; background: rgba(2,6,23,0.35); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
+
+        /* TABLE */
+        .table-wrapper { max-width: 1520px; margin: 18px auto 50px; padding: 0 24px; }
+        .table-glass { background: var(--card-glass); border: 1px solid var(--border-glass); border-radius: 18px; overflow: hidden; backdrop-filter: blur(20px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+        .table-scroll { max-height: calc(100vh - 360px); min-height: 380px; overflow-y: auto; overflow-x: auto; }
+        .pro-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .pro-table thead { background: rgba(2,6,23,0.9); position: sticky; top: 0; z-index: 10; }
+        .pro-table th { padding: 14px 18px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); border-bottom: 1px solid rgba(255,255,255,0.08); white-space: nowrap; }
+        .pro-table td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.87rem; vertical-align: middle; transition: all 0.2s ease; }
+        .pro-table tbody tr { transition: all 0.2s cubic-bezier(0.4,0,0.2,1); }
+        .pro-table tbody tr:hover td { background: rgba(56,189,248,0.03); }
+        .pro-table tbody tr:hover { box-shadow: inset 3px 0 0 var(--accent-cyan); }
+        .prob-code-badge { font-family: var(--font-code); font-weight: 700; font-size: 0.88rem; color: var(--accent-cyan); background: rgba(56,189,248,0.08); padding: 4px 10px; border-radius: 8px; border: 1px solid rgba(56,189,248,0.2); display: inline-block; text-shadow: 0 0 8px rgba(56,189,248,0.2); transition: all 0.2s ease; }
+        .pro-table tbody tr:hover .prob-code-badge { background: rgba(56,189,248,0.14); border-color: rgba(56,189,248,0.35); box-shadow: 0 0 12px rgba(56,189,248,0.15); }
+
+        /* BUTTONS */
+        .btn-action-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; font-size: 0.76rem; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary); transition: all 0.25s cubic-bezier(0.4,0,0.2,1); text-decoration: none; white-space: nowrap; }
+        .btn-action-pill:hover { transform: translateY(-2px); background: rgba(255,255,255,0.08); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .btn-primary-glow { background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); color: #020617; font-weight: 700; border: none; padding: 11px 22px; border-radius: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 9px; font-size: 0.86rem; box-shadow: 0 4px 20px rgba(56,189,248,0.3), 0 0 40px rgba(56,189,248,0.1); transition: all 0.3s cubic-bezier(0.4,0,0.2,1); font-family: var(--font-main); }
+        .btn-primary-glow:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 30px rgba(56,189,248,0.45), 0 0 60px rgba(56,189,248,0.15); }
+        .btn-primary-glow:active { transform: translateY(-1px); }
+        .btn-ai-glow { background: linear-gradient(135deg, #7c3aed 0%, #c084fc 100%); color: #fff; font-weight: 700; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.86rem; box-shadow: 0 4px 20px rgba(168,85,247,0.3), 0 0 40px rgba(168,85,247,0.1); transition: all 0.3s cubic-bezier(0.4,0,0.2,1); font-family: var(--font-main); }
+        .btn-ai-glow:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 30px rgba(168,85,247,0.45), 0 0 60px rgba(168,85,247,0.15); }
+        .btn-outline-ghost { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; border-radius: 10px; font-size: 0.86rem; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); color: var(--text-secondary); transition: all 0.25s ease; font-family: var(--font-main); }
+        .btn-outline-ghost:hover { background: rgba(255,255,255,0.08); color: var(--text-bright); border-color: rgba(255,255,255,0.2); }
+
+        /* AUTH */
+        .auth-overlay { position: fixed; inset: 0; z-index: 10000; display: none; align-items: center; justify-content: center; background: rgba(2,6,23,0.85); backdrop-filter: blur(16px); }
+        .auth-overlay.open { display: flex; }
+        .auth-modal { width: min(440px, 92vw); background: rgba(15,23,42,0.95); border: 1px solid rgba(56,189,248,0.25); border-radius: 20px; padding: 36px 32px; box-shadow: 0 25px 80px rgba(0,0,0,0.8), 0 0 60px rgba(56,189,248,0.08); animation: fadeInScale 0.4s cubic-bezier(0.16,1,0.3,1); }
+        .auth-icon { width: 60px; height: 60px; border-radius: 16px; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--accent-cyan); margin: 0 auto 18px; }
+        .auth-title { text-align: center; margin-bottom: 6px; font-size: 1.4rem; font-weight: 800; color: var(--text-bright); }
+        .auth-desc { color: var(--text-secondary); font-size: 0.84rem; text-align: center; margin-bottom: 24px; line-height: 1.55; }
+        .auth-input { width: 100%; box-sizing: border-box; background: rgba(2,6,23,0.7); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px 16px; color: var(--text-bright); font-size: 0.9rem; font-family: var(--font-main); transition: all 0.3s ease; }
+        .auth-input:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 20px rgba(56,189,248,0.15); }
+        .auth-label { font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 6px; font-weight: 600; }
+        .auth-submit { width: 100%; margin-top: 6px; }
+        .auth-footer { text-align: center; margin-top: 16px; font-size: 0.78rem; color: var(--text-dim); }
+        .auth-footer a { color: var(--accent-cyan); text-decoration: none; }
+
+        /* MODALS */
+        .modal-overlay { position: fixed; inset: 0; z-index: 5000; display: none; align-items: center; justify-content: center; background: rgba(2,6,23,0.75); backdrop-filter: blur(14px); }
+        .modal-overlay.open { display: flex; }
+        .modal-panel { background: rgba(11,19,41,0.97); border: 1px solid rgba(56,189,248,0.25); border-radius: 20px; box-shadow: 0 25px 80px rgba(0,0,0,0.85), 0 0 50px rgba(56,189,248,0.06); position: relative; animation: fadeInScale 0.35s cubic-bezier(0.16,1,0.3,1); max-height: 92vh; overflow-y: auto; }
+        .modal-close { position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: var(--text-dim); cursor: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s ease; z-index: 10; }
+        .modal-close:hover { background: rgba(251,113,133,0.15); border-color: rgba(251,113,133,0.3); color: var(--accent-rose); transform: rotate(90deg); }
+        .modal-header { padding: 24px 28px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .modal-body { padding: 20px 28px 24px; }
+
+        /* FORMS */
+        .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .form-field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-field input, .form-field select, .form-field textarea { width: 100%; box-sizing: border-box; background: rgba(2,6,23,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px; color: var(--text-bright); font-size: 0.86rem; font-family: var(--font-main); transition: all 0.3s ease; }
+        .form-field input:focus, .form-field select:focus, .form-field textarea:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 16px rgba(56,189,248,0.15); }
+        .form-field .code-input { font-family: var(--font-code); color: var(--accent-cyan); font-weight: 700; }
+        .form-field textarea.code-area { font-family: var(--font-code); font-size: 0.83rem; line-height: 1.55; background: rgba(2,6,23,0.8); resize: vertical; }
+
+        /* VISIBILITY TOGGLE */
+        .visibility-card { background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; cursor: pointer; transition: all 0.2s ease; }
+        .visibility-card:hover { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
+        .visibility-card label { display: flex; align-items: center; gap: 12px; margin: 0; cursor: pointer; }
+
+        /* TEMPLATE CHIPS */
+        .template-chips { display: flex; gap: 6px; }
+        .template-chip { font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid; background: transparent; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; }
+        .template-chip:hover { transform: translateY(-1px); }
+        .template-chip.cyan { color: var(--accent-cyan); border-color: rgba(56,189,248,0.25); }
+        .template-chip.cyan:hover { background: rgba(56,189,248,0.1); }
+        .template-chip.purple { color: var(--accent-purple); border-color: rgba(168,85,247,0.25); }
+        .template-chip.purple:hover { background: rgba(168,85,247,0.1); }
+        .template-chip.emerald { color: var(--accent-emerald); border-color: rgba(52,211,153,0.25); }
+        .template-chip.emerald:hover { background: rgba(52,211,153,0.1); }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; padding-top: 8px; }
+
+        /* TEST CARD */
+        .test-card-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; position: relative; cursor: move; transition: all 0.2s ease; }
+        .test-card-item:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
+        .test-card-item.dragging { opacity: 0.5; border-color: var(--accent-cyan); }
+
+        /* ALERT */
+        .admin-alert-bar { max-width: 1472px; margin: 16px auto 0; padding: 12px 20px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; display: none; align-items: center; gap: 10px; animation: fadeInUp 0.3s ease; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); color: var(--accent-cyan); }
+        .admin-alert-bar.show { display: flex; }
+
+        /* SCROLL FAB */
+        .scroll-fab { position: fixed; bottom: 28px; right: 28px; z-index: 500; display: flex; flex-direction: column; gap: 6px; }
+        .scroll-btn { width: 40px; height: 40px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.85); backdrop-filter: blur(12px); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.25s ease; font-size: 0.85rem; }
+        .scroll-btn:hover { background: rgba(56,189,248,0.15); border-color: rgba(56,189,248,0.3); color: var(--accent-cyan); transform: translateY(-2px); }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
+        ::-webkit-scrollbar-track { background: rgba(2,6,23,0.4); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(56,189,248,0.35); }
+        input[type="checkbox"] { accent-color: var(--accent-cyan); }
+
+        @media (max-width: 768px) {
+            .header-glass { padding: 0 16px; }
+            .nav-tabs { display: none; }
+            .hero-card { padding: 20px; }
+            .hero-title { font-size: 1.4rem; }
+            .cmd-bar { flex-direction: column; }
+            .bulk-group { width: 100%; justify-content: center; }
         }
     </style>
 </head>
-<body class="usaco-theme">
-    <!-- AUTH OVERLAY -->
+<body class="usaco-theme" spellcheck="false">
+    <div class="ambient-bg" aria-hidden="true">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="orb orb-4"></div>
+        <div class="grid-mesh"></div>
+    </div>
+
     <div id="admin-login-overlay" class="auth-overlay">
-        <div class="auth-card-modal">
-            <h2><i class="fa-solid fa-user-shield"></i> Xác thực Quản trị</h2>
-            <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:18px;">Vui lòng đăng nhập tài khoản Quản trị viên để tiếp tục.</p>
+        <div class="auth-modal">
+            <div class="auth-icon"><i class="fa-solid fa-user-shield"></i></div>
+            <h2 class="auth-title">Xác Thực Quản Trị</h2>
+            <p class="auth-desc">Vui lòng đăng nhập tài khoản Quản trị viên (<b>ADMIN</b>, <b>SUPERADMIN</b> hoặc <b>DEV</b>) để tiếp tục.</p>
             <form id="admin-login-form">
-                <div style="margin-bottom:14px;">
-                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">Tài khoản / Email</label>
-                    <input id="admin-login-user" type="text" placeholder="dev / admin" required style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px; color:var(--text-bright);">
-                </div>
-                <div style="margin-bottom:18px;">
-                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">Mật khẩu</label>
-                    <input id="admin-login-pass" type="password" placeholder="••••••••" required style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px; color:var(--text-bright);">
-                </div>
-                <button type="submit" class="admin-button primary" style="width:100%; padding:12px;"><i class="fa-solid fa-right-to-bracket"></i> Đăng nhập</button>
+                <div style="margin-bottom: 16px;"><label class="auth-label">Tài khoản hoặc Email</label><input id="admin-login-user" type="text" class="auth-input" placeholder="dev / admin" required></div>
+                <div style="margin-bottom: 20px;"><label class="auth-label">Mật khẩu</label><input id="admin-login-pass" type="password" class="auth-input" placeholder="••••••••" required></div>
+                <p id="admin-login-msg" hidden style="color: #f87171; font-size: 0.82rem; margin-bottom: 14px; padding: 10px 14px; background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); border-radius: 8px;"></p>
+                <button type="submit" class="btn-primary-glow auth-submit"><i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập Quản Trị</button>
             </form>
-            <div id="admin-login-msg" style="color:#f87171; font-size:0.82rem; margin-top:14px;" hidden></div>
+            <p class="auth-footer"><i class="fa-solid fa-shield-halved"></i> Quyết truy cập vào <a href="admin-console.html">ClueOJ Studio</a></p>
         </div>
     </div>
 
-    <!-- HEADER NAVIGATION -->
-    <header class="prob-page-header">
-        <div style="display:flex; align-items:center; gap:16px;">
-            <a href="admin-console.html" class="admin-logo">
-                <i class="fa-solid fa-code"></i> LOCAL CP
-            </a>
-            <span style="height:20px; width:1px; background:var(--border-color);"></span>
-            <div class="prob-nav-tabs">
-                <a href="admin-console.html" class="prob-nav-btn"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-                <a href="admin-console.html?view=contests" class="prob-nav-btn"><i class="fa-solid fa-flag-checkered"></i> Cuộc thi</a>
-                <a href="admin-problems.html" class="prob-nav-btn active"><i class="fa-solid fa-layer-group"></i> Kho Bài tập &amp; AI Studio</a>
+    <div class="page-content">
+        <header class="header-glass animate-in">
+            <div class="brand-group">
+                <a href="admin-console.html" class="brand-link"><i class="fa-solid fa-code" style="color: #38bdf8;"></i><span>LOCAL CP <span class="pro-tag">PRO</span></span></a>
+                <nav class="nav-tabs">
+                    <a href="admin-console.html" class="nav-tab"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                    <a href="admin-console.html?view=contests" class="nav-tab"><i class="fa-solid fa-flag-checkered"></i> Cuộc thi</a>
+                    <a href="admin-problems.html" class="nav-tab active"><i class="fa-solid fa-layer-group"></i> Kho Đề Bài &amp; AI Studio</a>
+                    <a href="admin-console.html?view=data_storage" class="nav-tab" id="nav-storage-link" style="display:none;"><i class="fa-solid fa-hard-drive"></i> Lưu trữ</a>
+                </nav>
             </div>
-        </div>
-        <div style="display:flex; align-items:center; gap:12px;">
-            <span id="user-display" class="admin-user"><i class="fa-solid fa-user-shield"></i> Admin Studio</span>
-            <a href="index.html" class="btn-icon" title="Quay về IDE"><i class="fa-solid fa-house"></i> IDE Studio</a>
-        </div>
-    </header>
-
-    <!-- MAIN CONTENT CONTAINER -->
-    <main class="admin-content" style="padding-top: 24px;">
-        <div class="admin-toolbar" style="margin-bottom: 24px;">
-            <div>
-                <span class="admin-kicker">PROBLEM BANK &amp; AI TESTCASES STUDIO</span>
-                <h1 style="color:var(--text-bright); font-size:1.8rem; margin-top:4px;">Kho Bài tập &amp; Trình Tạo Test AI</h1>
-                <p style="color:var(--text-secondary); font-size:0.85rem; margin-top:4px;">Quản lý toàn bộ ngân hàng đề thi, cấu hình điểm, giới hạn thời gian/bộ nhớ và sinh bộ testcases chuẩn từ mã nguồn giải.</p>
+            <div class="header-right">
+                <span id="user-display" class="user-chip"><i class="fa-solid fa-user-shield"></i> Đang xác thực...</span>
+                <a href="index.html" class="ide-link"><i class="fa-solid fa-house"></i> IDE Studio</a>
             </div>
-            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                <input id="problem-search" type="search" placeholder="Search mã bài, tên bài tập..." style="min-width:260px;">
-                <button id="btn-create-prob" class="admin-button primary"><i class="fa-solid fa-plus"></i> Tạo Bài tập mới</button>
-            </div>
-        </div>
+        </header>
 
-        <!-- PROBLEMS LIST TABLE -->
-        <div class="admin-card">
-            <div class="admin-table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width:70px;">Mã</th>
-                            <th>Tên Bài tập &amp; Trích yếu</th>
-                            <th>Gán Cuộc thi</th>
-                            <th style="text-align:center;">Điểm</th>
-                            <th style="text-align:center;">Giới hạn (CPU/RAM)</th>
-                            <th style="text-align:center;">Testcases</th>
-                            <th style="text-align:right;">Thao tác Quản trị</th>
-                        </tr>
-                    </thead>
-                    <tbody id="problems-tbody">
-                        <tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
+        <div id="admin-alert" class="admin-alert-bar" style="display:none;"></div>
 
-    <!-- PROBLEM EDIT MODAL -->
-    <div id="problem-modal-overlay" class="detail-overlay">
-        <div class="detail-modal" style="width: min(740px, 95vw);">
-            <button class="detail-close" onclick="closeProblemModal()"><i class="fa-solid fa-xmark"></i></button>
-            <h3 id="problem-modal-title" style="color:var(--accent-cyan); margin-bottom:16px;">Chỉnh sửa Bài tập</h3>
-            <form id="problem-edit-form" class="admin-form">
-                <input type="hidden" id="edit-prob-id">
-                <div class="form-two">
-                    <label>Mã bài (Code)<input id="edit-prob-code" placeholder="VD: A, B, C..." required></label>
-                    <label>Tên bài tập (Title)<input id="edit-prob-title" placeholder="VD: Tính tổng hai số A+B" required></label>
+        <section class="hero-wrapper animate-in animate-in-delay-1">
+            <div class="hero-card">
+                <div>
+                    <span class="hero-kicker"><i class="fa-solid fa-sparkles"></i> CLUEOJ PROBLEM BANK &amp; AI TESTCASES STUDIO</span>
+                    <h1 class="hero-title"><span>Kho Đề Bài &amp; Trình Tạo Test AI</span><span class="version-pill">V45.0 PRO</span></h1>
+                    <p class="hero-desc">Quản lý toàn diện ngân hàng bài tập thuật toán: Sửa đề bài Markdown/LaTeX, biên tập test cases, 1-click Ẩn/Hiện bài tập và AI tự động sinh dữ liệu kiểm thử chuẩn xác 100% từ mã nguồn giải.</p>
                 </div>
-                <div class="form-two">
-                    <label>Điểm số (Points)<input id="edit-prob-points" type="number" value="100" required></label>
-                    <label>Giới hạn Thời gian (giây)<input id="edit-prob-tl" type="number" step="0.1" value="1.0" required></label>
-                </div>
-                <div class="form-two">
-                    <label>Giới hạn Bộ nhớ (MB)<input id="edit-prob-ml" type="number" value="256" required></label>
-                    <label>Cuộc thi gán vào
-                        <select id="edit-prob-contest"></select>
-                    </label>
-                </div>
-                <label>Đề bài chi tiết (Markdown / LaTeX)
-                    <textarea id="edit-prob-statement" placeholder="Nội dung đề bài, quy cách dữ liệu vào/ra, ví dụ..." style="min-height: 170px; font-family: var(--font-code); font-size: 0.85rem;"></textarea>
-                </label>
-                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px;">
-                    <button type="button" class="admin-button" onclick="closeProblemModal()">Hủy</button>
-                    <button type="submit" class="admin-button primary"><i class="fa-solid fa-floppy-disk"></i> Lưu Bài tập</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- TESTCASES MANAGER MODAL -->
-    <div id="test-modal-overlay" class="detail-overlay">
-        <div class="detail-modal" style="width: min(860px, 96vw); max-height: 90vh;">
-            <button class="detail-close" onclick="closeTestModal()"><i class="fa-solid fa-xmark"></i></button>
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-                <h3 id="test-modal-title" style="color:var(--accent-cyan); margin:0;">Quản lý Bộ Testcases</h3>
-                <div style="display:flex; gap:8px;">
-                    <button type="button" id="btn-open-ai-gen" class="admin-button" style="background:rgba(168,85,247,0.2); border-color:#a855f7; color:#c084fc;"><i class="fa-solid fa-wand-magic-sparkles"></i> ⚡ AI Sinh Test từ Code</button>
-                    <button type="button" id="btn-add-manual-test" class="admin-button"><i class="fa-solid fa-plus"></i> Thêm Test thủ công</button>
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <button id="btn-create-prob" class="btn-primary-glow"><i class="fa-solid fa-plus"></i> Tạo Bài Tập Mới</button>
                 </div>
             </div>
-            <input type="hidden" id="test-mgr-prob-id">
-            <div id="testcases-list-container" style="display:flex; flex-direction:column; gap:14px; max-height: 55vh; overflow-y:auto; padding-right:6px; margin-bottom:16px;"></div>
+        </section>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px;">
-                <span id="test-count-badge" style="font-size:0.84rem; color:var(--text-secondary); font-family:var(--font-code);">0 test cases</span>
-                <div style="display:flex; gap:8px;">
-                    <button type="button" class="admin-button" onclick="closeTestModal()">Đóng</button>
-                    <button type="button" id="btn-save-all-tests" class="admin-button primary"><i class="fa-solid fa-floppy-disk"></i> Lưu Toàn Bộ Tests</button>
+        <section class="stats-row">
+            <div class="stat-card animate-in animate-in-delay-2"><div class="stat-icon cyan"><i class="fa-solid fa-book-bookmark"></i></div><div><div class="stat-label">Tổng Số Bài Tập</div><div id="prob-stat-total" class="stat-value" style="color: var(--text-bright);">--</div></div></div>
+            <div class="stat-card animate-in animate-in-delay-3"><div class="stat-icon emerald"><i class="fa-solid fa-eye"></i></div><div><div class="stat-label">Đang Hiển Thị</div><div id="prob-stat-active" class="stat-value" style="color: var(--accent-emerald);">--</div></div></div>
+            <div class="stat-card animate-in animate-in-delay-3"><div class="stat-icon amber"><i class="fa-solid fa-eye-slash"></i></div><div><div class="stat-label">Đang Tạm Ẩn</div><div id="prob-stat-hidden" class="stat-value" style="color: var(--accent-amber);">--</div></div></div>
+            <div class="stat-card animate-in animate-in-delay-4"><div class="stat-icon purple"><i class="fa-solid fa-vial-circle-check"></i></div><div><div class="stat-label">Tổng Bộ Test Cases</div><div id="prob-stat-tests" class="stat-value" style="color: var(--accent-purple);">--</div></div></div>
+        </section>
+
+        <section class="cmd-wrapper animate-in animate-in-delay-4">
+            <div class="cmd-bar">
+                <div class="cmd-filters">
+                    <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="problem-search" type="search" class="search-input" placeholder="Tìm kiếm theo mã bài, tên bài tập..."></div>
+                    <select id="problem-status-filter" class="filter-select"><option value="all">⚡ Tất cả Trạng thái</option><option value="active">🟢 Đang Hiển thị</option><option value="hidden">🟠 Đang Tạm Ẩn</option></select>
+                    <select id="problem-contest-filter" class="filter-select"><option value="all">📁 Tất cả Cuộc thi / Kho</option></select>
+                </div>
+                <div class="bulk-group">
+                    <span id="prob-selected-count-badge" style="font-size: 0.8rem; color: var(--text-dim); margin-right: 4px; font-weight: 600;">Chọn: <strong style="color: var(--accent-cyan);">0</strong> bài</span>
+                    <button type="button" class="btn-action-pill" onclick="bulkActionProblems('hide')" style="color: #fbbf24; border-color: rgba(245,158,11,0.25);"><i class="fa-solid fa-eye-slash"></i> Ẩn</button>
+                    <button type="button" class="btn-action-pill" onclick="bulkActionProblems('unhide')" style="color: #34d399; border-color: rgba(52,211,153,0.25);"><i class="fa-solid fa-eye"></i> Hiện</button>
+                    <button type="button" class="btn-action-pill" onclick="bulkActionProblems('delete')" style="color: #fb7185; border-color: rgba(251,113,133,0.25);"><i class="fa-solid fa-trash"></i> Xóa</button>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- AI TEST GENERATOR STUDIO MODAL -->
-    <div id="ai-test-modal-overlay" class="detail-overlay" style="z-index: 1200;">
-        <div class="detail-modal" style="width: min(820px, 95vw); max-height: 90vh;">
-            <button class="detail-close" onclick="closeAITestModal()"><i class="fa-solid fa-xmark"></i></button>
-            <h3 style="color:#c084fc; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-microchip"></i> AI Sinh Test Tự Động từ Mã Nguồn Chuẩn
-            </h3>
-            <p style="color:var(--text-secondary); font-size:0.82rem; margin-bottom:14px; line-height:1.5;">
-                Dán Code giải bài tập &rarr; AI tự động suy luận sinh ra tập dữ liệu Input hiểm hóc &rarr; Sandbox biên dịch và thực thi lấy Output chính xác 100%.
-            </p>
-
-            <div class="form-two" style="margin-bottom:12px;">
-                <label>Ngôn ngữ Mã nguồn
-                    <select id="ai-test-lang">
-                        <option value="cpp">C++17 (g++)</option>
-                        <option value="python">Python 3</option>
-                        <option value="java">Java 17</option>
-                        <option value="c">C (gcc)</option>
-                    </select>
-                </label>
-                <label>Số lượng Testcases cần sinh
-                    <input id="ai-test-count" type="number" min="1" max="20" value="5">
-                </label>
-            </div>
-
-            <label style="margin-bottom:12px; display:block;">Mã nguồn Code giải mẫu (Solution Code)
-                <textarea id="ai-solution-code" placeholder="#include <bits/stdc++.h>&#10;using namespace std;&#10;int main() { ... }" style="min-height: 160px; font-family: var(--font-code); font-size: 0.82rem; background:#040814; color:#f1f5f9;"></textarea>
-            </label>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                <button type="button" id="btn-run-ai-testgen" class="admin-button primary" style="background:linear-gradient(135deg, #a855f7, #2563eb); border:none; padding:11px 20px;">
-                    <i class="fa-solid fa-play"></i> ⚡ Chạy Sandbox &amp; Sinh Testcases
-                </button>
-                <span id="ai-testgen-status" style="font-size:0.84rem; color:var(--text-secondary);"></span>
-            </div>
-
-            <!-- Preview table -->
-            <div id="ai-generated-preview" style="display:none; border-top:1px solid var(--border-color); padding-top:14px;">
-                <h4 style="color:var(--accent-cyan); font-size:0.85rem; margin-bottom:8px;">Kết quả Testcases vừa tạo từ Code:</h4>
-                <div class="admin-table-wrap" style="max-height: 220px; overflow-y:auto; margin-bottom:14px;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width:40px;">#</th>
-                                <th>Input</th>
-                                <th>Expected Output (Code sinh ra)</th>
-                                <th style="width:90px; text-align:center;">Thời gian</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ai-tests-preview-tbody"></tbody>
+        <section class="table-wrapper animate-in animate-in-delay-5">
+            <div class="table-glass">
+                <div class="table-scroll">
+                    <table class="pro-table">
+                        <thead><tr>
+                            <th style="width: 44px; text-align: center;"><input type="checkbox" id="prob-master-cb" style="cursor: pointer; transform: scale(1.2);"></th>
+                            <th style="width: 85px;">Mã Bài</th>
+                            <th>Tên Bài Tập &amp; Nội Dung Đề</th>
+                            <th style="width: 165px;">Cuộc Thi / Kho</th>
+                            <th style="width: 120px; text-align: center;">Trạng Thái</th>
+                            <th style="width: 145px; text-align: center;">Điểm &amp; Giới Hạn</th>
+                            <th style="width: 105px; text-align: center;">Testcases</th>
+                            <th style="width: 310px; text-align: right;">Thao Tác</th>
+                        </tr></thead>
+                        <tbody id="problems-tbody"><tr><td colspan="8" style="text-align: center; padding: 60px 20px; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin" style="font-size: 1.6rem; color: var(--accent-cyan); margin-bottom: 12px; display: block;"></i>Đang nạp cơ sở dữ liệu đề bài...</td></tr></tbody>
                     </table>
                 </div>
-                <button type="button" id="btn-apply-ai-tests" class="admin-button primary" style="width:100%; padding:12px;"><i class="fa-solid fa-check-double"></i> Nạp Bộ Testcases này vào Bài tập</button>
+            </div>
+        </section>
+    </div>
+
+    <div id="problem-modal-overlay" class="modal-overlay">
+        <div class="modal-panel" style="width: min(860px, 95vw);">
+            <button class="modal-close" onclick="closeProblemModal()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header"><h3 id="problem-modal-title" style="color: var(--accent-cyan); margin: 0; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa Đề bài</h3></div>
+            <div class="modal-body">
+                <form id="problem-edit-form">
+                    <input type="hidden" id="edit-prob-id">
+                    <div class="form-grid-2"><div class="form-field"><label>Mã bài (Code)</label><input id="edit-prob-code" class="code-input" placeholder="VD: PY001, A, B..." required></div><div class="form-field"><label>Tên bài tập (Title)</label><input id="edit-prob-title" placeholder="VD: Kiểm tra số nguyên dương hay âm" required></div></div>
+                    <div class="form-grid-2"><div class="form-field"><label>Điểm số (Points)</label><input id="edit-prob-points" type="number" value="100" required></div><div class="form-field"><label>Giới hạn Thời gian (CPU: giây)</label><input id="edit-prob-tl" type="number" step="0.1" value="1.0" required></div></div>
+                    <div class="form-grid-2"><div class="form-field"><label>Giới hạn Bộ nhớ (RAM: MB)</label><input id="edit-prob-ml" type="number" value="256" required></div><div class="form-field"><label>Cuộc thi gán vào</label><select id="edit-prob-contest"></select></div></div>
+                    <div style="margin-bottom: 16px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><label style="margin: 0; font-weight: 700; color: var(--text-secondary); font-size: 0.82rem;">Nội dung Đề bài (Markdown / LaTeX)</label><div class="template-chips"><button type="button" class="template-chip cyan" onclick="insertStatementTemplate('io')"><i class="fa-solid fa-code"></i> + Mẫu I/O</button><button type="button" class="template-chip purple" onclick="insertStatementTemplate('sample')"><i class="fa-solid fa-list-check"></i> + Ví Dụ</button><button type="button" class="template-chip emerald" onclick="insertStatementTemplate('constraints')"><i class="fa-solid fa-ruler"></i> + Ràng Buộc</button></div></div><div class="form-field"><textarea id="edit-prob-statement" class="code-area" placeholder="Mô tả đề bài, quy cách Input, Output, Ví dụ và Ràng buộc..." style="min-height: 200px;"></textarea></div></div>
+                    <div class="visibility-card"><label><input type="checkbox" id="edit-prob-hidden" style="cursor: pointer; transform: scale(1.3);"><div><strong style="color: var(--accent-amber); font-size: 0.88rem;"><i class="fa-solid fa-eye-slash"></i> Tạm ẩn bài tập này</strong><div style="color: var(--text-dim); font-size: 0.77rem; margin-top: 2px;">Khi bật, thí sinh sẽ không thấy bài tập này trong danh sách.</div></div></label></div>
+                    <div class="modal-actions"><button type="button" class="btn-outline-ghost" onclick="closeProblemModal()">Hủy Bỏ</button><button type="submit" class="btn-primary-glow"><i class="fa-solid fa-floppy-disk"></i> Lưu Đề Bài</button></div>
+                </form>
             </div>
         </div>
     </div>
 
-    <script src="js/admin-problems.js?v=1.0"></script>
+    <div id="test-modal-overlay" class="modal-overlay">
+        <div class="modal-panel" style="width: min(940px, 96vw); border-color: rgba(168,85,247,0.25);">
+            <button class="modal-close" onclick="closeTestModal()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header"><div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;"><div><h3 id="test-modal-title" style="color: var(--accent-purple); margin: 0; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-vial-circle-check"></i> Quản lý Bộ Testcases</h3><p style="color: var(--text-dim); font-size: 0.78rem; margin: 4px 0 0;">Thêm, sửa, xóa trực tiếp từng test hoặc dùng AI sinh test tự động</p></div><div style="display: flex; gap: 8px;"><button type="button" id="btn-open-ai-gen" class="btn-ai-glow" style="padding: 9px 16px; font-size: 0.82rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Sinh Test</button><button type="button" id="btn-add-manual-test" class="btn-action-pill" style="padding: 9px 14px; color: var(--accent-cyan); border-color: rgba(56,189,248,0.25);"><i class="fa-solid fa-plus"></i> Thêm Test</button></div></div></div>
+            <div class="modal-body"><input type="hidden" id="test-mgr-prob-id"><div id="testcases-list-container" style="display: flex; flex-direction: column; gap: 12px; max-height: 50vh; overflow-y: auto; padding-right: 6px; margin-bottom: 16px;"></div><div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px;"><span id="test-count-badge" style="font-size: 0.85rem; color: var(--accent-cyan); font-family: var(--font-code); font-weight: 700;">0 test cases</span><div style="display: flex; gap: 10px;"><button type="button" class="btn-outline-ghost" onclick="closeTestModal()">Đóng</button><button type="button" id="btn-save-all-tests" class="btn-primary-glow"><i class="fa-solid fa-floppy-disk"></i> Lưu Tests</button></div></div></div>
+        </div>
+    </div>
+
+    <div id="ai-test-modal-overlay" class="modal-overlay" style="z-index: 6000;">
+        <div class="modal-panel" style="width: min(900px, 95vw); border-color: rgba(168,85,247,0.3);">
+            <button class="modal-close" onclick="closeAITestModal()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header"><h3 style="color: var(--accent-purple); margin: 0 0 6px; display: flex; align-items: center; gap: 8px; font-size: 1.2rem; font-weight: 800;"><i class="fa-solid fa-microchip"></i> AI Sinh Test Tự Động từ Mã Nguồn Chuẩn</h3><p style="color: var(--text-dim); font-size: 0.82rem; margin: 0; line-height: 1.5;">Dán Code giải bài tập &rarr; AI tự động suy luận sinh ra tập dữ liệu Input hiểm hóc &rarr; Sandbox biên dịch và thực thi lấy Output chính xác 100%.</p></div>
+            <div class="modal-body">
+                <div class="form-grid-2"><div class="form-field"><label>Ngôn ngữ Mã nguồn</label><select id="ai-test-lang"><option value="cpp">C++17 (g++)</option><option value="python">Python 3</option><option value="java">Java 17</option><option value="c">C (gcc)</option></select></div><div class="form-field"><label>Số lượng Testcases cần sinh</label><input id="ai-test-count" type="number" min="1" max="30" value="5"></div></div>
+                <div class="form-field" style="margin-bottom: 16px;"><label>Mã nguồn Code giải mẫu (Solution Code)</label><textarea id="ai-solution-code" class="code-area" placeholder="#include <bits/stdc++.h>&#10;using namespace std;&#10;int main() { ... }" style="min-height: 180px;"></textarea></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;"><button type="button" id="btn-run-ai-testgen" class="btn-ai-glow" style="padding: 11px 24px;"><i class="fa-solid fa-play"></i> Chạy Sandbox &amp; Sinh Testcases</button><span id="ai-testgen-status" style="font-size: 0.84rem; color: var(--accent-cyan); font-weight: 600;"></span></div>
+                <div id="ai-generated-preview" style="display: none; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;"><h4 style="color: var(--accent-cyan); font-size: 0.88rem; margin-bottom: 10px; font-weight: 700;"><i class="fa-solid fa-check-double"></i> Kết quả Testcases vừa tạo:</h4><div style="max-height: 220px; overflow-y: auto; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;"><table class="pro-table"><thead><tr><th style="width: 40px;">#</th><th>Input</th><th>Expected Output</th><th style="width: 90px; text-align: center;">Thời gian</th></tr></thead><tbody id="ai-tests-preview-tbody"></tbody></table></div><button type="button" id="btn-apply-ai-tests" class="btn-primary-glow" style="width: 100%; justify-content: center; padding: 12px;"><i class="fa-solid fa-check-double"></i> Nạp Bộ Testcases này vào Bài tập</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-testcases-modal-overlay" class="modal-overlay" style="z-index: 7000;">
+        <div class="modal-panel" style="width: min(1060px, 96vw); max-height: 92vh; display: flex; flex-direction: column; padding: 0; overflow: hidden;">
+            <div style="padding: 20px 26px; background: rgba(2,6,23,0.9); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 14px;"><div class="stat-icon cyan" style="width: 44px; height: 44px; font-size: 1.2rem;"><i class="fa-solid fa-vial-circle-check"></i></div><div><h3 id="tc-inspector-title" style="margin: 0; font-size: 1.1rem; color: var(--text-bright); font-weight: 800; display: flex; align-items: center; gap: 8px;">Test Cases: <span id="tc-inspector-code" style="color: var(--accent-cyan);">--</span> - <span id="tc-inspector-prob-title">--</span></h3><p id="tc-inspector-subtitle" style="margin: 3px 0 0; font-size: 0.76rem; color: var(--text-dim);">Bộ test cases kiểm thử chuẩn xác &amp; chống gian lận</p></div></div>
+                <div style="display: flex; align-items: center; gap: 10px;"><span id="tc-inspector-total-badge" style="background: rgba(56,189,248,0.1); color: var(--accent-cyan); border: 1px solid rgba(56,189,248,0.2); padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700;">-- Tests</span><button type="button" class="btn-action-pill" onclick="copyAllTestCasesJSON()" style="color: var(--accent-cyan); border-color: rgba(56,189,248,0.25);"><i class="fa-solid fa-copy"></i> Copy JSON</button><button type="button" class="modal-close" onclick="closeTestCasesInspectorModal()" style="position: static;"><i class="fa-solid fa-xmark"></i></button></div>
+            </div>
+            <div style="padding: 12px 26px; background: rgba(2,6,23,0.75); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 10px; align-items: center; flex: 1;"><input id="tc-inspector-search" type="search" class="search-input" placeholder="🔍 Tìm kiếm trong Input / Expected Output..." style="min-width: 260px; max-width: 100%;"><select id="tc-inspector-filter" class="filter-select"><option value="all">Tất cả Test Cases</option><option value="samples">Chỉ Test Mẫu (Samples)</option><option value="hidden">Chỉ Test Ẩn (Hidden)</option></select></div>
+                <div style="font-size: 0.82rem; color: var(--text-dim);">Hiển thị: <strong id="tc-inspector-showing-count" style="color: var(--accent-cyan); font-family: var(--font-code);">--</strong> tests</div>
+            </div>
+            <div id="tc-inspector-cards-container" style="flex: 1; overflow-y: auto; padding: 20px 26px; display: flex; flex-direction: column; gap: 12px; max-height: calc(90vh - 160px);"><div style="text-align: center; padding: 50px; color: var(--text-dim);">Đang nạp bộ test cases...</div></div>
+        </div>
+    </div>
+
+    <div class="scroll-fab">
+        <button type="button" class="scroll-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Cuộn lên đầu"><i class="fa-solid fa-chevron-up"></i></button>
+        <button type="button" class="scroll-btn" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="Cuộn xuống cuối"><i class="fa-solid fa-chevron-down"></i></button>
+    </div>
+
+    <script src="js/admin-problems.js?v=46.0"></script>
 </body>
 </html>

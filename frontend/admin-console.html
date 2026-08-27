@@ -9,8 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="js/theme.js"></script>
-    <link rel="stylesheet" href="css/style.css?v=7.0">
-    <link rel="stylesheet" href="css/admin.css?v=7.0">
+    <link rel="stylesheet" href="css/style.css?v=11.0">
+    <link rel="stylesheet" href="css/admin.css?v=11.0">
+    <link rel="stylesheet" href="css/glassmorphism-effects.css">
     <style>
         :root {
             --dev-color: #a855f7;
@@ -26,6 +27,10 @@
         .badge.dev    { background: rgba(168,85,247,.18); color: #c084fc; border: 1px solid rgba(168,85,247,.4); box-shadow: 0 0 10px var(--dev-glow); }
         .badge.superadmin { background: rgba(236,72,153,.18); color: #f472b6; border: 1px solid rgba(236,72,153,.4); box-shadow: 0 0 10px var(--superadmin-glow); }
         .badge.admin  { background: rgba(34,211,238,.15); color: var(--accent-cyan); border: 1px solid rgba(34,211,238,.35); box-shadow: 0 0 10px var(--admin-glow); }
+        .badge.pro    { background: rgba(56,189,248,.18); color: #38bdf8; border: 1px solid rgba(56,189,248,.4); box-shadow: 0 0 10px rgba(56,189,248,.25); }
+        .badge.enterprise { background: rgba(251,191,36,.18); color: #fbbf24; border: 1px solid rgba(251,191,36,.4); box-shadow: 0 0 10px rgba(251,191,36,.25); }
+        .badge.contestant { background: rgba(34,197,94,.18); color: #4ade80; border: 1px solid rgba(34,197,94,.4); }
+        .badge.moderator  { background: rgba(249,115,22,.18); color: #fb923c; border: 1px solid rgba(249,115,22,.4); }
         .badge.user   { background: rgba(255,255,255,.08); color: var(--text-secondary); border: 1px solid rgba(255,255,255,.1); }
         .badge.locked { background: rgba(239,68,68,.2); color: #f87171; border: 1px solid rgba(239,68,68,.35); }
 
@@ -76,7 +81,12 @@
         .btn-icon.warn:hover { border-color: #fb923c; color: #fb923c; background: rgba(251,146,60,0.1); }
     </style>
 </head>
-<body class="usaco-theme">
+<body class="usaco-theme" spellcheck="false">
+    <div class="app-ambient" aria-hidden="true">
+        <div class="orb orb-cyan"></div>
+        <div class="orb orb-violet"></div>
+        <div class="orb orb-emerald"></div>
+    </div>
     <!-- AUTH MODAL (Hiện ra nếu chưa login hoặc phiên hết hạn) -->
     <div id="admin-login-overlay" class="auth-overlay">
         <div class="auth-card-modal">
@@ -111,12 +121,18 @@
             <nav id="admin-nav-container">
                 <button class="admin-nav active" data-view="overview"><i class="fa-solid fa-chart-line"></i> Tổng quan</button>
                 <button class="admin-nav" data-view="contests"><i class="fa-solid fa-flag-checkered"></i> Quản lý Cuộc thi</button>
-                <a class="admin-nav" href="admin-problems.html"><i class="fa-solid fa-layer-group"></i> Kho Bài tập &amp; AI Studio</a>
+                <button class="admin-nav" data-view="problems"><i class="fa-solid fa-layer-group"></i> Kho Đề Bài &amp; Test Cases</button>
+                <a class="admin-nav" data-view="external_problems" href="admin-problems.html" title="Mở trang Studio Đề bài riêng biệt" style="color: #c084fc; text-decoration: none !important;"><i class="fa-solid fa-wand-magic-sparkles"></i> Trang Đề Bài &amp; AI Studio <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.7rem; margin-left:auto;"></i></a>
+                <button class="admin-nav" data-view="submissions"><i class="fa-solid fa-paper-plane"></i> Quản lý Bài nộp</button>
                 <button class="admin-nav" data-view="github"><i class="fa-brands fa-github"></i> Sao lưu GitHub</button>
                 <button class="admin-nav" data-view="members"><i class="fa-solid fa-users"></i> Thành viên</button>
                 <button class="admin-nav" data-view="security"><i class="fa-solid fa-shield-halved"></i> Bảo mật &amp; IP</button>
                 <button class="admin-nav" data-view="monitoring"><i class="fa-solid fa-tower-broadcast"></i> Giám sát Máy chấm</button>
                 <button class="admin-nav" data-view="system"><i class="fa-solid fa-sliders"></i> Cấu hình Hệ thống</button>
+                <button class="admin-nav" data-view="anticheat_monitor"><i class="fa-solid fa-user-secret" style="color:#c084fc;"></i> Giám sát Chống Gian lận <span class="badge dev" style="font-size:0.62rem; margin-left:auto;">DEV</span></button>
+                <button class="admin-nav" data-view="web_monitor"><i class="fa-solid fa-radar" style="color:#38bdf8;"></i> Radar Giám Sát Web &amp; IP <span class="badge dev" style="font-size:0.62rem; margin-left:auto;">DEV</span></button>
+                <button class="admin-nav" data-view="bot_actions"><i class="fa-solid fa-robot" style="color:#22d3ee;"></i> Nhật Ký Tác Chiến Bot <span class="badge dev" style="font-size:0.62rem; margin-left:auto;">DEV</span></button>
+                <button class="admin-nav" data-view="data_storage"><i class="fa-solid fa-hard-drive" style="color:#10b981;"></i> Giám sát Lưu trữ &amp; Nginx <span class="badge dev" style="font-size:0.62rem; margin-left:auto; background:rgba(16,185,129,0.2); color:#34d399; border-color:rgba(16,185,129,0.4);">STORAGE</span></button>
             </nav>
 
             <div id="sidebar-role-info" style="margin-top:auto; padding:12px; background:rgba(34,211,238,.06); border-radius:10px; border:1px solid rgba(34,211,238,.18); font-size:.8rem; color:var(--text-secondary);">
@@ -189,28 +205,20 @@
                     <div class="card-heading"><h2>Phân bổ Vai trò Người dùng</h2><i class="fa-solid fa-chart-pie" style="color:var(--accent-cyan);"></i></div>
                     <div id="role-breakdown" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;"></div>
                 </article>
-
-                <article class="admin-card judge-monitor">
-                    <div class="card-heading">
-                        <div><h2>Máy chấm đang hoạt động</h2><p>Trạng thái runtime và năng lực xử lý submission ClueOJ.</p></div>
-                        <button id="refresh-judges" class="admin-button"><i class="fa-solid fa-rotate"></i> Làm mới</button>
-                    </div>
-                    <div class="admin-table-wrap">
-                        <table>
-                            <thead><tr><th>Node</th><th>Trạng thái</th><th>Trình biên dịch</th><th>Ngôn ngữ</th><th>Giới hạn Sandbox</th><th>Uptime</th></tr></thead>
-                            <tbody id="judges-table"></tbody>
-                        </table>
-                    </div>
-                    <small id="judges-checked"></small>
-                </article>
             </section>
 
             <!-- ==================== 2. CONTESTS PANEL ==================== -->
             <section class="admin-view" data-view-panel="contests">
                 <div class="admin-toolbar">
-                    <div>
-                        <h2>Trình tạo &amp; Quản lý Cuộc thi ClueOJ Studio</h2>
-                        <p>Tạo cuộc thi mới theo chuẩn ClueOJ: ICPC/IOI Format, Rated Contest, Access Code, và nạp bài tập từ ClueOJ Folder (init.yml).</p>
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, rgba(251,191,36,0.25), rgba(245,158,11,0.35)); border:1px solid rgba(251,191,36,0.4); display:flex; align-items:center; justify-content:center; color:#fbbf24; font-size:1.4rem; box-shadow:0 0 20px rgba(251,191,36,0.25);">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <div>
+                            <span class="admin-kicker">CLUEOJ CONTEST BUILDER</span>
+                            <h2 style="margin:2px 0 0;">Trình tạo &amp; Quản lý Cuộc thi ClueOJ Studio</h2>
+                            <p>Tạo cuộc thi mới theo chuẩn ClueOJ: ICPC/IOI Format, Rated Contest, Access Code, và nạp bài tập từ ClueOJ Folder (init.yml).</p>
+                        </div>
                     </div>
                     <button id="new-contest" class="admin-button primary"><i class="fa-solid fa-plus"></i> Tạo Cuộc thi mới</button>
                 </div>
@@ -218,8 +226,8 @@
                 <div class="contest-admin-layout">
                     <form id="contest-form" class="admin-card admin-form">
                         <input type="hidden" id="contest-id">
-                        <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;">
-                            <h3 style="color: var(--accent-cyan); margin: 0; font-size: 0.95rem;"><i class="fa-solid fa-circle-info"></i> 1. Thông tin cơ bản Cuộc thi</h3>
+                        <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; margin-bottom: 10px;">
+                            <h3 style="color: var(--accent-cyan); margin: 0; font-size: 0.95rem; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-circle-info"></i> 1. Thông tin cơ bản Cuộc thi</h3>
                         </div>
                         <div class="form-two">
                             <label>Tên cuộc thi (Contest Title)<input id="contest-title" placeholder="VD: ClueOJ Round #1 (Rated)" required></label>
@@ -242,8 +250,8 @@
                                 </select>
                             </label>
                         </div>
-                        <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin: 16px 0 10px;">
-                            <h3 style="color: var(--accent-cyan); margin: 0; font-size: 0.95rem;"><i class="fa-solid fa-sliders"></i> 2. Qui tắc Tính điểm &amp; Quyền truy cập</h3>
+                        <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; margin: 16px 0 10px;">
+                            <h3 style="color: var(--accent-cyan); margin: 0; font-size: 0.95rem; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-sliders"></i> 2. Qui tắc Tính điểm &amp; Quyền truy cập</h3>
                         </div>
                         <div class="form-two">
                             <label>Chế độ Đánh giá Xếp hạng (Rating)
@@ -268,22 +276,37 @@
                             <label>Thời gian Bắt đầu<input id="contest-start" type="datetime-local"></label>
                             <label>Thời gian Kết thúc<input id="contest-end" type="datetime-local"></label>
                         </div>
-                        <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin: 16px 0 10px;">
-                            <h3 style="color: var(--accent-cyan); margin: 0; font-size: 0.95rem;"><i class="fa-solid fa-file-lines"></i> 3. Thể lệ &amp; Mô tả Đề thi (Markdown / LaTeX)</h3>
+                        <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; margin: 16px 0 10px;">
+                            <h3 style="color: var(--accent-cyan); margin: 0; font-size: 0.95rem; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-file-lines"></i> 3. Thể lệ &amp; Mô tả Đề thi (Markdown / LaTeX)</h3>
                         </div>
                         <label>Mô tả chi tiết cuộc thi<textarea id="contest-statement" placeholder="Mô tả thể lệ thi đấu, quy định điểm số, danh sách tác giả..." required style="min-height: 120px;"></textarea></label>
-                        <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin: 16px 0 10px;">
-                            <h3 style="color: var(--accent-cyan); margin: 0; font-size: 0.95rem;"><i class="fa-solid fa-puzzle-piece"></i> 4. Quản lý Bài tập ClueOJ (Problems Builder)</h3>
+                        <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; margin: 16px 0 10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                            <h3 style="color: var(--accent-cyan); margin: 0; font-size: 0.95rem; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-puzzle-piece"></i> 4. Quản lý Bài tập Cuộc thi (Problems Builder)</h3>
+                            <button type="button" id="open-problem-picker-btn" class="admin-button" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 700; border: none; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 14px rgba(37,99,235,0.4);">
+                                <i class="fa-solid fa-square-check" style="color: #93c5fd;"></i> Chọn bài từ Kho bài tập (300 bài)
+                            </button>
                         </div>
-                        <div style="background: rgba(34,211,238,0.06); padding: 14px; border-radius: 8px; border: 1px dashed var(--border-color); margin-bottom: 14px;">
-                            <label style="font-weight: 700; color: var(--accent-cyan); display: block; margin-bottom: 6px;"><i class="fa-solid fa-file-import"></i> Nạp Bài tập trực tiếp từ thư mục ClueOJ (init.yml):</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input id="clueoj-path-input" placeholder="Đường dẫn thư mục bài tập (VD: C:\Users\HOA BINH\Local-Ai\data\clueoj_problems\aplusb)" style="flex: 1;">
-                                <button type="button" id="import-clueoj-btn" class="admin-button"><i class="fa-solid fa-upload"></i> Nạp ClueOJ Problem</button>
+
+                        <!-- Interactive Selected Problems Container -->
+                        <div id="contest-selected-problems-wrapper" style="margin-bottom: 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-size: 0.82rem; font-weight: 700; color: #94a3b8;"><i class="fa-solid fa-list-check" style="color: #38bdf8;"></i> Các bài tập đã đưa vào cuộc thi (<span id="contest-selected-count" style="color:#38bdf8;">0</span> bài):</span>
+                                <button type="button" id="clear-all-contest-problems-btn" style="background: none; border: none; color: #ef4444; font-size: 0.75rem; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-trash-can"></i> Xóa tất cả</button>
+                            </div>
+                            <div id="contest-selected-chips-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding-right: 4px;">
+                                <div style="color: #64748b; font-size: 0.8rem; font-style: italic; text-align: center; padding: 16px;">Chưa chọn bài tập nào. Bấm nút "Chọn bài từ Kho bài tập" ở trên để tích chọn bài.</div>
                             </div>
                         </div>
-                        <label>Danh sách bài tập JSON (Mã bài, tiêu đề, test cases, điểm số)
-                            <textarea id="contest-problems" placeholder='[{"code":"A","title":"A+B Problem","points":100,"tests":[{"input":"1 2\n","expected":"3\n","points":50}]}]' style="min-height: 140px; font-family: var(--font-code); font-size: 0.8rem;"></textarea>
+
+                        <div style="background: rgba(34,211,238,0.06); padding: 12px; border-radius: 10px; border: 1px dashed rgba(34,211,238,0.3); margin-bottom: 12px;">
+                            <label style="font-weight: 700; color: var(--accent-cyan); display: block; margin-bottom: 6px; font-size: 0.82rem;"><i class="fa-solid fa-file-import"></i> Hoặc nạp bài tập từ thư mục ClueOJ (init.yml):</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input id="clueoj-path-input" placeholder="Đường dẫn thư mục bài tập (VD: C:\Users\HOA BINH\Local-Ai\data\clueoj_problems\aplusb)" style="flex: 1; font-size: 0.82rem;">
+                                <button type="button" id="import-clueoj-btn" class="admin-button" style="padding: 6px 12px; font-size: 0.8rem;"><i class="fa-solid fa-upload"></i> Nạp ClueOJ</button>
+                            </div>
+                        </div>
+                        <label style="font-size: 0.8rem; color: #94a3b8;">Dữ liệu JSON bài tập (Tự động cập nhật khi tích chọn bài)
+                            <textarea id="contest-problems" placeholder='[{"code":"A","title":"A+B Problem","points":100,"tests":[{"input":"1 2\n","expected":"3\n","points":50}]}]' style="min-height: 100px; font-family: var(--font-code); font-size: 0.75rem; background: rgba(0,0,0,0.3);"></textarea>
                         </label>
                         <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
                             <button id="ai-gen-tests-btn" type="button" class="admin-button"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Sinh Testcases</button>
@@ -294,7 +317,9 @@
                     </form>
 
                     <div class="admin-card">
-                        <h2>Danh sách Cuộc thi đã tạo</h2>
+                        <div class="card-heading">
+                            <h2><i class="fa-solid fa-layer-group" style="color:var(--accent-yellow);"></i> Danh sách Cuộc thi đã tạo</h2>
+                        </div>
                         <div id="contest-list" class="contest-list"></div>
                     </div>
                 </div>
@@ -302,33 +327,94 @@
 
             <!-- ==================== 2.5 PROBLEMS BANK PANEL ==================== -->
             <section class="admin-view" data-view-panel="problems">
-                <div class="admin-toolbar">
-                    <div>
-                        <h2>Kho Bài tập &amp; Quản lý Testcases</h2>
-                        <p>Quản lý toàn bộ bài tập luyện tập và đề thi: chỉnh sửa đề bài, thời gian, bộ nhớ, điểm số và quản lý bộ testcases thi đấu.</p>
+                <div class="admin-toolbar" style="margin-bottom: 16px;">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, rgba(6,182,212,0.25), rgba(37,99,235,0.35)); border:1px solid rgba(6,182,212,0.4); display:flex; align-items:center; justify-content:center; color:#38bdf8; font-size:1.4rem; box-shadow:0 0 20px rgba(6,182,212,0.25);">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+                        <div>
+                            <span class="admin-kicker">PROBLEM MANAGEMENT &amp; TEST STUDIO</span>
+                            <h2 style="margin:2px 0 0;">Quản lý Đề bài &amp; Bộ Test Cases</h2>
+                            <p style="margin:2px 0 0; font-size:0.82rem; color:var(--text-secondary);">Toàn quyền: Sửa đề, Sửa tests, Xóa bài, Ẩn/Hiện bài thi đấu và sinh test tự động bằng AI.</p>
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <input id="problem-bank-search" type="search" placeholder="Tìm tên bài, mã bài..." style="min-width: 240px;">
-                        <button id="btn-create-bank-problem" class="admin-button primary"><i class="fa-solid fa-plus"></i> Tạo Bài tập mới</button>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button id="btn-create-bank-problem" class="admin-button primary" style="box-shadow: 0 0 16px rgba(37,99,235,0.4);"><i class="fa-solid fa-plus"></i> Tạo Bài tập mới</button>
                     </div>
                 </div>
 
-                <div class="admin-card">
-                    <div class="admin-table-wrap">
-                        <table>
-                            <thead>
+                <!-- PROBLEM STATS SUMMARY CARDS -->
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                    <div class="admin-card" style="padding: 14px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #38bdf8;">
+                        <div style="font-size: 1.6rem; color: #38bdf8;"><i class="fa-solid fa-book-bookmark"></i></div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Tổng số Bài tập</div>
+                            <div id="prob-stat-total" style="font-size: 1.4rem; font-weight: 800; color: #f8fafc; font-family: var(--font-code);">--</div>
+                        </div>
+                    </div>
+                    <div class="admin-card" style="padding: 14px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #34d399;">
+                        <div style="font-size: 1.6rem; color: #34d399;"><i class="fa-solid fa-eye"></i></div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Đang Hiển Thị</div>
+                            <div id="prob-stat-active" style="font-size: 1.4rem; font-weight: 800; color: #34d399; font-family: var(--font-code);">--</div>
+                        </div>
+                    </div>
+                    <div class="admin-card" style="padding: 14px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #f59e0b;">
+                        <div style="font-size: 1.6rem; color: #f59e0b;"><i class="fa-solid fa-eye-slash"></i></div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Đang Tạm Ẩn</div>
+                            <div id="prob-stat-hidden" style="font-size: 1.4rem; font-weight: 800; color: #f59e0b; font-family: var(--font-code);">--</div>
+                        </div>
+                    </div>
+                    <div class="admin-card" style="padding: 14px 18px; display: flex; align-items: center; gap: 14px; border-left: 4px solid #c084fc;">
+                        <div style="font-size: 1.6rem; color: #c084fc;"><i class="fa-solid fa-vial-circle-check"></i></div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Tổng Test Cases</div>
+                            <div id="prob-stat-tests" style="font-size: 1.4rem; font-weight: 800; color: #c084fc; font-family: var(--font-code);">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FILTER & BULK ACTIONS TOOLBAR -->
+                <div class="admin-card" style="padding: 12px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex: 1;">
+                        <input id="problem-bank-search" type="search" placeholder="🔍 Tìm tên bài, mã bài..." style="min-width: 240px; padding: 7px 12px; font-size: 0.82rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-bright);">
+                        <select id="problem-status-filter" style="padding: 7px 12px; font-size: 0.82rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-bright);">
+                            <option value="all">Tất cả Trạng thái (Ẩn &amp; Hiện)</option>
+                            <option value="active">Chỉ Bài Đang Hiển thị</option>
+                            <option value="hidden">Chỉ Bài Đang Tạm Ẩn</option>
+                        </select>
+                        <select id="problem-contest-filter" style="padding: 7px 12px; font-size: 0.82rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-bright);">
+                            <option value="all">Tất cả Cuộc thi / Kho</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span id="prob-selected-count-badge" style="font-size: 0.78rem; color: var(--text-secondary); margin-right: 4px;">Chọn: <strong style="color:#38bdf8;">0</strong> bài</span>
+                        <button type="button" class="btn-icon" onclick="bulkActionProblems('hide')" title="Ẩn các bài đã chọn"><i class="fa-solid fa-eye-slash"></i> Ẩn</button>
+                        <button type="button" class="btn-icon" onclick="bulkActionProblems('unhide')" title="Hiện các bài đã chọn"><i class="fa-solid fa-eye"></i> Hiện</button>
+                        <button type="button" class="btn-icon danger" onclick="bulkActionProblems('delete')" title="Xóa các bài đã chọn"><i class="fa-solid fa-trash"></i> Xóa</button>
+                    </div>
+                </div>
+
+                <div class="admin-card" style="padding:0; overflow:hidden; border:1px solid rgba(255,255,255,0.12); box-shadow:0 8px 32px rgba(0,0,0,0.35);">
+                    <div class="admin-table-wrap" style="border:none; border-radius:0; max-height:calc(100vh - 300px); min-height:380px; overflow-y:auto; overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <thead style="position:sticky; top:0; z-index:10;">
                                 <tr>
-                                    <th style="width:60px;">Mã</th>
-                                    <th>Tên Bài tập</th>
-                                    <th>Cuộc thi / Kho</th>
-                                    <th style="text-align:center;">Điểm</th>
-                                    <th style="text-align:center;">Giới hạn (T/M)</th>
-                                    <th style="text-align:center;">Số Tests</th>
-                                    <th style="text-align:right;">Thao tác</th>
+                                    <th style="width:40px; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px); text-align:center;">
+                                        <input type="checkbox" id="prob-bank-master-cb" style="cursor:pointer; transform:scale(1.15);">
+                                    </th>
+                                    <th style="width:70px; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Mã</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Tên Bài tập &amp; Trích yếu</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Cuộc thi / Kho</th>
+                                    <th style="text-align:center; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Trạng thái</th>
+                                    <th style="text-align:center; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Điểm &amp; Giới hạn</th>
+                                    <th style="text-align:center; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Số Tests</th>
+                                    <th style="text-align:right; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody id="problems-bank-tbody">
-                                <tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách bài tập...</td></tr>
+                                <tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách bài tập...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -337,56 +423,228 @@
 
             <!-- ==================== 3. MEMBERS PANEL ==================== -->
             <section class="admin-view" data-view-panel="members">
-                <div class="admin-toolbar">
-                    <div>
-                        <h2 id="members-panel-title">Thành viên &amp; Quản lý Tài khoản</h2>
-                        <p id="members-panel-desc">Xem chi tiết, phân quyền, khóa tài khoản và xem lịch sử hoạt động.</p>
+                <div class="admin-toolbar" style="margin-bottom: 16px;">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, rgba(168,85,247,0.25), rgba(99,102,241,0.35)); border:1px solid rgba(168,85,247,0.4); display:flex; align-items:center; justify-content:center; color:#c084fc; font-size:1.4rem; box-shadow:0 0 20px rgba(168,85,247,0.25);">
+                            <i class="fa-solid fa-users-gear"></i>
+                        </div>
+                        <div>
+                            <span class="admin-kicker">MEMBER DIRECTORY &amp; ROLES</span>
+                            <h2 id="members-panel-title" style="margin:2px 0 0;">Thành viên &amp; Quản lý Toàn quyền</h2>
+                            <p id="members-panel-desc" style="margin:2px 0 0; font-size:0.82rem; color:var(--text-secondary);">Phân quyền vai trò, Khóa/Mở khóa và Xóa tài khoản vĩnh viễn.</p>
+                        </div>
                     </div>
-                    <input id="member-search" type="search" placeholder="Tìm username, email, IP, role...">
+                    <div style="position:relative; width:min(320px, 100%);">
+                        <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-secondary); font-size:0.85rem;"></i>
+                        <input id="member-search" type="search" placeholder="Tìm username, email, IP, role..." style="padding-left:38px; width:100%;">
+                    </div>
                 </div>
 
-                <div class="admin-table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Tài khoản</th>
-                                <th>Email</th>
-                                <th>Vai trò</th>
-                                <th>Trạng thái</th>
-                                <th>IP gần nhất</th>
-                                <th>Sessions</th>
-                                <th>Ngày tạo</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="members-table"></tbody>
-                    </table>
+                <div class="admin-card" style="padding:0; overflow:hidden; border:1px solid rgba(255,255,255,0.12); box-shadow:0 8px 32px rgba(0,0,0,0.35);">
+                    <div class="admin-table-wrap" style="border:none; border-radius:0; max-height:calc(100vh - 240px); min-height:380px; overflow-y:auto; overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <thead style="position:sticky; top:0; z-index:10;">
+                                <tr>
+                                    <th style="width:50px; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">#</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Tài khoản</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Email</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Vai trò</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Trạng thái</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">IP gần nhất</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Sessions</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Ngày tạo</th>
+                                    <th style="text-align:right; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="members-table"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
-            <!-- ==================== 4. SECURITY PANEL (SUPERADMIN & DEV) ==================== -->
+            <!-- ==================== 4. SECURITY & ANTI-CHEAT PANEL (SUPERADMIN & DEV) ==================== -->
             <section class="admin-view" data-view-panel="security">
-                <div class="admin-toolbar">
-                    <div>
-                        <h2>Bảo mật &amp; Kiểm soát IP</h2>
-                        <p>Quản lý danh sách IP bị chặn và nhật ký sự kiện bảo mật.</p>
+                <div class="admin-toolbar" style="margin-bottom: 20px;">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(244,63,94,0.35)); border:1px solid rgba(239,68,68,0.4); display:flex; align-items:center; justify-content:center; color:#f87171; font-size:1.4rem; box-shadow:0 0 20px rgba(239,68,68,0.25);">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div>
+                            <span class="admin-kicker">ENTERPRISE SOC &amp; ANTI-CHEAT BOT</span>
+                            <h2 style="margin:2px 0 0;">Sentinel Shield Bot &amp; Trung tâm Phòng vệ An ninh</h2>
+                            <p>Bot tự động phòng thủ, phát hiện đạo nhái mã nguồn, bẫy Decoy Honeypot và ngăn chặn tin tặc toàn diện.</p>
+                        </div>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <input id="block-ip-input" placeholder="Nhập IP để chặn..." style="width:180px;">
-                        <button id="block-ip-btn" class="admin-button danger"><i class="fa-solid fa-ban"></i> Chặn IP</button>
+                    <div style="display:flex; gap:10px; align-items:center; background:rgba(0,0,0,0.35); padding:6px 8px 6px 14px; border-radius:14px; border:1px solid rgba(255,255,255,0.12);">
+                        <i class="fa-solid fa-network-wired" style="color:var(--text-secondary); font-size:0.85rem;"></i>
+                        <input id="block-ip-input" placeholder="Nhập IP cần chặn..." style="border:none; background:transparent; width:180px; box-shadow:none; padding:6px 4px; font-size:0.84rem; color:var(--text-bright);">
+                        <button id="block-ip-btn" class="admin-button danger" style="padding:8px 16px; border-radius:10px;"><i class="fa-solid fa-ban"></i> Chặn IP</button>
                     </div>
                 </div>
 
+                <!-- SENTINEL BOT TELEMETRY HUD -->
+                <div class="admin-card" style="margin-bottom:20px; background:linear-gradient(135deg, rgba(15,23,42,0.85), rgba(30,41,59,0.75)); border:1px solid rgba(34,211,238,0.3); box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:14px; margin-bottom:16px;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <span class="health-dot" style="background:#10b981; box-shadow:0 0 12px #10b981;"></span>
+                            <strong style="font-size:1.1rem; color:var(--accent-cyan); display:flex; align-items:center; gap:8px;">
+                                <i class="fa-solid fa-robot"></i> SENTINEL SHIELD DEFENSE BOT
+                            </strong>
+                            <span id="sentinel-mode-badge" class="badge dev" style="font-size:0.75rem;">AUTONOMOUS DEFENSE</span>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <label style="font-size:0.8rem; color:var(--text-secondary); margin:0;">Chế độ Phòng thủ:</label>
+                            <select id="sentinel-mode-select" style="background:rgba(0,0,0,0.4); border:1px solid var(--border-color); border-radius:8px; padding:6px 12px; color:var(--text-bright); font-size:0.82rem;">
+                                <option value="autonomous">🤖 Autonomous (Tự động Phản xạ &amp; Ban IP)</option>
+                                <option value="strict">🚨 Strict Lockdown (Phòng thủ Nghiêm ngặt)</option>
+                                <option value="monitoring">👁️ Monitoring Only (Chỉ Giám sát &amp; Ghi log)</option>
+                            </select>
+                            <button id="btn-save-sentinel-mode" class="admin-button primary" style="padding:6px 12px; font-size:0.8rem;"><i class="fa-solid fa-check"></i> Áp dụng</button>
+                        </div>
+                    </div>
+
+                    <div class="stat-grid" style="margin-bottom:0;">
+                        <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-shield-virus"></i></div><small>ĐÒN TẤN CÔNG ĐÃ CHẶN</small><strong id="sentinel-stat-mitigated" style="color:#10b981;">0</strong></div>
+                        <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-worm"></i></div><small>SẬP BẪY HONEYPOT</small><strong id="sentinel-stat-honeypot" style="color:#f59e0b;">0</strong></div>
+                        <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-ban"></i></div><small>IP BỊ KHÓA TỰ ĐỘNG</small><strong id="sentinel-stat-bans" style="color:#f87171;">0</strong></div>
+                        <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-code"></i></div><small>CODE ĐỘC HẠI BỊ TỪ CHỐI</small><strong id="sentinel-stat-unsafe-code" style="color:#c084fc;">0</strong></div>
+                        <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-plug-circle-xmark"></i></div><small>PHIÊN ĐÃ HỦY (KILLSWITCH)</small><strong id="sentinel-stat-killed" style="color:#38bdf8;">0</strong></div>
+                    </div>
+                </div>
+
+                <!-- ANTI-CHEAT & PLAGIARISM INSPECTOR CARD -->
+                <div class="admin-card" style="margin-bottom:20px; border:1px solid rgba(168,85,247,0.35);">
+                    <div class="card-heading">
+                        <div>
+                            <h2><i class="fa-solid fa-user-secret" style="color:#c084fc;"></i> Kiểm soát Gian lận Cuộc thi (Anti-Cheat &amp; Plagiarism Engine)</h2>
+                            <p style="margin:4px 0 0; font-size:0.8rem; color:var(--text-secondary);">Thuật toán Token Winnowing (MOSS standard) phát hiện sao chép mã nguồn, đổi tên biến, đảo hàm giữa các thí sinh.</p>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <select id="anticheat-contest-select" style="background:rgba(0,0,0,0.35); border:1px solid var(--border-color); border-radius:8px; padding:6px 12px; color:var(--text-bright); font-size:0.82rem; min-width:200px;">
+                                <option value="">Chọn cuộc thi để quét...</option>
+                            </select>
+                            <label style="font-size:0.8rem; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+                                Ngưỡng:
+                                <input id="anticheat-threshold-input" type="number" min="20" max="100" value="60" style="width:60px; padding:4px 8px; border-radius:6px; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); color:var(--text-bright); text-align:center;"> %
+                            </label>
+                            <button id="btn-run-anticheat-scan" class="admin-button primary" style="background:linear-gradient(135deg, #a855f7, #6366f1); border:none; padding:8px 16px;"><i class="fa-solid fa-magnifying-glass-chart"></i> ⚡ Quét Gian Lận Toàn Bộ</button>
+                        </div>
+                    </div>
+
+                    <div class="admin-table-wrap" style="max-height:300px; overflow-y:auto; margin-top:12px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th># ID</th>
+                                    <th>Thí sinh A (Bài nộp 1)</th>
+                                    <th>Thí sinh B (Bài nộp 2)</th>
+                                    <th style="text-align:center;">Tỷ lệ Tương đồng</th>
+                                    <th style="text-align:center;">Trạng thái / Đánh giá</th>
+                                    <th style="text-align:right;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="anticheat-reports-tbody">
+                                <tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-secondary);">Chưa có báo cáo vi phạm. Hãy chọn cuộc thi và nhấn "Quét Gian Lận".</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- DEFENSE SKILLS ARSENAL & ACTIONS HISTORY -->
+                <div class="admin-grid-two" style="margin-bottom:20px;">
+                    <!-- SKILLS ARSENAL -->
+                    <article class="admin-card">
+                        <div class="card-heading">
+                            <h2><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent-cyan);"></i> Kho Kỹ năng Phòng thủ (Skills Arsenal)</h2>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid var(--border-color);">
+                                <div>
+                                    <strong style="font-size:0.85rem; color:var(--text-bright); display:block;">🛡️ Auto-Tarpit &amp; Progressive Ban</strong>
+                                    <small style="color:var(--text-secondary); font-size:0.75rem;">Làm nghẽn scanner và ban IP tự động theo điểm rủi ro</small>
+                                </div>
+                                <span class="badge dev">AUTOMATED</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid var(--border-color);">
+                                <div>
+                                    <strong style="font-size:0.85rem; color:var(--text-bright); display:block;">🍯 Honeypot Decoy Traps</strong>
+                                    <small style="color:var(--text-secondary); font-size:0.75rem;">15+ bẫy rà quét (/wp-login, /.env, /shell.php, /actuator)</small>
+                                </div>
+                                <span class="badge dev">TRAPPING</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid var(--border-color);">
+                                <div>
+                                    <strong style="font-size:0.85rem; color:var(--text-bright); display:block;">⚡ Emergency Session Killswitch</strong>
+                                    <small style="color:var(--text-secondary); font-size:0.75rem;">Hủy toàn bộ token của tài khoản / IP bị lộ</small>
+                                </div>
+                                <button type="button" id="btn-manual-killswitch" class="btn-icon danger">Kích hoạt</button>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid var(--border-color);">
+                                <div>
+                                    <strong style="font-size:0.85rem; color:var(--text-bright); display:block;">🚨 Strict Lockdown Mode</strong>
+                                    <small style="color:var(--text-secondary); font-size:0.75rem;">Siết chặt toàn bộ rate-limit và chặn mọi request nghi vấn</small>
+                                </div>
+                                <button type="button" id="btn-strict-lockdown" class="btn-icon warn">Khóa khẩn cấp</button>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- SENTINEL ACTION TIMELINE -->
+                    <article class="admin-card">
+                        <div class="card-heading">
+                            <h2><i class="fa-solid fa-bolt" style="color:#38bdf8;"></i> Lịch sử Hành động của Sentinel Bot</h2>
+                            <button id="refresh-sentinel-actions" class="admin-button"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+                        </div>
+                        <div class="admin-table-wrap" style="max-height:260px; overflow-y:auto;">
+                            <table>
+                                <thead><tr><th>Thời gian</th><th>Hành động</th><th>Mục tiêu (Target)</th><th>Lý do &amp; Chi tiết</th></tr></thead>
+                                <tbody id="sentinel-actions-tbody">
+                                    <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-secondary);">Chưa có hành động nào gần đây.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- HONEYPOT LOGS & THREAT SCORES -->
                 <div class="admin-grid-two" style="margin-bottom:16px;">
                     <article class="admin-card">
                         <div class="card-heading">
-                            <h2><i class="fa-solid fa-ban" style="color:#f87171;"></i> IP đang bị chặn</h2>
+                            <h2><i class="fa-solid fa-spider" style="color:#f59e0b;"></i> Nhật ký Bẫy Honeypot Decoy Traps</h2>
+                            <button id="refresh-honeypot" class="admin-button"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+                        </div>
+                        <div class="admin-table-wrap" style="max-height:280px; overflow-y:auto;">
+                            <table>
+                                <thead><tr><th>Thời gian</th><th>IP</th><th>Method</th><th>Đường dẫn bẫy</th><th>Xử lý</th></tr></thead>
+                                <tbody id="honeypot-logs-table"></tbody>
+                            </table>
+                        </div>
+                    </article>
+
+                    <article class="admin-card">
+                        <div class="card-heading">
+                            <h2><i class="fa-solid fa-chart-simple" style="color:#ef4444;"></i> Bảng Điểm Rủi ro (Threat Scores per IP)</h2>
+                            <button id="refresh-threats" class="admin-button"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+                        </div>
+                        <div class="admin-table-wrap" style="max-height:280px; overflow-y:auto;">
+                            <table>
+                                <thead><tr><th>IP</th><th>Điểm rủi ro</th><th>Số lần vi phạm</th><th>Vi phạm gần nhất</th><th style="text-align:right;">Thao tác</th></tr></thead>
+                                <tbody id="threat-scores-table"></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- BLOCKED IPS & SECURITY EVENTS -->
+                <div class="admin-grid-two" style="margin-bottom:16px;">
+                    <article class="admin-card">
+                        <div class="card-heading">
+                            <h2><i class="fa-solid fa-ban" style="color:#f87171;"></i> IP đang bị chặn (Blacklist)</h2>
                             <button id="refresh-blocked" class="admin-button"><i class="fa-solid fa-rotate"></i> Làm mới</button>
                         </div>
                         <div class="admin-table-wrap">
                             <table>
-                                <thead><tr><th>IP</th><th>Lý do</th><th>Hết hạn</th><th>Hành động</th></tr></thead>
+                                <thead><tr><th>IP</th><th>Lý do</th><th>Hết hạn</th><th style="text-align:right;">Hành động</th></tr></thead>
                                 <tbody id="blocked-ips-table"></tbody>
                             </table>
                         </div>
@@ -394,10 +652,10 @@
 
                     <article class="admin-card">
                         <div class="card-heading">
-                            <h2><i class="fa-solid fa-triangle-exclamation" style="color:#fb923c;"></i> Nhật ký Bảo mật</h2>
+                            <h2><i class="fa-solid fa-triangle-exclamation" style="color:#fb923c;"></i> Nhật ký Sự kiện An ninh</h2>
                             <button id="refresh-events" class="admin-button"><i class="fa-solid fa-rotate"></i> Làm mới</button>
                         </div>
-                        <div class="admin-table-wrap" style="max-height:320px; overflow-y:auto;">
+                        <div class="admin-table-wrap" style="max-height:340px; overflow-y:auto;">
                             <table>
                                 <thead><tr><th>Thời gian</th><th>IP</th><th>Method</th><th>Path</th><th>Status</th><th>Lý do</th></tr></thead>
                                 <tbody id="security-events-table"></tbody>
@@ -410,33 +668,124 @@
             <!-- ==================== 5. MONITORING PANEL (DEV ONLY) ==================== -->
             <section class="admin-view" data-view-panel="monitoring">
                 <div class="monitoring-toolbar">
-                    <div>
-                        <span class="admin-kicker">RUNTIME MONITOR (DEV ONLY)</span>
-                        <h2>Giám sát &amp; Điều khiển Cụm Máy chấm</h2>
-                        <p>Theo dõi tiến trình thực thi sandbox, đo độ trễ và bật/tắt từng Judge Worker Node.</p>
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, rgba(6,182,212,0.25), rgba(59,130,246,0.35)); border:1px solid rgba(6,182,212,0.4); display:flex; align-items:center; justify-content:center; color:#22d3ee; font-size:1.4rem; box-shadow:0 0 20px rgba(6,182,212,0.25);">
+                            <i class="fa-solid fa-tower-broadcast"></i>
+                        </div>
+                        <div>
+                            <span class="admin-kicker">RUNTIME MONITOR (DEV ONLY)</span>
+                            <h2 style="margin:2px 0 0;">Giám sát &amp; Điều khiển Cụm Máy chấm</h2>
+                            <p>Theo dõi tiến trình thực thi sandbox, đo độ trễ và bật/tắt từng Judge Worker Node.</p>
+                        </div>
                     </div>
                     <button id="run-health-check" class="admin-button primary"><i class="fa-solid fa-stethoscope"></i> Health Check</button>
                 </div>
 
                 <div class="monitor-stats">
-                    <article><small>DỊCH VỤ</small><strong id="monitor-service">-</strong></article>
+                    <article><small>DỊCH VỤ</small><strong id="monitor-service">ONLINE</strong></article>
                     <article><small>JOB ĐANG CHẠY</small><strong id="monitor-active">0</strong></article>
                     <article><small>ĐÃ HOÀN TẤT</small><strong id="monitor-completed">0</strong></article>
-                    <article><small>THẤT BẠI</small><strong id="monitor-failed">0</strong></article>
+                    <article><small>THẤT BẠI</small><strong id="monitor-failed" style="color:#f87171;">0</strong></article>
                 </div>
+
+                <article class="admin-card judge-monitor" style="margin-bottom:20px;">
+                    <div class="card-heading">
+                        <div>
+                            <h2><i class="fa-solid fa-microchip" style="color:var(--accent-cyan);"></i> Máy chấm đang hoạt động</h2>
+                            <p style="margin:4px 0 0; font-size:0.8rem; color:var(--text-secondary);">Trạng thái runtime và năng lực xử lý submission ClueOJ (Nhấp vào hàng để xem chi tiết &amp; Benchmark).</p>
+                        </div>
+                        <button id="refresh-judges" class="admin-button"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+                    </div>
+                    <div class="admin-table-wrap">
+                        <table>
+                            <thead><tr><th>Node</th><th>Trạng thái</th><th>Trình biên dịch</th><th>Ngôn ngữ</th><th>Giới hạn Sandbox</th><th style="text-align:right;">Thao tác &amp; Uptime</th></tr></thead>
+                            <tbody id="judges-table"></tbody>
+                        </table>
+                    </div>
+                    <small id="judges-checked" style="display:block; margin-top:10px; color:var(--text-secondary); font-size:0.75rem;"></small>
+                </article>
 
                 <div class="admin-card">
                     <div class="card-heading">
-                        <h2>Nhật ký Máy chấm Workers</h2>
+                        <h2><i class="fa-solid fa-list-check" style="color:var(--accent-purple);"></i> Nhật ký Máy chấm Workers</h2>
                         <button id="refresh-monitoring" class="admin-button"><i class="fa-solid fa-rotate"></i> Làm mới</button>
                     </div>
                     <div class="admin-table-wrap">
                         <table>
-                            <thead><tr><th>Node Worker</th><th>Trạng thái</th><th>Tiến trình Jobs</th><th>Thời gian hoạt động</th><th>Điều khiển (DEV)</th></tr></thead>
+                            <thead><tr><th>Node Worker</th><th>Trạng thái</th><th>Tiến trình Jobs</th><th>Thời gian hoạt động</th><th style="text-align:right;">Điều khiển (DEV)</th></tr></thead>
                             <tbody id="monitoring-table"></tbody>
                         </table>
                     </div>
-                    <small id="monitoring-checked"></small>
+                    <small id="monitoring-checked" style="display:block; margin-top:10px; color:var(--text-secondary); font-size:0.75rem;"></small>
+                </div>
+            </section>
+
+            <!-- ==================== SUBMISSIONS PANEL ==================== -->
+            <section class="admin-view" data-view-panel="submissions">
+                <div class="admin-toolbar" style="margin-bottom: 16px;">
+                    <div>
+                        <h2>Quản lý Bài nộp &amp; Kết quả Chấm điểm (Submissions)</h2>
+                        <p>Theo dõi toàn bộ bài nộp của thí sinh, kiểm tra Verdict, thời gian chạy và xem mã nguồn chi tiết.</p>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button id="refresh-submissions" class="admin-button"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+                    </div>
+                </div>
+
+                <div class="admin-card" style="margin-bottom:16px; padding:16px;">
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                        <div style="flex:1; min-width:200px;">
+                            <input type="text" id="sub-search-input" placeholder="Tìm theo tên thí sinh, ID bài nộp, tên bài..." style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:8px 12px; color:var(--text-bright); font-size:0.85rem;">
+                        </div>
+                        <div style="width:160px;">
+                            <select id="sub-verdict-filter" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:8px 12px; color:var(--text-bright); font-size:0.85rem;">
+                                <option value="">Tất cả Verdict</option>
+                                <option value="AC">AC (Accepted)</option>
+                                <option value="WA">WA (Wrong Answer)</option>
+                                <option value="TLE">TLE (Time Limit Exceeded)</option>
+                                <option value="CE">CE (Compile Error)</option>
+                                <option value="RTE">RTE (Runtime Error)</option>
+                            </select>
+                        </div>
+                        <div style="width:140px;">
+                            <select id="sub-lang-filter" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:8px 12px; color:var(--text-bright); font-size:0.85rem;">
+                                <option value="">Tất cả Ngôn ngữ</option>
+                                <option value="cpp">C++</option>
+                                <option value="python">Python</option>
+                                <option value="c">C</option>
+                                <option value="java">Java</option>
+                                <option value="rust">Rust</option>
+                                <option value="go">Go</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-card" style="padding:0; overflow:hidden; border:1px solid rgba(255,255,255,0.12); box-shadow:0 8px 32px rgba(0,0,0,0.35);">
+                    <div class="admin-table-wrap" style="border:none; border-radius:0; max-height:calc(100vh - 280px); min-height:380px; overflow-y:auto; overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <thead style="position:sticky; top:0; z-index:10;">
+                                <tr>
+                                    <th style="width:70px; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);"># ID</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Thí sinh</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Cuộc thi / Bài tập</th>
+                                    <th style="text-align:center; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Ngôn ngữ</th>
+                                    <th style="text-align:center; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Verdict</th>
+                                    <th style="text-align:center; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Điểm</th>
+                                    <th style="text-align:center; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Thời gian</th>
+                                    <th style="text-align:center; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">RAM</th>
+                                    <th style="background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Thời điểm nộp</th>
+                                    <th style="text-align:center; background:rgba(15, 23, 42, 0.98); backdrop-filter:blur(10px);">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="submissions-tbody">
+                                <tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách bài nộp...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="padding:10px 18px; border-top:1px solid rgba(255,255,255,0.06); background:rgba(15, 23, 42, 0.4);">
+                        <small id="submissions-count" style="color:var(--text-secondary); font-size:0.8rem;"></small>
+                    </div>
                 </div>
             </section>
 
@@ -463,21 +812,6 @@
                         <div style="display:flex; flex-direction:column; gap:10px;">
                             <button id="export-members" class="admin-button"><i class="fa-solid fa-download"></i> Xuất dữ liệu Thành viên (JSON)</button>
                             <button id="reset-system" class="admin-button danger"><i class="fa-solid fa-rotate-right"></i> Reset Hệ thống <small style="opacity:.7;">[DEV only]</small></button>
-                        </div>
-                    </div>
-
-                    <div class="admin-card admin-form" id="card-github-backup">
-                        <h2><i class="fa-brands fa-github" style="color:var(--accent-cyan);"></i> Sao lưu GitHub</h2>
-                        <p style="color:var(--text-secondary); font-size:.85rem; margin-bottom:12px;">Push nhánh hiện tại lên remote <code>origin</code>. Xác thực dùng Git Credential Manager hoặc SSH, không lưu token trong hệ thống.</p>
-                        <label><input id="github-auto-push" type="checkbox"> Bật sao lưu tự động</label>
-                        <label>Push sau số thay đổi cơ sở dữ liệu <input id="github-trigger-count" type="number" min="0" value="0"></label>
-                        <label>Khung giờ 1 <input id="github-time-1" type="time" value="02:00"></label>
-                        <label>Khung giờ 2 <input id="github-time-2" type="time" value="14:00"></label>
-                        <label>Khung giờ 3 <input id="github-time-3" type="time" value="20:00"></label>
-                        <small id="github-repo-status" style="color:var(--text-secondary);"></small>
-                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                            <button id="save-github-config" class="admin-button"><i class="fa-solid fa-floppy-disk"></i> Lưu lịch</button>
-                            <button id="push-github" class="admin-button primary"><i class="fa-solid fa-cloud-arrow-up"></i> Push ngay</button>
                         </div>
                     </div>
                 </div>
@@ -602,6 +936,416 @@
                     </div>
                 </div>
             </section>
+
+            <!-- ==================== 9. DEV-ONLY: ANTI-CHEAT MONITOR PANEL ==================== -->
+            <section class="admin-view" data-view-panel="anticheat_monitor">
+                <div class="admin-toolbar" style="margin-bottom: 20px;">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, rgba(168,85,247,0.25), rgba(99,102,241,0.35)); border:1px solid rgba(168,85,247,0.4); display:flex; align-items:center; justify-content:center; color:#c084fc; font-size:1.4rem; box-shadow:0 0 20px rgba(168,85,247,0.25);">
+                            <i class="fa-solid fa-user-secret"></i>
+                        </div>
+                        <div>
+                            <span class="admin-kicker">ENTERPRISE ANTI-CHEAT SOC [DEV ROOT]</span>
+                            <h2 style="margin:2px 0 0;">Giám sát &amp; Điều tra Gian lận Toàn diện</h2>
+                            <p>Theo dõi toàn bộ các vụ đạo nhái mã nguồn, thuật toán Winnowing MOSS, tỷ lệ vi phạm và các án phạt tự động của bot.</p>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button id="btn-refresh-dev-anticheat" class="admin-button primary" style="background:linear-gradient(135deg, #a855f7, #6366f1); border:none;"><i class="fa-solid fa-rotate"></i> Làm mới Dữ liệu</button>
+                    </div>
+                </div>
+
+                <!-- STATS CARDS -->
+                <div class="stat-grid" style="margin-bottom:20px;">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#38bdf8;"><i class="fa-solid fa-file-code"></i></div>
+                        <small>TỔNG SỐ BÁO CÁO QUÉT</small>
+                        <strong id="dev-ac-stat-total" style="color:#38bdf8;">0</strong>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#fb923c;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <small>CA NGHI VẤN GIAN LẬN</small>
+                        <strong id="dev-ac-stat-flagged" style="color:#fb923c;">0</strong>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#f87171;"><i class="fa-solid fa-gavel"></i></div>
+                        <small>THÍ SINH BỊ DISQUALIFY</small>
+                        <strong id="dev-ac-stat-dq" style="color:#f87171;">0</strong>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#10b981;"><i class="fa-solid fa-circle-check"></i></div>
+                        <small>BÀI NỘP HỢP LỆ (CLEAN)</small>
+                        <strong id="dev-ac-stat-clean" style="color:#10b981;">0</strong>
+                    </div>
+                </div>
+
+                <!-- CONTESTS BREAKDOWN & RECENT REPORTS -->
+                <div class="admin-grid-two" style="margin-bottom:20px;">
+                    <!-- CONTEST BREAKDOWN -->
+                    <article class="admin-card">
+                        <div class="card-heading">
+                            <h2><i class="fa-solid fa-chart-pie" style="color:#c084fc;"></i> Thống kê Gian lận theo Kỳ thi</h2>
+                        </div>
+                        <div class="admin-table-wrap" style="max-height:280px; overflow-y:auto;">
+                            <table>
+                                <thead><tr><th>Cuộc thi</th><th style="text-align:center;">Số vụ quét</th><th style="text-align:center;">Tương đồng TB</th><th style="text-align:center;">Đã hủy bài</th></tr></thead>
+                                <tbody id="dev-ac-contest-breakdown-tbody">
+                                    <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-secondary);">Đang tải dữ liệu...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </article>
+
+                    <!-- RECENT ACTION SUMMARY -->
+                    <article class="admin-card">
+                        <div class="card-heading">
+                            <h2><i class="fa-solid fa-shield-halved" style="color:var(--accent-cyan);"></i> Chính sách Trừng phạt Tự động</h2>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+                            <div style="padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid var(--border-color);">
+                                <strong style="color:#f87171; font-size:0.85rem;">🚨 Tỷ lệ Tương đồng &ge; 85%</strong>
+                                <p style="margin:2px 0 0; font-size:0.75rem; color:var(--text-secondary);">Bot tự động gắn nhãn PLAGIARISM_FLAGGED và trừ điểm xếp hạng toàn cục.</p>
+                            </div>
+                            <div style="padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid var(--border-color);">
+                                <strong style="color:#fb923c; font-size:0.85rem;">⚠️ Tỷ lệ Tương đồng 60% &ndash; 84%</strong>
+                                <p style="margin:2px 0 0; font-size:0.75rem; color:var(--text-secondary);">Bot gắn nhãn SUSPICIOUS để Dev / Ban giám khảo đối chiếu code song song.</p>
+                            </div>
+                            <div style="padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid var(--border-color);">
+                                <strong style="color:#38bdf8; font-size:0.85rem;">🔒 Khóa Tài khoản Thí sinh Vi phạm Nhiều lần</strong>
+                                <p style="margin:2px 0 0; font-size:0.75rem; color:var(--text-secondary);">Thí sinh có &ge; 3 bài nộp bị Disqualify sẽ bị Bot tự động khóa tài khoản thi đấu.</p>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- FULL ANTI-CHEAT INCIDENTS TABLE -->
+                <div class="admin-card">
+                    <div class="card-heading">
+                        <h2><i class="fa-solid fa-list-check" style="color:var(--accent-cyan);"></i> Toàn bộ Hồ sơ Nghi vấn Đạo nhái &amp; Gian lận</h2>
+                    </div>
+                    <div class="admin-table-wrap" style="max-height:360px; overflow-y:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th># ID</th>
+                                    <th>Kỳ thi</th>
+                                    <th>Thí sinh A (Sub 1)</th>
+                                    <th>Thí sinh B (Sub 2)</th>
+                                    <th style="text-align:center;">Độ tương đồng</th>
+                                    <th style="text-align:center;">Phán quyết</th>
+                                    <th>Thời gian</th>
+                                    <th style="text-align:right;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dev-ac-full-reports-tbody">
+                                <tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-secondary);">Đang tải danh sách hồ sơ...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 10. DEV-ONLY: WEB SOC & IP THREAT RADAR ==================== -->
+            <section class="admin-view" data-view-panel="web_monitor">
+                <div class="admin-toolbar" style="margin-bottom: 20px;">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, rgba(6,182,212,0.25), rgba(59,130,246,0.35)); border:1px solid rgba(6,182,212,0.4); display:flex; align-items:center; justify-content:center; color:#22d3ee; font-size:1.4rem; box-shadow:0 0 20px rgba(6,182,212,0.25);">
+                            <i class="fa-solid fa-radar"></i>
+                        </div>
+                        <div>
+                            <span class="admin-kicker">ENTERPRISE WEB SOC &amp; THREAT RADAR [DEV ROOT]</span>
+                            <h2 style="margin:2px 0 0;">Radar Giám Sát An Ninh Web &amp; Điểm Rủi Ro IP</h2>
+                            <p>Giám sát theo thời gian thực tất cả địa chỉ IP, Member, Admin, SuperAdmin. Tự động chấm điểm rủi ro và bảo vệ Dev tuyệt đối.</p>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <button id="btn-refresh-dev-web-monitor" class="admin-button" title="Tự động cập nhật thời gian thực"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+                    </div>
+                </div>
+
+                <!-- EMERGENCY ACTION BAR -->
+                <div class="admin-card" style="margin-bottom:20px; background:rgba(0,0,0,0.3); border:1px solid rgba(239,68,68,0.3);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <i class="fa-solid fa-gavel" style="color:#f87171; font-size:1.2rem;"></i>
+                            <strong style="font-size:0.9rem; color:var(--text-bright);">Can thiệp Trực tiếp (Dev Emergency Direct Intervention):</strong>
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <input id="dev-ban-target-input" placeholder="Nhập IP hoặc User ID cần khóa..." style="background:rgba(0,0,0,0.4); border:1px solid var(--border-color); border-radius:8px; padding:6px 12px; color:var(--text-bright); font-size:0.82rem; width:220px;">
+                            <button id="btn-dev-direct-ban" class="admin-button danger" style="padding:6px 14px; font-size:0.82rem;"><i class="fa-solid fa-ban"></i> Khóa Khẩn Cấp</button>
+                            <button id="btn-dev-direct-unban" class="admin-button" style="background:rgba(16,185,129,0.15); border-color:#10b981; color:#34d399; padding:6px 14px; font-size:0.82rem;"><i class="fa-solid fa-lock-open"></i> Mở Khóa</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LOCKED ACCOUNTS LIST -->
+                <div class="admin-card" style="margin-bottom:20px;">
+                    <div class="card-heading">
+                        <h2><i class="fa-solid fa-user-lock" style="color:#f87171;"></i> Danh Sách Tài Khoản Đang Bị Khóa An Ninh</h2>
+                    </div>
+                    <div class="admin-table-wrap" style="max-height:220px; overflow-y:auto;">
+                        <table>
+                            <thead><tr><th>User ID</th><th>Tên đăng nhập</th><th>Email</th><th>Vai trò</th><th style="text-align:right;">Thao tác</th></tr></thead>
+                            <tbody id="dev-web-locked-users-tbody">
+                                <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-secondary);">Không có tài khoản nào bị khóa.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- MONITORED ENTITIES RADAR TABLE (FULL WIDTH & SPACIOUS) -->
+                <div class="admin-card">
+                    <div class="card-heading">
+                        <div>
+                            <h2><i class="fa-solid fa-network-wired" style="color:var(--accent-cyan);"></i> Bảng Radar Giám Sát Mọi Địa Chỉ IP &amp; Người Dùng</h2>
+                            <p style="margin:4px 0 0; font-size:0.8rem; color:var(--text-secondary);">Theo dõi điểm nguy cơ (Threat Scores) liên tục. Tài khoản mang vai trò Dev luôn được miễn trừ (Dev-Immunity).</p>
+                        </div>
+                    </div>
+                    <div class="admin-table-wrap" style="max-height:calc(100vh - 280px); min-height:400px; overflow-y:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Địa chỉ IP</th>
+                                    <th>Tài khoản gắn liền</th>
+                                    <th>Vai trò (Role)</th>
+                                    <th style="text-align:center;">Điểm rủi ro</th>
+                                    <th style="text-align:center;">Số lần vi phạm</th>
+                                    <th>Vi phạm gần nhất</th>
+                                    <th style="text-align:center;">Trạng thái</th>
+                                    <th style="text-align:right;">Thao tác Dev</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dev-web-monitored-entities-tbody">
+                                <tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-secondary);">Đang quét và tổng hợp dữ liệu...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 11. DEV-ONLY: SENTINEL BOT ACTIONS & TTY TERMINAL ==================== -->
+            <section class="admin-view" data-view-panel="bot_actions">
+                <div class="admin-toolbar" style="margin-bottom: 20px;">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, rgba(34,211,238,0.25), rgba(168,85,247,0.35)); border:1px solid rgba(34,211,238,0.4); display:flex; align-items:center; justify-content:center; color:#38bdf8; font-size:1.4rem; box-shadow:0 0 20px rgba(34,211,238,0.25);">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div>
+                            <span class="admin-kicker">SENTINEL DEFENSE BOT OPERATIONS [DEV ROOT]</span>
+                            <h2 style="margin:2px 0 0;">Trung Tâm Tác Chiến &amp; Nhật Ký Phản Xạ Bot Sentinel</h2>
+                            <p>Dòng hành động phản xạ tự động 24/7, bẫy Honeypot Decoy, triệt tiêu phiên cướp quyền và cửa sổ dòng lệnh Terminal TTY.</p>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                        <!-- CONTINUOUS BOT AUTO-RUN TOGGLE SWITCH -->
+                        <div style="display:flex; align-items:center; gap:12px; background:rgba(0,0,0,0.45); padding:8px 16px; border-radius:14px; border:1px solid rgba(34,211,238,0.35); box-shadow:0 0 16px rgba(0,0,0,0.3);">
+                            <span id="dev-bot-status-indicator" class="health-dot" style="background:#10b981; box-shadow:0 0 12px #10b981; width:10px; height:10px; border-radius:50%; display:inline-block;"></span>
+                            <span id="dev-bot-status-text" style="font-size:0.85rem; font-weight:700; color:#34d399; letter-spacing:0.02em;">BOT ĐANG CHẠY LIÊN TỤC 24/7</span>
+                            <label style="margin:0; cursor:pointer; display:inline-flex; align-items:center;">
+                                <input type="checkbox" id="dev-bot-master-toggle" checked style="display:none;">
+                                <span id="dev-bot-slider" style="width:50px; height:26px; background:#10b981; border-radius:20px; display:inline-block; position:relative; transition:all 0.3s cubic-bezier(0.16,1,0.3,1); box-shadow:0 0 12px rgba(16,185,129,0.5);">
+                                    <span id="dev-bot-knob" style="position:absolute; top:3px; left:26px; width:20px; height:20px; border-radius:50%; background:#ffffff; transition:all 0.3s cubic-bezier(0.16,1,0.3,1); box-shadow:0 2px 6px rgba(0,0,0,0.3);"></span>
+                                </span>
+                            </label>
+                        </div>
+                        <button id="btn-refresh-dev-bot-actions" class="admin-button" title="Tự động cập nhật thời gian thực"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+                    </div>
+                </div>
+
+                <!-- SENTINEL BOT REAL-TIME TERMINAL TTY CONSOLE (FULL WIDTH) -->
+                <div class="admin-card" style="margin-bottom:20px; background:#040814; border:1px solid rgba(34,211,238,0.4); box-shadow:0 0 25px rgba(0,0,0,0.7);">
+                    <div class="card-heading" style="margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <i class="fa-solid fa-terminal" style="color:var(--accent-cyan); font-size:1.1rem;"></i>
+                            <h2 style="font-size:0.95rem; color:#f8fafc; font-family:var(--font-code); margin:0;">SENTINEL BOT LIVE TERMINAL TTY CONSOLE</h2>
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span style="font-family:var(--font-code); font-size:0.75rem; color:var(--text-secondary); background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">CLI: <code>python cli_sentinel_monitor.py</code></span>
+                            <button id="btn-clear-terminal-logs" class="btn-icon" style="font-size:0.75rem; padding:4px 10px;" title="Xóa màn hình console"><i class="fa-solid fa-eraser"></i> Clear</button>
+                        </div>
+                    </div>
+                    <div id="dev-web-terminal-logs" style="background:#020612; border-radius:10px; padding:14px; font-family:var(--font-code); font-size:0.82rem; line-height:1.6; height:200px; max-height:220px; overflow-y:auto; color:#38bdf8; border:1px solid rgba(255,255,255,0.06); box-shadow:inset 0 2px 10px rgba(0,0,0,0.8);">
+                        <div style="color:var(--text-muted);">[SYSTEM] Đang kết nối tới dòng sự kiện thời gian thực của Bot Sentinel...</div>
+                    </div>
+                </div>
+
+                <!-- LIVE ACTION STREAM TABLE (FULL WIDTH & SPACIOUS) -->
+                <div class="admin-card">
+                    <div class="card-heading">
+                        <div>
+                            <h2><i class="fa-solid fa-bolt" style="color:#38bdf8;"></i> Dòng Hành Động Phản Xạ Của Bot (Live Action Stream &amp; Forensic Audit)</h2>
+                            <p style="margin:4px 0 0; font-size:0.8rem; color:var(--text-secondary);">Ghi nhận toàn bộ hành động khóa IP, bẫy Honeypot, hủy token chiếm quyền và quét ngầm định kỳ.</p>
+                        </div>
+                    </div>
+                    <div class="admin-table-wrap" style="max-height:calc(100vh - 360px); min-height:360px; overflow-y:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:170px;">Thời gian</th>
+                                    <th style="width:160px;">Loại phản xạ</th>
+                                    <th style="width:180px;">Mục tiêu</th>
+                                    <th>Lý do &amp; Vết điều tra (Forensics)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dev-web-action-stream-tbody">
+                                <tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-secondary);">Đang tải dữ liệu stream...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== DATA STORAGE & NGINX MONITOR VIEW ==================== -->
+            <section class="admin-view" data-view-panel="data_storage">
+                <!-- Top Action Header -->
+                <div class="view-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px 20px;">
+                    <div>
+                        <h2 style="margin:0; font-size:1.3rem; display:flex; align-items:center; gap:10px; color:#f8fafc;">
+                            <i class="fa-solid fa-hard-drive" style="color:#34d399;"></i> Giám sát Lưu trữ Dữ liệu &amp; Nginx
+                        </h2>
+                        <p style="margin:4px 0 0; font-size:0.84rem; color:var(--text-secondary);">
+                            Theo dõi dung lượng CSDL SQLite, file media uploads, kho 300 bài tập (9.000 tests) và quản lý sao lưu (Backup) tự động/thủ công.
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button type="button" id="btn-refresh-storage" class="admin-button" style="padding:9px 16px; font-size:0.84rem;">
+                            <i class="fa-solid fa-rotate"></i> Làm mới
+                        </button>
+                        <button type="button" id="btn-create-backup-now" class="admin-button primary" style="background:linear-gradient(135deg, #059669, #10b981); border:none; padding:9px 18px; font-size:0.84rem; font-weight:700; box-shadow:0 4px 12px rgba(16,185,129,0.35);">
+                            <i class="fa-solid fa-box-archive"></i> Tạo Bản Sao Lưu Ngay
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4 METRIC STAT CARDS -->
+                <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:24px;">
+                    <!-- Card 1: Database -->
+                    <div class="stat-card" style="background:rgba(15,23,42,0.7); border:1px solid rgba(52,211,153,0.3); border-radius:12px; padding:18px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                            <span style="font-size:0.82rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700;">Cơ sở Dữ liệu (SQLite)</span>
+                            <div style="width:36px; height:36px; border-radius:8px; background:rgba(52,211,153,0.15); display:flex; align-items:center; justify-content:center; color:#34d399;">
+                                <i class="fa-solid fa-database"></i>
+                            </div>
+                        </div>
+                        <div style="font-size:1.8rem; font-weight:800; color:#f8fafc; font-family:var(--font-code);" id="storage-db-size">-- MB</div>
+                        <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:6px;" id="storage-db-meta">Đang tải số bản ghi...</div>
+                    </div>
+
+                    <!-- Card 2: Problem Bank -->
+                    <div class="stat-card" style="background:rgba(15,23,42,0.7); border:1px solid rgba(59,130,246,0.3); border-radius:12px; padding:18px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                            <span style="font-size:0.82rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700;">Kho 300 Bài &amp; Test Cases</span>
+                            <div style="width:36px; height:36px; border-radius:8px; background:rgba(59,130,246,0.15); display:flex; align-items:center; justify-content:center; color:#60a5fa;">
+                                <i class="fa-solid fa-folder-tree"></i>
+                            </div>
+                        </div>
+                        <div style="font-size:1.8rem; font-weight:800; color:#f8fafc; font-family:var(--font-code);" id="storage-problems-size">-- MB</div>
+                        <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:6px;" id="storage-problems-meta">300 bài · 9.000 test cases</div>
+                    </div>
+
+                    <!-- Card 3: Media Uploads -->
+                    <div class="stat-card" style="background:rgba(15,23,42,0.7); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:18px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                            <span style="font-size:0.82rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700;">Media Tải Lên (/media/)</span>
+                            <div style="width:36px; height:36px; border-radius:8px; background:rgba(245,158,11,0.15); display:flex; align-items:center; justify-content:center; color:#fbbf24;">
+                                <i class="fa-solid fa-images"></i>
+                            </div>
+                        </div>
+                        <div style="font-size:1.8rem; font-weight:800; color:#f8fafc; font-family:var(--font-code);" id="storage-media-size">-- MB</div>
+                        <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:6px;" id="storage-media-meta">0 avatar · 0 ảnh đề bài</div>
+                    </div>
+
+                    <!-- Card 4: Backup & Disk Free -->
+                    <div class="stat-card" style="background:rgba(15,23,42,0.7); border:1px solid rgba(168,85,247,0.3); border-radius:12px; padding:18px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                            <span style="font-size:0.82rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700;">Sao Lưu &amp; Ổ Đĩa Trống</span>
+                            <div style="width:36px; height:36px; border-radius:8px; background:rgba(168,85,247,0.15); display:flex; align-items:center; justify-content:center; color:#c084fc;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                            </div>
+                        </div>
+                        <div style="font-size:1.8rem; font-weight:800; color:#f8fafc; font-family:var(--font-code);" id="storage-disk-free">-- GB</div>
+                        <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:6px;" id="storage-backup-meta">-- bản sao lưu</div>
+                    </div>
+                </div>
+
+                <!-- 2-COLUMN SECTION: DIRECTORY BREAKDOWN & NGINX INSPECTOR -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:24px;">
+                    <!-- Directory Breakdown Table -->
+                    <div class="admin-card" style="margin-bottom:0;">
+                        <h3 style="font-size:1rem; margin-top:0; margin-bottom:14px; display:flex; align-items:center; gap:8px; color:var(--accent-cyan);">
+                            <i class="fa-solid fa-folder-open"></i> Phân Bổ Dung Lượng Các Thư Mục
+                        </h3>
+                        <div class="admin-table-container">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Thư mục / Tệp tin</th>
+                                        <th>Loại dữ liệu</th>
+                                        <th style="width:110px; text-align:right;">Dung lượng</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="storage-breakdown-tbody">
+                                    <tr><td colspan="3" style="text-align:center; color:var(--text-secondary); padding:16px;">Đang tính toán dung lượng...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Nginx & Filesystem Security Inspector -->
+                    <div class="admin-card" style="margin-bottom:0;">
+                        <h3 style="font-size:1rem; margin-top:0; margin-bottom:14px; display:flex; align-items:center; gap:8px; color:#34d399;">
+                            <i class="fa-brands fa-linux"></i> Trạng Thái Nginx &amp; Phân Quyền Filesystem
+                        </h3>
+                        <div style="display:flex; flex-direction:column; gap:10px; font-size:0.85rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(0,0,0,0.25); border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
+                                <span><i class="fa-solid fa-shield-halved" style="color:#34d399; width:20px;"></i> Bảo mật File nhạy cảm:</span>
+                                <span class="badge success" style="font-size:0.75rem;">Đã chặn .env, .db, .git</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(0,0,0,0.25); border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
+                                <span><i class="fa-solid fa-server" style="color:#60a5fa; width:20px;"></i> Nginx Media Alias:</span>
+                                <span style="font-family:var(--font-code); color:var(--text-bright); font-size:0.8rem;">/media/ ➔ data/media/</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(0,0,0,0.25); border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
+                                <span><i class="fa-solid fa-bolt" style="color:#fbbf24; width:20px;"></i> Client Max Body Size:</span>
+                                <span style="font-family:var(--font-code); color:var(--text-bright); font-size:0.8rem;">30 MB</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(0,0,0,0.25); border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
+                                <span><i class="fa-solid fa-key" style="color:#c084fc; width:20px;"></i> Quyền File .env (Chmod):</span>
+                                <span class="badge dev" style="font-size:0.75rem;">chmod 600 (Strict)</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:rgba(0,0,0,0.25); border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
+                                <span><i class="fa-solid fa-clock-rotate-left" style="color:#38bdf8; width:20px;"></i> Cache tĩnh Nginx:</span>
+                                <span style="font-family:var(--font-code); color:var(--text-bright); font-size:0.8rem;">7 ngày (CSS/JS) · 30 ngày (Media)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BACKUP ARCHIVE MANAGER TABLE -->
+                <div class="admin-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                        <h3 style="font-size:1rem; margin:0; display:flex; align-items:center; gap:8px; color:#c084fc;">
+                            <i class="fa-solid fa-box-archive"></i> Danh Sách Bản Sao Lưu Hệ Thống (.ZIP)
+                        </h3>
+                        <span id="storage-backups-count-badge" class="badge" style="background:rgba(168,85,247,0.15); border-color:#c084fc; color:#c084fc; font-size:0.78rem;">0 bản sao lưu</span>
+                    </div>
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Tên tệp sao lưu (.zip)</th>
+                                    <th style="width:180px;">Thời gian tạo</th>
+                                    <th style="width:130px; text-align:right;">Kích thước</th>
+                                    <th style="width:180px; text-align:center;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="storage-backups-tbody">
+                                <tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:20px;">Đang tải danh sách bản sao lưu...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </section>
     </main>
 
@@ -614,16 +1358,62 @@
         </div>
     </div>
 
-    <!-- ==================== PROBLEM EDIT MODAL ==================== -->
+    <!-- ==================== JUDGE DIAGNOSTIC MODAL ==================== -->
+    <div id="judge-detail-modal-overlay" class="detail-overlay">
+        <div class="detail-modal" style="width: min(760px, 95vw);">
+            <button class="detail-close" onclick="closeJudgeDetailModal()"><i class="fa-solid fa-xmark"></i></button>
+            <h3 id="judge-detail-title" style="color:var(--accent-cyan); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-server"></i> Chi tiết Thông số Máy chấm
+            </h3>
+            <div id="judge-detail-body" style="margin-bottom:16px;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-color); padding-top:14px;">
+                <button type="button" id="btn-run-judge-benchmark" class="admin-button primary" style="background:linear-gradient(135deg, #a855f7, #2563eb); border:none;">
+                    <i class="fa-solid fa-stopwatch"></i> ⚡ Chạy Benchmark Kiểm tra Tốc độ Máy chấm
+                </button>
+                <button type="button" class="admin-button" onclick="closeJudgeDetailModal()">Đóng</button>
+            </div>
+            <div id="judge-benchmark-result" style="margin-top:12px; font-family:var(--font-code); font-size:0.85rem;" hidden></div>
+        </div>
+    </div>
+
+    <!-- ==================== SUBMISSION DETAIL & CODE MODAL ==================== -->
+    <div id="submission-detail-modal-overlay" class="detail-overlay">
+        <div class="detail-modal" style="width: min(850px, 95vw);">
+            <button class="detail-close" onclick="closeSubmissionModal()"><i class="fa-solid fa-xmark"></i></button>
+            <h3 id="sub-modal-title" style="color:var(--accent-cyan); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-code"></i> Chi tiết Mã nguồn Bài nộp #<span id="sub-modal-id">--</span>
+            </h3>
+            <div id="sub-modal-meta" style="margin-bottom:14px;"></div>
+            <div style="margin-bottom:12px;">
+                <div style="font-size:0.78rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700; margin-bottom:6px;">
+                    <i class="fa-solid fa-file-code"></i> Source Code
+                </div>
+                <pre id="sub-modal-code" style="background:#0d1117; color:#c9d1d9; border:1px solid var(--border-color); border-radius:8px; padding:14px; font-family:'JetBrains Mono', monospace; font-size:0.84rem; max-height:360px; overflow:auto; white-space:pre-wrap; margin:0;"></pre>
+            </div>
+            <div id="sub-modal-compiler-box" style="margin-bottom:12px;" hidden>
+                <div style="font-size:0.78rem; color:#ef4444; text-transform:uppercase; font-weight:700; margin-bottom:4px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Compiler Output / Error Log
+                </div>
+                <pre id="sub-modal-compiler-out" style="background:rgba(239,68,68,0.1); color:#f87171; border:1px solid #ef4444; border-radius:8px; padding:10px 12px; font-family:var(--font-code); font-size:0.8rem; max-height:160px; overflow:auto; margin:0;"></pre>
+            </div>
+            <div style="text-align:right; border-top:1px solid var(--border-color); padding-top:12px;">
+                <button type="button" class="admin-button" onclick="closeSubmissionModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PROBLEM EDIT MODAL (SỬA ĐỀ BÀI) ==================== -->
     <div id="problem-modal-overlay" class="detail-overlay">
-        <div class="detail-modal" style="width: min(720px, 95vw);">
+        <div class="detail-modal" style="width: min(780px, 95vw);">
             <button class="detail-close" onclick="closeProblemModal()"><i class="fa-solid fa-xmark"></i></button>
-            <h3 id="problem-modal-title" style="color:var(--accent-cyan); margin-bottom:16px;">Chỉnh sửa Bài tập</h3>
+            <h3 id="problem-modal-title" style="color:var(--accent-cyan); margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa Đề bài
+            </h3>
             <form id="problem-edit-form" class="admin-form">
                 <input type="hidden" id="edit-prob-id">
                 <div class="form-two">
-                    <label>Mã bài (Code)<input id="edit-prob-code" placeholder="VD: A, B, C..." required></label>
-                    <label>Tên bài tập (Title)<input id="edit-prob-title" placeholder="VD: Tính tổng hai số" required></label>
+                    <label>Mã bài (Code)<input id="edit-prob-code" placeholder="VD: PY001, A, B..." required></label>
+                    <label>Tên bài tập (Title)<input id="edit-prob-title" placeholder="VD: Kiểm tra số nguyên dương hay âm" required></label>
                 </div>
                 <div class="form-two">
                     <label>Điểm số (Points)<input id="edit-prob-points" type="number" value="100" required></label>
@@ -635,12 +1425,34 @@
                         <select id="edit-prob-contest"></select>
                     </label>
                 </div>
-                <label>Đề bài chi tiết (Markdown / LaTeX)
-                    <textarea id="edit-prob-statement" placeholder="Mô tả đề bài, ràng buộc, quy cách input/output..." style="min-height: 160px; font-family: var(--font-code); font-size: 0.85rem;"></textarea>
-                </label>
-                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px;">
+                
+                <!-- Statement with helper buttons -->
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <label style="margin:0; font-weight:600;">Đề bài chi tiết (Markdown / LaTeX)</label>
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" class="btn-icon" onclick="insertStatementTemplate('io')" style="padding:2px 8px; font-size:0.72rem;">+ Mẫu I/O</button>
+                            <button type="button" class="btn-icon" onclick="insertStatementTemplate('sample')" style="padding:2px 8px; font-size:0.72rem;">+ Mẫu Ví Dụ</button>
+                            <button type="button" class="btn-icon" onclick="insertStatementTemplate('constraints')" style="padding:2px 8px; font-size:0.72rem;">+ Ràng Buộc</button>
+                        </div>
+                    </div>
+                    <textarea id="edit-prob-statement" placeholder="Mô tả đề bài, quy cách Input, Output, Ví dụ và Ràng buộc..." style="min-height: 180px; font-family: 'JetBrains Mono', var(--font-code); font-size: 0.84rem; line-height: 1.5;"></textarea>
+                </div>
+
+                <!-- Visibility Toggle Checkbox -->
+                <div style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 10px; padding: 12px 16px; margin-top: 10px;">
+                    <label style="display:flex; align-items:center; gap:10px; margin:0; cursor:pointer;">
+                        <input type="checkbox" id="edit-prob-hidden" style="cursor:pointer; transform:scale(1.25);">
+                        <div>
+                            <strong style="color: #fbbf24; font-size: 0.88rem; display:block;"><i class="fa-solid fa-eye-slash"></i> Tạm ẩn bài tập này</strong>
+                            <small style="color: var(--text-secondary); font-size: 0.76rem;">Khi bật, thí sinh sẽ không thấy bài tập này trong danh sách luyện tập hay cuộc thi.</small>
+                        </div>
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px;">
                     <button type="button" class="admin-button" onclick="closeProblemModal()">Hủy</button>
-                    <button type="submit" class="admin-button primary"><i class="fa-solid fa-floppy-disk"></i> Lưu Bài tập</button>
+                    <button type="submit" class="admin-button primary"><i class="fa-solid fa-floppy-disk"></i> Lưu Đề Bài</button>
                 </div>
             </form>
         </div>
@@ -728,6 +1540,178 @@
         </div>
     </div>
 
-    <script src="js/admin.js?v=11.0"></script>
+    <!-- ==================== ANTI-CHEAT PLAGIARISM COMPARISON MODAL ==================== -->
+    <div id="anticheat-modal-overlay" class="detail-overlay" style="z-index: 1300;">
+        <div class="detail-modal" style="width: min(1050px, 96vw); max-height: 92vh;">
+            <button class="detail-close" onclick="closeAntiCheatModal()"><i class="fa-solid fa-xmark"></i></button>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                <h3 id="anticheat-modal-title" style="color:#c084fc; margin:0; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-scale-unbalanced"></i> Đối chiếu Mã nguồn Nghi vấn Gian lận #<span id="anticheat-modal-report-id">--</span>
+                </h3>
+                <div id="anticheat-modal-score-badge" style="font-size:1rem; font-weight:800; font-family:var(--font-code);"></div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:16px;">
+                <!-- SUBMISSION A -->
+                <div style="background:#070d1e; border:1px solid var(--border-color); border-radius:10px; padding:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <strong id="anticheat-user-a" style="color:var(--accent-cyan); font-size:0.92rem;">Thí sinh A</strong>
+                        <span id="anticheat-sub-a-meta" style="font-size:0.75rem; color:var(--text-secondary); font-family:var(--font-code);">#ID</span>
+                    </div>
+                    <pre id="anticheat-code-a" style="background:#030712; color:#c9d1d9; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px; font-family:'JetBrains Mono', monospace; font-size:0.8rem; max-height:360px; overflow:auto; white-space:pre-wrap; margin:0;"></pre>
+                </div>
+
+                <!-- SUBMISSION B -->
+                <div style="background:#070d1e; border:1px solid var(--border-color); border-radius:10px; padding:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <strong id="anticheat-user-b" style="color:#f472b6; font-size:0.92rem;">Thí sinh B</strong>
+                        <span id="anticheat-sub-b-meta" style="font-size:0.75rem; color:var(--text-secondary); font-family:var(--font-code);">#ID</span>
+                    </div>
+                    <pre id="anticheat-code-b" style="background:#030712; color:#c9d1d9; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px; font-family:'JetBrains Mono', monospace; font-size:0.8rem; max-height:360px; overflow:auto; white-space:pre-wrap; margin:0;"></pre>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-top:1px solid var(--border-color); padding-top:14px;">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span style="font-size:0.82rem; color:var(--text-secondary);">Quyết định Phán quyết:</span>
+                    <button type="button" id="btn-verdict-disqualify" class="admin-button danger" style="padding:6px 14px; font-size:0.8rem;"><i class="fa-solid fa-gavel"></i> Hủy kết quả (Disqualify)</button>
+                    <button type="button" id="btn-verdict-flagged" class="admin-button" style="background:rgba(251,146,60,0.15); border-color:#fb923c; color:#fb923c; padding:6px 14px; font-size:0.8rem;"><i class="fa-solid fa-flag"></i> Đánh dấu Nghi vấn</button>
+                    <button type="button" id="btn-verdict-clean" class="admin-button" style="background:rgba(16,185,129,0.15); border-color:#10b981; color:#34d399; padding:6px 14px; font-size:0.8rem;"><i class="fa-solid fa-check"></i> Hợp lệ (Clean)</button>
+                </div>
+                <button type="button" class="admin-button" onclick="closeAntiCheatModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PROBLEM PICKER MODAL (KHO BÀI TẬP TÍCH CHỌN VÀO CUỘC THI) ==================== -->
+    <div id="problem-picker-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 99999; backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; width: 100%; max-width: 950px; height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); overflow: hidden;">
+            <!-- Modal Header -->
+            <div style="padding: 16px 20px; background: rgba(30,41,59,0.7); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(37,99,235,0.2), rgba(59,130,246,0.3)); border: 1px solid rgba(59,130,246,0.4); display: flex; align-items: center; justify-content: center; color: #60a5fa;">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.05rem; color: #f8fafc; font-weight: 700;">Kho Bài Tập — Tích Chọn Bài Đưa Vào Cuộc Thi</h3>
+                        <p style="margin: 2px 0 0; font-size: 0.78rem; color: #94a3b8;">Tích chọn bài từ 300 bài tập Python &amp; Thuật toán để tự động nạp đề bài và test cases vào cuộc thi</p>
+                    </div>
+                </div>
+                <button type="button" id="close-problem-picker-modal" style="background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; padding: 4px 8px; border-radius: 6px;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Modal Toolbar -->
+            <div style="padding: 12px 20px; background: rgba(15,23,42,0.9); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 10px; flex: 1; min-width: 280px;">
+                    <select id="modal-chapter-filter" style="padding: 7px 12px; border-radius: 8px; background: #1e293b; border: 1px solid rgba(255,255,255,0.15); color: #f8fafc; font-size: 0.82rem; outline: none; cursor: pointer; max-width: 240px;">
+                        <option value="0">Tất cả 30 Chuyên đề (300 bài)</option>
+                    </select>
+                    <div style="position: relative; flex: 1;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 9px; color: #64748b; font-size: 0.8rem;"></i>
+                        <input id="modal-problem-search" placeholder="Tìm theo mã bài (PY001), tên bài..." style="width: 100%; padding: 6px 12px 6px 30px; border-radius: 8px; background: #1e293b; border: 1px solid rgba(255,255,255,0.15); color: #f8fafc; font-size: 0.82rem; outline: none;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button type="button" id="modal-select-all-btn" class="admin-button" style="padding: 6px 12px; font-size: 0.76rem; background: rgba(255,255,255,0.08);"><i class="fa-solid fa-check-double"></i> Chọn tất cả</button>
+                    <button type="button" id="modal-deselect-all-btn" class="admin-button" style="padding: 6px 12px; font-size: 0.76rem; background: rgba(255,255,255,0.08);"><i class="fa-solid fa-xmark"></i> Bỏ chọn</button>
+                </div>
+            </div>
+
+            <!-- Modal Table Body -->
+            <div style="flex: 1; overflow-y: auto; padding: 0 20px;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.84rem;">
+                    <thead style="position: sticky; top: 0; background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 2;">
+                        <tr>
+                            <th style="padding: 10px 8px; width: 44px; text-align: center;"><input type="checkbox" id="modal-master-checkbox" style="cursor: pointer; transform: scale(1.15);"></th>
+                            <th style="padding: 10px 8px; width: 80px; color: #94a3b8;">MÃ BÀI</th>
+                            <th style="padding: 10px 8px; color: #94a3b8;">TÊN BÀI TẬP</th>
+                            <th style="padding: 10px 8px; color: #94a3b8;">CHUYÊN ĐỀ</th>
+                            <th style="padding: 10px 8px; width: 95px; color: #94a3b8;">TEST CASES</th>
+                            <th style="padding: 10px 8px; width: 85px; color: #94a3b8; text-align: right;">ĐIỂM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-problems-tbody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">
+                                <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; color: #3b82f6; margin-bottom: 10px; display: block;"></i>
+                                Đang nạp danh sách 300 bài tập từ kho...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="padding: 14px 20px; background: rgba(30,41,59,0.7); border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.85rem; color: #94a3b8;">
+                    Đã tích chọn: <strong id="modal-selected-count-badge" style="color: #38bdf8; font-size: 1.05rem;">0</strong> bài tập
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" id="modal-cancel-btn" class="admin-button" style="background: transparent; border: 1px solid rgba(255,255,255,0.15); padding: 8px 16px; font-size: 0.82rem;">Hủy bỏ</button>
+                    <button type="button" id="modal-apply-btn" class="admin-button primary" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 8px 20px; font-weight: 700; font-size: 0.84rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 16px rgba(37,99,235,0.4);">
+                        <i class="fa-solid fa-plus"></i> Đưa các bài đã chọn vào Cuộc thi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== VIEW TEST CASES INSPECTOR MODAL (XEM TEST CASES TỪNG BÀI) ==================== -->
+    <div id="view-testcases-modal-overlay" class="detail-overlay" style="z-index: 100000; backdrop-filter: blur(8px);">
+        <div class="detail-modal" style="width: min(980px, 96vw); max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; background: #0b1329; border: 1px solid rgba(56,189,248,0.35); box-shadow: 0 25px 60px rgba(0,0,0,0.85); border-radius: 16px;">
+            <!-- Header -->
+            <div style="padding: 16px 22px; background: rgba(15,23,42,0.9); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(56,189,248,0.15); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 1.15rem; border: 1px solid rgba(56,189,248,0.3);">
+                        <i class="fa-solid fa-vial-circle-check"></i>
+                    </div>
+                    <div>
+                        <h3 id="tc-inspector-title" style="margin: 0; font-size: 1.1rem; color: #f8fafc; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            Test Cases: <span id="tc-inspector-code" style="color: var(--accent-cyan);">--</span> - <span id="tc-inspector-prob-title">--</span>
+                        </h3>
+                        <p id="tc-inspector-subtitle" style="margin: 2px 0 0; font-size: 0.78rem; color: var(--text-secondary);">Bộ test cases kiểm thử chuẩn xác &amp; chống gian lận</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="tc-inspector-total-badge" class="badge admin" style="font-size: 0.82rem; padding: 5px 12px; font-weight: 700;">-- Tests</span>
+                    <button type="button" class="admin-button" onclick="copyAllTestCasesJSON()" title="Sao chép toàn bộ JSON"><i class="fa-solid fa-copy"></i> Copy JSON</button>
+                    <button type="button" class="detail-close" onclick="closeTestCasesInspectorModal()" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <!-- Filter & Search Toolbar -->
+            <div style="padding: 10px 22px; background: rgba(8,14,29,0.85); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
+                    <input id="tc-inspector-search" type="search" placeholder="🔍 Tìm kiếm trong Input / Expected Output..." style="padding: 7px 12px; font-size: 0.82rem; min-width: 280px; background: rgba(0,0,0,0.35); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-bright);">
+                    <select id="tc-inspector-filter" style="padding: 7px 12px; font-size: 0.82rem; background: rgba(0,0,0,0.35); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-bright);">
+                        <option value="all">Tất cả Test Cases</option>
+                        <option value="samples">Chỉ Test Mẫu (Samples #1 - #2)</option>
+                        <option value="hidden">Chỉ Test Ẩn (Hidden Tests #3+)</option>
+                    </select>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                    Hiển thị: <strong id="tc-inspector-showing-count" style="color: var(--accent-cyan); font-family: var(--font-code);">--</strong> tests
+                </div>
+            </div>
+
+            <!-- Body: Test Cards Container -->
+            <div id="tc-inspector-cards-container" style="flex: 1; overflow-y: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; max-height: calc(90vh - 160px);">
+                <div style="text-align:center; padding: 40px; color: var(--text-secondary);">Đang nạp bộ test cases...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FLOATING QUICK SCROLL CONTROLLER (KÉO LÊN / KÉO XUỐNG) ==================== -->
+    <div class="floating-scroll-controls" title="Điều hướng Nhanh Kéo lên / Kéo xuống">
+        <button type="button" class="btn-scroll-action up" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Cuộn lên đầu trang (Scroll to Top)">
+            <i class="fa-solid fa-chevron-up"></i>
+        </button>
+        <button type="button" class="btn-scroll-action down" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="Cuộn xuống cuối trang (Scroll to Bottom)">
+            <i class="fa-solid fa-chevron-down"></i>
+        </button>
+    </div>
+
+    <script src="js/glassmorphism.js"></script>
+    <script src="js/admin.js?v=40.0"></script>
 </body>
 </html>

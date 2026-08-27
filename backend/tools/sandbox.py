@@ -42,6 +42,13 @@ class ProcessSandbox:
         status_detail = "Normal execution"
 
         try:
+            # Prepare safe environment with full UTF-8 encoding support
+            env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8"
+            env["PYTHONUTF8"] = "1"
+            env["LANG"] = "en_US.UTF-8"
+            env["LC_ALL"] = "en_US.UTF-8"
+
             # Run process
             proc = subprocess.Popen(
                 cmd,
@@ -50,7 +57,8 @@ class ProcessSandbox:
                 stderr=subprocess.PIPE,
                 text=True,
                 encoding="utf-8",
-                errors="replace"
+                errors="replace",
+                env=env
             )
 
 

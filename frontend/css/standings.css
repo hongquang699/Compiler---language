@@ -1,0 +1,55 @@
+/**
+ * LOCAL CP — Standings Module Stylesheet
+ */
+
+.standing-row-current {
+    background: rgba(37, 99, 235, 0.08) !important;
+    border-left: 3px solid var(--arena-primary) !important;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.role-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 2px 7px;
+    border-radius: 6px;
+    text-transform: uppercase;
+}
+
+.role-tag.dev { 
+    background: rgba(168, 85, 247, 0.15); 
+    color: #a855f7; 
+    border: 1px solid rgba(168, 85, 247, 0.3); 
+}
+
+.role-tag.admin { 
+    background: rgba(236, 72, 153, 0.15); 
+    color: #ec4899; 
+    border: 1px solid rgba(236, 72, 153, 0.3); 
+}
+
+.role-tag.user { 
+    background: rgba(100, 116, 139, 0.12); 
+    color: var(--arena-text-muted); 
+    border: 1px solid var(--arena-border); 
+}

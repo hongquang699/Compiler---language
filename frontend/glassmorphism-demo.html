@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LOCAL CP STUDIO — Glassmorphism React & Tailwind CSS Platform</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            glass: {
+              surface: 'rgba(15, 23, 42, 0.65)',
+              border: 'rgba(255, 255, 255, 0.15)',
+              borderHover: 'rgba(99, 102, 241, 0.45)',
+              highlight: 'rgba(255, 255, 255, 0.08)',
+            }
+          },
+          boxShadow: {
+            'soft-sm': '0 4px 16px 0 rgba(0, 0, 0, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
+            'soft-md': '0 8px 32px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.15)',
+            'soft-lg': '0 16px 48px -8px rgba(0, 0, 0, 0.45), 0 0 24px -4px rgba(99, 102, 241, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)',
+            'neon-indigo': '0 0 25px -4px rgba(99, 102, 241, 0.55)',
+            'neon-cyan': '0 0 25px -4px rgba(6, 182, 212, 0.55)',
+            'neon-pink': '0 0 25px -4px rgba(236, 72, 153, 0.55)',
+            'neon-emerald': '0 0 25px -4px rgba(16, 185, 129, 0.55)',
+          },
+          animation: {
+            'float-slow': 'float 8s ease-in-out infinite',
+            'float-reverse': 'floatReverse 11s ease-in-out infinite',
+            'pulse-glow': 'pulseGlow 4s ease-in-out infinite',
+            'shimmer-fast': 'shimmer 2.5s linear infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px) scale(1)' },
+              '50%': { transform: 'translateY(-28px) scale(1.08)' },
+            },
+            floatReverse: {
+              '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+              '50%': { transform: 'translateY(32px) rotate(12deg)' },
+            },
+            pulseGlow: {
+              '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
+              '50%': { opacity: '0.85', transform: 'scale(1.15)' },
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & Babel Standalone -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      background-color: #070a14;
+      color: #f1f5f9;
+      font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+      margin: 0;
+    }
+
+    /* Ambient Glowing Aurora Blobs in the background */
+    .aurora-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Shine Sweep Animation for Buttons */
+    .shine-sweep {
+      position: relative;
+      overflow: hidden;
+    }
+    .shine-sweep::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(60deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+      transform: rotate(30deg) translateX(-100%);
+      transition: transform 0.75s cubic-bezier(0.19, 1, 0.22, 1);
+      pointer-events: none;
+    }
+    .shine-sweep:hover::after {
+      transform: rotate(30deg) translateX(100%);
+    }
+
+    /* Glowing Gradient Border Animation */
+    .gradient-border-glow {
+      position: relative;
+    }
+    .gradient-border-glow::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.6), rgba(99, 102, 241, 0.6), rgba(236, 72, 153, 0.6));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0.7;
+      transition: opacity 0.3s ease;
+    }
+    .gradient-border-glow:hover::before {
+      opacity: 1;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+  </style>
+</head>
+<body>
+  
+  <!-- Aurora Background Glow Orbs -->
+  <div class="aurora-bg">
+    <div class="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-indigo-600/25 blur-[130px] animate-float-slow"></div>
+    <div class="absolute top-1/4 -right-40 w-[550px] h-[550px] rounded-full bg-pink-600/22 blur-[140px] animate-float-reverse"></div>
+    <div class="absolute top-2/3 left-1/3 w-[500px] h-[500px] rounded-full bg-cyan-500/20 blur-[135px] animate-pulse-glow"></div>
+    <div class="absolute -bottom-40 left-1/4 w-[650px] h-[650px] rounded-full bg-violet-600/20 blur-[150px] animate-float-slow"></div>
+  </div>
+
+  <div id="root" class="relative z-10 min-h-screen flex flex-col"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // =========================================================================
+    // 1. REUSABLE GLASSMORPHISM UI CORE COMPONENTS (REACT + TAILWIND)
+    // =========================================================================
+
+    /**
+     * SpotlightCard: Interactive Glass Card tracking cursor position for dynamic spotlight glow
+     */
+    const SpotlightCard = ({ children, className = '', glowColor = 'rgba(99, 102, 241, 0.22)' }) => {
+      const cardRef = useRef(null);
+      const [pos, setPos] = useState({ x: 0, y: 0, opacity: 0 });
+
+      const handleMouseMove = (e) => {
+        if (!cardRef.current) return;
+        const rect = cardRef.current.getBoundingClientRect();
+        setPos({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+          opacity: 1,
+        });
+      };
+
+      const handleMouseLeave = () => {
+        setPos((prev) => ({ ...prev, opacity: 0 }));
+      };
+
+      return (
+        <div
+          ref={cardRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          className={`
+            relative overflow-hidden rounded-2xl
+            bg-slate-900/60 backdrop-blur-2xl
+            border border-white/10 hover:border-white/20
+            shadow-soft-md hover:shadow-soft-lg
+            transition-all duration-300 ease-out
+            hover:-translate-y-1 group ${className}
+          `}
+        >
+          {/* Dynamic Laser Spotlight Aura */}
+          <div
+            className="pointer-events-none absolute -inset-px transition-opacity duration-300 -z-0"
+            style={{
+              opacity: pos.opacity,
+              background: `radial-gradient(400px circle at ${pos.x}px ${pos.y}px, ${glowColor}, transparent 70%)`,
+            }}
+          />
+          <div className="relative z-10 h-full">{children}</div>
+        </div>
+      );
+    };
+
+    /**
+     * GlassButton: Button with Frosted Glass, Smooth Hover Lift, and Shine Sweep Light
+     */
+    const GlassButton = ({ children, variant = 'primary', size = 'md', className = '', onClick, disabled = false }) => {
+      const sizeClasses = {
+        sm: 'px-3 py-1.5 text-xs rounded-xl gap-1.5',
+        md: 'px-4 py-2 text-xs font-semibold rounded-2xl gap-2',
+        lg: 'px-6 py-3 text-sm font-bold rounded-2xl gap-2.5',
+      };
+
+      const variantClasses = {
+        primary: 'bg-indigo-600/30 hover:bg-indigo-600/50 text-white border-indigo-400/40 hover:border-indigo-300/70 shadow-neon-indigo',
+        secondary: 'bg-white/10 hover:bg-white/20 text-slate-200 border-white/20 hover:border-white/40 shadow-soft-sm',
+        cyan: 'bg-cyan-500/25 hover:bg-cyan-500/45 text-cyan-100 border-cyan-400/40 hover:border-cyan-300/70 shadow-neon-cyan',
+        emerald: 'bg-emerald-500/25 hover:bg-emerald-500/45 text-emerald-100 border-emerald-400/40 hover:border-emerald-300/70 shadow-neon-emerald',
+        danger: 'bg-rose-500/25 hover:bg-rose-500/45 text-rose-100 border-rose-400/40 hover:border-rose-300/70',
+      };
+
+      return (
+        <button
+          onClick={onClick}
+          disabled={disabled}
+          className={`
+            relative inline-flex items-center justify-center
+            backdrop-blur-xl border font-sans select-none cursor-pointer
+            transition-all duration-300 ease-out
+            hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
+            shine-sweep disabled:opacity-50 disabled:pointer-events-none
+            ${sizeClasses[size] || sizeClasses.md}
+            ${variantClasses[variant] || variantClasses.primary}
+            ${className}
+          `}
+        >
+          {children}
+        </button>
+      );
+    };
+
+    /**
+     * GlassBadge: Sleek Frosted Tag
+     */
+    const GlassBadge = ({ children, variant = 'indigo', icon = null }) => {
+      const styles = {
+        indigo: 'bg-indigo-500/15 text-indigo-300 border-indigo-400/30',
+        emerald: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30',
+        cyan: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30',
+        amber: 'bg-amber-500/15 text-amber-300 border-amber-400/30',
+        rose: 'bg-rose-500/15 text-rose-300 border-rose-400/30',
+      };
+      return (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold border backdrop-blur-md ${styles[variant] || styles.indigo}`}>
+          {icon && <i className={icon}></i>}
+          {children}
+        </span>
+      );
+    };
+
+    // =========================================================================
+    // 2. MAIN APPLICATION VIEWS & MODULES
+    // =========================================================================
+
+    /**
+     * View 1: Algorithm Code IDE
+     */
+    const IdeView = () => {
+      const [lang, setLang] = useState('cpp');
+      const [output, setOutput] = useState('Sẵn sàng biên dịch và chạy thử test cases...');
+      const [isRunning, setIsRunning] = useState(false);
+
+      const handleRun = () => {
+        setIsRunning(true);
+        setOutput('Đang biên dịch mã nguồn C++17 bằng G++ compiler...');
+        setTimeout(() => {
+          setIsRunning(false);
+          setOutput(`[SUCCESS] Biên dịch thành công (0.014s)\n--- Kết quả chạy thử ---\nInput: 15 28\nOutput: 43\nExpected: 43\nTest Status: PASSED (10/10) · 100/100 Điểm`);
+        }, 900);
+      };
+
+      return (
+        <div className="flex flex-col gap-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <i className="fa-solid fa-laptop-code text-indigo-400"></i> Code Studio & Sandbox
+              </h2>
+              <p className="text-xs text-slate-400">Trình soạn thảo mã nguồn thuật toán với máy chấm Local CP Sandbox realtime</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value)}
+                className="px-3 py-1.5 text-xs font-mono rounded-xl bg-slate-900/80 border border-white/15 text-white outline-none focus:border-indigo-400"
+              >
+                <option value="cpp">C++17 (GCC 11.2)</option>
+                <option value="py">Python 3.12 (PyPy3)</option>
+                <option value="java">Java 17 (OpenJDK)</option>
+              </select>
+              <GlassButton variant="primary" onClick={handleRun} disabled={isRunning}>
+                {isRunning ? <><i className="fa-solid fa-spinner fa-spin"></i> Đang chạy...</> : <><i className="fa-solid fa-play"></i> Chạy thử</>}
+              </GlassButton>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Code Editor Panel */}
+            <div className="lg:col-span-8">
+              <SpotlightCard className="p-0 flex flex-col h-[460px]">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-slate-950/60 border-b border-white/10 text-xs text-slate-400 font-mono">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+                    <span>solution.cpp</span>
+                  </div>
+                  <span>UTF-8 · C++17</span>
+                </div>
+                <div className="p-4 flex-1 font-mono text-sm text-cyan-200 overflow-auto bg-slate-950/30">
+                  <pre>{`#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(nullptr);
+    
+    long long a, b;
+    if (cin >> a >> b) {
+        cout << (a + b) << "\\n";
+    }
+    return 0;
+}`}</pre>
+                </div>
+              </SpotlightCard>
+            </div>
+
+            {/* Terminal / Output Panel */}
+            <div className="lg:col-span-4">
+              <SpotlightCard className="p-4 flex flex-col h-[460px]" glowColor="rgba(6, 182, 212, 0.2)">
+                <div className="flex items-center justify-between pb-3 border-b border-white/10 text-xs font-bold text-slate-300">
+                  <span><i className="fa-solid fa-terminal text-cyan-400"></i> Terminal & Chấm bài</span>
+                  <GlassBadge variant="emerald">ONLINE</GlassBadge>
+                </div>
+                <div className="mt-3 p-3 flex-1 rounded-xl bg-black/50 border border-white/10 font-mono text-xs text-slate-300 whitespace-pre-wrap overflow-auto">
+                  {output}
+                </div>
+              </SpotlightCard>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    /**
+     * View 2: Problem Bank (Kho Bài Tập)
+     */
+    const ProblemsView = () => {
+      const [filter, setFilter] = useState('all');
+      const problems = [
+        { id: 1, code: 'P001', title: 'Tổng hai số nguyên lớn (A + B)', category: 'Nhập xuất & Toán học', level: 'Cơ bản', color: 'emerald', solved: true },
+        { id: 2, code: 'P002', title: 'Dãy con liên tiếp có tổng lớn nhất', category: 'Quy hoạch động (Kadane)', level: 'Trung bình', color: 'indigo', solved: true },
+        { id: 3, code: 'P003', title: 'Đường đi ngắn nhất trọng số dương (Dijkstra)', category: 'Đồ thị & Hàng đợi ưu tiên', level: 'Trung bình', color: 'indigo', solved: false },
+        { id: 4, code: 'P004', title: 'Bài toán Balo 0/1 (Knapsack DP)', category: 'Quy hoạch động 2 chiều', level: 'Nâng cao', color: 'rose', solved: false },
+        { id: 5, code: 'P005', title: 'Truy vấn đoạn trên Segment Tree', category: 'Cấu trúc dữ liệu nâng cao', level: 'Nâng cao', color: 'rose', solved: false },
+      ];
+
+      return (
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <i className="fa-solid fa-layer-group text-cyan-400"></i> Kho Bài Tập Thuật Toán
+              </h2>
+              <p className="text-xs text-slate-400">Luyện tập từ cơ bản đến nâng cao với máy chấm tự động</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {['all', 'easy', 'medium', 'hard'].map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1 rounded-xl text-xs font-semibold capitalize transition-all ${
+                    filter === f ? 'bg-indigo-500/30 text-white border border-indigo-400/50 shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {f === 'all' ? 'Tất cả' : f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {problems.map((p) => (
+              <SpotlightCard key={p.id} className="p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-mono text-xs text-indigo-400 font-bold">{p.code}</span>
+                    <GlassBadge variant={p.color}>{p.level}</GlassBadge>
+                  </div>
+                  <h3 className="text-sm font-bold text-white mb-1.5 group-hover:text-cyan-300 transition-colors">
+                    {p.title}
+                  </h3>
+                  <p className="text-xs text-slate-400 mb-4">{p.category}</p>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-white/10 text-xs">
+                  {p.solved ? (
+                    <span className="text-emerald-400 font-medium flex items-center gap-1.5">
+                      <i className="fa-solid fa-circle-check"></i> Đã giải (AC)
+                    </span>
+                  ) : (
+                    <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                      <i className="fa-regular fa-circle"></i> Chưa làm
+                    </span>
+                  )}
+                  <GlassButton variant="secondary" size="sm">
+                    Làm bài <i className="fa-solid fa-arrow-right ml-1"></i>
+                  </GlassButton>
+                </div>
+              </SpotlightCard>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    /**
+     * View 3: Leaderboard (Bảng Xếp Hạng Top 3 Podium)
+     */
+    const StandingsView = () => {
+      const topUsers = [
+        { rank: 1, name: 'vohongquang', score: 3850, solved: 78, tag: 'DEV', badge: 'gold' },
+        { rank: 2, name: 'nguyen_van_a', score: 3420, solved: 69, tag: 'USER', badge: 'silver' },
+        { rank: 3, name: 'algorithm_pro', score: 3100, solved: 62, tag: 'USER', badge: 'bronze' },
+        { rank: 4, name: 'le_thi_b', score: 2890, solved: 55, tag: 'USER' },
+        { rank: 5, name: 'coder_99', score: 2650, solved: 49, tag: 'USER' },
+      ];
+
+      return (
+        <div className="flex flex-col gap-6">
+          <div>
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <i className="fa-solid fa-ranking-star text-amber-400"></i> Bảng Xếp Hạng Học Viên
+            </h2>
+            <p className="text-xs text-slate-400">Xếp hạng thời gian thực dựa trên tổng số bài giải đúng (AC)</p>
+          </div>
+
+          {/* Top 3 Podium Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            {/* Rank 2 - Silver */}
+            <SpotlightCard className="p-5 text-center flex flex-col items-center order-2 md:order-1 h-[210px] justify-center" glowColor="rgba(203, 213, 225, 0.2)">
+              <span className="text-2xl mb-1">🥈</span>
+              <h3 className="font-bold text-white text-sm">nguyen_van_a</h3>
+              <span className="text-xs font-mono text-cyan-300 font-bold mt-1">3,420 điểm · 69 bài</span>
+              <GlassBadge variant="cyan" className="mt-3">Hạng #2 Bạc</GlassBadge>
+            </SpotlightCard>
+
+            {/* Rank 1 - Gold (Center, Elevated) */}
+            <SpotlightCard className="p-6 text-center flex flex-col items-center order-1 md:order-2 h-[250px] justify-center border-amber-400/40 shadow-neon-indigo" glowColor="rgba(251, 191, 36, 0.3)">
+              <span className="text-4xl mb-1.5 animate-bounce">👑 🥇</span>
+              <h3 className="font-extrabold text-white text-base">vohongquang</h3>
+              <span className="text-xs font-mono text-amber-300 font-bold mt-1">3,850 điểm · 78 bài</span>
+              <GlassBadge variant="amber" className="mt-3">Quán Quân #1 Vàng</GlassBadge>
+            </SpotlightCard>
+
+            {/* Rank 3 - Bronze */}
+            <SpotlightCard className="p-5 text-center flex flex-col items-center order-3 md:order-3 h-[190px] justify-center" glowColor="rgba(245, 158, 11, 0.2)">
+              <span className="text-2xl mb-1">🥉</span>
+              <h3 className="font-bold text-white text-sm">algorithm_pro</h3>
+              <span className="text-xs font-mono text-amber-400 font-bold mt-1">3,100 điểm · 62 bài</span>
+              <GlassBadge variant="amber" className="mt-3">Hạng #3 Đồng</GlassBadge>
+            </SpotlightCard>
+          </div>
+
+          {/* Standings Table */}
+          <SpotlightCard className="p-4">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-white/10 text-slate-400 font-bold uppercase text-[10px]">
+                  <th className="p-3">Hạng</th>
+                  <th className="p-3">Người học</th>
+                  <th className="p-3">Vai trò</th>
+                  <th className="p-3 text-center">Bài đã giải</th>
+                  <th className="p-3 text-right">Tổng điểm</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topUsers.map((u) => (
+                  <tr key={u.rank} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
+                    <td className="p-3 font-mono font-bold text-amber-400">#{u.rank}</td>
+                    <td className="p-3 font-bold text-white flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] text-white">
+                        {u.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      {u.name}
+                    </td>
+                    <td className="p-3"><GlassBadge variant={u.tag === 'DEV' ? 'indigo' : 'cyan'}>{u.tag}</GlassBadge></td>
+                    <td className="p-3 text-center font-semibold text-slate-300">{u.solved} bài</td>
+                    <td className="p-3 text-right font-mono font-bold text-cyan-300">{u.score}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </SpotlightCard>
+        </div>
+      );
+    };
+
+    /**
+     * View 4: TMath Clean Profile View (Left Card 4 items + Right Heatmap & Form)
+     */
+    const ProfileView = () => {
+      const [tab, setTab] = useState('about'); // 'about' | 'problems' | 'edit'
+      const [bio, setBio] = useState('Người đam mê về lịch sử Việt Nam và thuật toán thi đấu.');
+      const [fullname, setFullname] = useState('Võ Hồng Quang');
+      const [tz, setTz] = useState('Ho_Chi_Minh');
+
+      return (
+        <div className="flex flex-col gap-6">
+          {/* Profile Top Bar */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/60 backdrop-blur-2xl border border-white/10 shadow-soft-md">
+            <div>
+              <div className="text-[10px] font-mono text-indigo-400 font-bold uppercase tracking-wider">WORKSPACE</div>
+              <h1 className="text-xl font-extrabold text-white">Tài khoản của tôi (vohongquang)</h1>
+            </div>
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-black/40 border border-white/10">
+              <button
+                onClick={() => setTab('about')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  tab === 'about' ? 'bg-white/20 text-white shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <i className="fa-regular fa-circle-user mr-1.5"></i> Giới thiệu
+              </button>
+              <button
+                onClick={() => setTab('problems')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  tab === 'problems' ? 'bg-white/20 text-white shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <i className="fa-solid fa-star mr-1.5"></i> Bài tập
+              </button>
+              <button
+                onClick={() => setTab('edit')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  tab === 'edit' ? 'bg-white/20 text-white shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <i className="fa-solid fa-pen-to-square mr-1.5"></i> Chỉnh sửa tiểu sử
+              </button>
+            </div>
+          </div>
+
+          {/* 2-Column Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            {/* Left Card: 4 Mục Cốt Lõi */}
+            <div className="lg:col-span-4">
+              <SpotlightCard className="p-6 flex flex-col items-center text-center">
+                <div className="relative w-28 h-28 rounded-2xl overflow-hidden p-1 bg-gradient-to-tr from-purple-500 via-indigo-500 to-pink-500 shadow-neon-indigo mb-4 group">
+                  <img
+                    src="https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&auto=format&fit=crop&q=80"
+                    alt="avatar"
+                    className="w-full h-full object-cover rounded-[14px]"
+                  />
+                </div>
+
+                <h3 className="text-sm font-bold text-white mb-4">562 số lượng bài đã giải</h3>
+
+                <div className="w-full flex flex-col gap-2 mb-4">
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs">
+                    <span className="text-slate-400">Xếp hạng bảng điểm:</span>
+                    <span className="font-bold text-white font-mono">#1</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs">
+                    <span className="text-slate-400">Tổng điểm:</span>
+                    <span className="font-bold text-cyan-300 font-mono">3,850</span>
+                  </div>
+                </div>
+
+                <GlassButton variant="primary" size="md" className="w-full font-bold">
+                  Xem các bài nộp
+                </GlassButton>
+              </SpotlightCard>
+            </div>
+
+            {/* Right Column Views */}
+            <div className="lg:col-span-8 flex flex-col gap-5">
+              {tab === 'about' && (
+                <>
+                  <SpotlightCard className="p-5" glowColor="rgba(244, 63, 94, 0.2)">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Giới thiệu</h3>
+                    <p className="text-sm font-medium text-rose-300">{bio}</p>
+                  </SpotlightCard>
+
+                  {/* 52-Week Heatmap */}
+                  <SpotlightCard className="p-5" glowColor="rgba(16, 185, 129, 0.2)">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xs font-bold text-white">2,423 submissions in the last year</h3>
+                      <span className="text-xs text-slate-400">năm qua</span>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 overflow-x-auto">
+                      <div className="flex gap-1 min-w-[620px]">
+                        {Array.from({ length: 48 }).map((_, w) => (
+                          <div key={w} className="flex flex-col gap-1 flex-1">
+                            {Array.from({ length: 7 }).map((_, d) => (
+                              <div
+                                key={d}
+                                className={`w-2.5 h-2.5 rounded-[2px] transition-transform hover:scale-150 cursor-pointer ${
+                                  (w + d) % 5 === 0 ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]' : (w + d) % 3 === 0 ? 'bg-emerald-600/70' : 'bg-white/[0.06]'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </SpotlightCard>
+                </>
+              )}
+
+              {tab === 'problems' && (
+                <SpotlightCard className="p-5">
+                  <h3 className="text-sm font-bold text-white mb-3">Danh Sách Bài Tập Đã Giải (562)</h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="p-3 rounded-xl bg-white/[0.03] flex items-center justify-between">
+                      <span className="font-bold text-white">P001 · Tổng hai số nguyên lớn</span>
+                      <GlassBadge variant="emerald">AC · 100/100</GlassBadge>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/[0.03] flex items-center justify-between">
+                      <span className="font-bold text-white">P002 · Dãy con liên tiếp có tổng lớn nhất</span>
+                      <GlassBadge variant="emerald">AC · 100/100</GlassBadge>
+                    </div>
+                  </div>
+                </SpotlightCard>
+              )}
+
+              {tab === 'edit' && (
+                <SpotlightCard className="p-5 flex flex-col gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1.5">Mô tả bản thân:</label>
+                    <textarea
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      rows={4}
+                      className="w-full p-3 rounded-xl bg-black/40 border border-white/15 text-xs text-white outline-none focus:border-indigo-400"
+                    />
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-black/30 border border-white/10 flex flex-col gap-3 text-xs">
+                    <div className="grid grid-cols-3 items-center gap-2">
+                      <span className="text-slate-400">Tên đầy đủ:</span>
+                      <input
+                        type="text"
+                        value={fullname}
+                        onChange={(e) => setFullname(e.target.value)}
+                        className="col-span-2 p-2 rounded-lg bg-black/40 border border-white/15 text-white outline-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 items-center gap-2">
+                      <span className="text-slate-400">Múi giờ:</span>
+                      <select
+                        value={tz}
+                        onChange={(e) => setTz(e.target.value)}
+                        className="col-span-2 p-2 rounded-lg bg-black/40 border border-white/15 text-white outline-none"
+                      >
+                        <option value="Ho_Chi_Minh">Ho_Chi_Minh (UTC+7)</option>
+                        <option value="UTC">UTC (UTC+0)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <GlassButton variant="primary" onClick={() => alert('Cập nhật profile thành công!')}>
+                      <i className="fa-solid fa-floppy-disk mr-1.5"></i> Cập nhật profile
+                    </GlassButton>
+                  </div>
+                </SpotlightCard>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 3. MAIN SHELL & TOP NAVIGATION
+    // =========================================================================
+
+    const App = () => {
+      const [currentView, setCurrentView] = useState('ide'); // 'ide' | 'problems' | 'standings' | 'profile'
+
+      return (
+        <div className="flex-1 flex flex-col max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 gap-6">
+          {/* Glassmorphic Navbar */}
+          <header className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/60 backdrop-blur-2xl border border-white/10 shadow-soft-md">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center text-white shadow-neon-indigo">
+                <i className="fa-solid fa-code text-lg"></i>
+              </div>
+              <div>
+                <div className="font-extrabold text-white tracking-tight text-base">LOCAL CP STUDIO</div>
+                <div className="text-[10px] font-mono text-cyan-300 font-bold uppercase tracking-wider">Glassmorphism Edition</div>
+              </div>
+            </div>
+
+            {/* Nav Tabs */}
+            <nav className="flex items-center gap-1.5 p-1 rounded-xl bg-black/40 border border-white/10">
+              <button
+                onClick={() => setCurrentView('ide')}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  currentView === 'ide' ? 'bg-indigo-500/30 text-white border border-indigo-400/50 shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <i className="fa-solid fa-laptop-code"></i> Code IDE
+              </button>
+              <button
+                onClick={() => setCurrentView('problems')}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  currentView === 'problems' ? 'bg-indigo-500/30 text-white border border-indigo-400/50 shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <i className="fa-solid fa-layer-group"></i> Kho Bài tập
+              </button>
+              <button
+                onClick={() => setCurrentView('standings')}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  currentView === 'standings' ? 'bg-indigo-500/30 text-white border border-indigo-400/50 shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <i className="fa-solid fa-ranking-star"></i> Bảng xếp hạng
+              </button>
+              <button
+                onClick={() => setCurrentView('profile')}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  currentView === 'profile' ? 'bg-indigo-500/30 text-white border border-indigo-400/50 shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <i className="fa-regular fa-circle-user"></i> Profile
+              </button>
+            </nav>
+
+            {/* User Pill */}
+            <div className="flex items-center gap-3">
+              <a
+                href="admin-console.html"
+                className="px-3 py-1.5 rounded-xl bg-purple-500/20 border border-purple-400/30 text-purple-300 hover:text-white text-xs font-bold transition-colors"
+                title="ClueOJ Admin Console"
+              >
+                <i className="fa-solid fa-shield-halved mr-1"></i> Admin
+              </a>
+              <div
+                onClick={() => setCurrentView('profile')}
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/20 backdrop-blur-xl shadow-soft-sm cursor-pointer transition-all"
+              >
+                <div className="w-6 h-6 rounded-full overflow-hidden border border-white/40">
+                  <img
+                    src="https://images.unsplash.com/photo-1578632767115-351597cf2477?w=100&auto=format&fit=crop&q=80"
+                    alt="avatar"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="font-mono text-xs font-bold text-white">vohongquang</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+              </div>
+            </div>
+          </header>
+
+          {/* Main Body View Switching */}
+          <main className="flex-1">
+            {currentView === 'ide' && <IdeView />}
+            {currentView === 'problems' && <ProblemsView />}
+            {currentView === 'standings' && <StandingsView />}
+            {currentView === 'profile' && <ProfileView />}
+          </main>
+
+          {/* Glass Footer */}
+          <footer className="p-4 rounded-2xl bg-slate-900/40 backdrop-blur-xl border border-white/10 text-center text-xs text-slate-400">
+            &copy; 2026 <strong>LOCAL CP STUDIO</strong> — Thiết kế Glassmorphism chuẩn cao cấp kết hợp React & Tailwind CSS.
+          </footer>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+/**
+ * LOCAL CP — Submission Arena Module Stylesheet
+ */
+
+.submit-container-card {
+    background: var(--arena-card);
+    border: 1px solid var(--arena-border);
+    border-radius: 16px;
+    padding: 32px 36px;
+    box-shadow: var(--arena-shadow);
+    max-width: 1040px;
+    margin: 0 auto 30px;
+    transition: all 0.3s ease;
+}
+
+.submit-header-kicker {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--arena-text-sub);
+    margin-bottom: 4px;
+}
+
+.submit-header-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--arena-text-main);
+    margin-bottom: 16px;
+}
+
+.submit-divider {
+    height: 1px;
+    background: var(--arena-border);
+    margin-bottom: 24px;
+}
+
+.submit-form-group {
+    margin-bottom: 20px;
+}
+
+.submit-label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--arena-text-main);
+    margin-bottom: 8px;
+}
+
+.submit-select-wrapper {
+    position: relative;
+    max-width: 420px;
+}
+
+.submit-select {
+    width: 100%;
+    padding: 10px 38px 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--arena-border);
+    background: var(--arena-card);
+    color: var(--arena-text-main);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    appearance: none;
+    outline: none;
+    transition: all 0.2s ease;
+    box-shadow: var(--arena-shadow-sm);
+}
+
+.submit-select:focus {
+    border-color: var(--arena-primary);
+    box-shadow: 0 0 0 3px var(--arena-primary-glow);
+}
+
+.submit-select-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--arena-text-sub);
+    pointer-events: none;
+    font-size: 0.8rem;
+}
+
+/* IDE Code Editor Box */
+.ide-editor-container {
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    background: #0b1220;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    margin-bottom: 26px;
+    position: relative;
+    transition: all 0.25s ease;
+}
+
+.ide-editor-container.fullscreen {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    z-index: 99999;
+    margin: 0;
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+}
+
+.ide-editor-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    background: #080d18;
+    border-bottom: 1px solid #1e293b;
+}
+
+.ide-tab-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #94a3b8;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.btn-ide-expand {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-ide-expand:hover {
+    color: #22d3ee;
+    background: rgba(34, 211, 238, 0.1);
+}
+
+.monaco-submission-host {
+    width: 100%;
+    height: 340px;
+}
+.ide-editor-container.fullscreen .monaco-submission-host {
+    height: calc(100vh - 80px);
+}
+
+.ide-statusbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 14px;
+    background: #080d18;
+    border-top: 1px solid #1e293b;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.ide-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #a855f7;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+    display: inline-block;
+}
+
+/* Wide Blue Submit Button */
+.btn-big-submit {
+    display: block;
+    width: 100%;
+    padding: 14px 28px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-big-submit:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(37, 99, 235, 0.45);
+}
+.btn-big-submit:active {
+    transform: scale(0.98);
+}
+
+/* Result Verdict Box */
+.verdict-box {
+    margin-top: 24px;
+    padding: 20px 24px;
+    border-radius: 12px;
+    background: var(--arena-tab-hover);
+    border: 1px solid var(--arena-border);
+    display: none;
+    animation: fadeInUp 0.35s ease;
+}
+.verdict-box.show {
+    display: block;
+}
+.verdict-ac {
+    border-color: #86efac;
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+}
+.verdict-wa {
+    border-color: #fca5a5;
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}

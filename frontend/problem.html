@@ -3,18 +3,28 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Tổng hai số (A + B Problem) | Local CP Studio</title>
-    <meta name="description" content="Đề bài luyện tập thuật toán: Tính tổng hai số nguyên với giới hạn thời gian và bộ nhớ chuẩn.">
+    <title>Chi tiết đề bài | Local CP Studio</title>
+    <meta name="description" content="Chi tiết đề bài luyện tập thuật toán với hệ thống chấm tự động và hỗ trợ đa ngôn ngữ.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/auth-nav.js"></script>
     <link rel="stylesheet" href="css/arena.css?v=3.0">
+    <link rel="stylesheet" href="css/glassmorphism-effects.css">
+    <script src="js/glassmorphism.js"></script>
 </head>
-<body>
+<body class="usaco-theme">
+    <!-- Ambient Animated Mesh Background -->
+    <div class="app-ambient" aria-hidden="true">
+        <div class="orb orb-cyan"></div>
+        <div class="orb orb-violet"></div>
+        <div class="orb orb-emerald"></div>
+        <div class="mesh-grid"></div>
+    </div>
     <!-- Top Full-Width Header Bar -->
     <header class="site-header">
         <a class="brand" href="index.html">
@@ -44,79 +54,41 @@
             <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
             <a href="problems.html">Kho bài tập</a>
             <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
-            <span>Bài 001 · Tổng hai số</span>
+            <span id="breadcrumb-problem-title">Đang tải đề bài...</span>
         </nav>
 
-        <!-- Problem Details Layout (Matching Reference Image) -->
+        <!-- Problem Details Layout -->
         <main class="problem-layout-grid">
             <!-- Left Main Problem Statement Card -->
-            <article class="problem-main-card">
-                <div class="problem-status-kicker">TRẠNG THÁI</div>
-
-                <div style="margin-bottom: 24px;">
-                    <div class="problem-heading-req">Yêu cầu:</div>
-                    <div class="problem-prose">
-                        Em hãy viết chương trình nhập vào hai số nguyên <code>a</code> và <code>b</code>, sau đó in ra tổng <code>a + b</code> lên màn hình máy tính.
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 24px;">
-                    <div class="problem-heading-req" style="font-size: 1.05rem;">Dữ liệu vào (Input Specification):</div>
-                    <div class="problem-prose">
-                        Một dòng duy nhất chứa hai số nguyên <code>a</code> và <code>b</code>, cách nhau bởi một dấu cách (&minus;10<sup>9</sup> &le; a, b &le; 10<sup>9</sup>).
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 24px;">
-                    <div class="problem-heading-req" style="font-size: 1.05rem;">Dữ liệu ra (Output Specification):</div>
-                    <div class="problem-prose">
-                        In ra một số nguyên duy nhất là giá trị tổng <code>a + b</code>.
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 24px;">
-                    <div class="problem-heading-req" style="font-size: 1.05rem;">Ví dụ mẫu (Sample Tests):</div>
-                    
-                    <div style="border: 1px solid var(--arena-border); border-radius: 10px; overflow: hidden; margin-bottom: 12px;">
-                        <div style="padding: 8px 14px; background: var(--arena-thead-bg); border-bottom: 1px solid var(--arena-border); display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size: 0.75rem; font-weight: 800; color: var(--arena-text-sub); letter-spacing: 0.06em;">SAMPLE INPUT</span>
-                            <button onclick="navigator.clipboard.writeText('12 30'); alert('Đã sao chép input!');" style="background:none; border:none; color:var(--arena-primary); cursor:pointer; font-size:0.75rem; font-weight:700;">SAO CHÉP</button>
-                        </div>
-                        <pre style="padding: 12px 14px; margin: 0; background: var(--arena-tab-hover); font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; color: var(--arena-text-main);">12 30</pre>
-                    </div>
-
-                    <div style="border: 1px solid var(--arena-border); border-radius: 10px; overflow: hidden;">
-                        <div style="padding: 8px 14px; background: var(--arena-thead-bg); border-bottom: 1px solid var(--arena-border); display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size: 0.75rem; font-weight: 800; color: var(--arena-text-sub); letter-spacing: 0.06em;">SAMPLE OUTPUT</span>
-                            <button onclick="navigator.clipboard.writeText('42'); alert('Đã sao chép output!');" style="background:none; border:none; color:var(--arena-primary); cursor:pointer; font-size:0.75rem; font-weight:700;">SAO CHÉP</button>
-                        </div>
-                        <pre style="padding: 12px 14px; margin: 0; background: var(--arena-tab-hover); font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; color: var(--arena-text-main);">42</pre>
-                    </div>
+            <article class="problem-main-card" id="problem-content-area">
+                <div style="text-align: center; padding: 60px 20px; color: #94a3b8;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: #2563eb; margin-bottom: 12px; display: block;"></i>
+                    <p>Đang tải dữ liệu đề bài...</p>
                 </div>
             </article>
 
-            <!-- Right Problem Info Sidebar (Matching Reference Image) -->
+            <!-- Right Problem Info Sidebar -->
             <aside class="problem-sidebar-container">
                 <div class="sidebar-kicker">THÔNG TIN</div>
-                <div class="sidebar-title">Thông tin bài tập</div>
+                <div class="sidebar-title" id="sidebar-problem-code">Thông tin bài tập</div>
 
-                <a href="submission.html" class="btn-send-solution">
-                    Gửi bài giải
+                <a id="btn-submit-link" href="submission.html" class="btn-send-solution">
+                    <i class="fa-solid fa-paper-plane"></i> Gửi bài giải
                 </a>
 
                 <!-- 2x2 Grid (Điểm, Thời gian, Bộ nhớ, I/O) -->
                 <div class="info-grid-2x2">
                     <div class="info-card-cell">
                         <div class="info-cell-lbl">ĐIỂM</div>
-                        <div class="info-cell-val">100</div>
+                        <div class="info-cell-val" id="info-points">100</div>
                     </div>
                     <div class="info-card-cell">
                         <div class="info-cell-lbl">GIỚI HẠN THỜI GIAN:</div>
-                        <div class="info-cell-val">1.0s</div>
+                        <div class="info-cell-val" id="info-time">1.0s</div>
                     </div>
                     <div class="info-card-cell">
                         <div class="info-cell-lbl">GIỚI HẠN BỘ NHỚ:</div>
-                        <div class="info-cell-val">256 M</div>
+                        <div class="info-cell-val" id="info-memory">256 MB</div>
                     </div>
                     <div class="info-card-cell">
                         <div class="info-cell-lbl">I / O</div>
@@ -134,21 +106,21 @@
                 </div>
 
                 <div class="info-card-full">
-                    <div class="info-cell-lbl">LOẠI ĐỀ BÀI</div>
-                    <div class="info-cell-val" style="font-size: 0.84rem; font-weight: 600; line-height: 1.4;">
-                        A01 - Nhập môn: Biến, hằng và phép toán
+                    <div class="info-cell-lbl">CHUYÊN ĐỀ</div>
+                    <div class="info-cell-val" id="info-chapter" style="font-size: 0.84rem; font-weight: 600; line-height: 1.4;">
+                        Đang tải...
                     </div>
                 </div>
 
                 <div class="info-card-full">
                     <div class="info-cell-lbl">NGÔN NGỮ CHO PHÉP</div>
-                    <div class="info-cell-val" style="font-size: 0.84rem; font-weight: 600;">
-                        C, C++, Java, Python, Pascal
+                    <div class="info-cell-val" style="font-size: 0.84rem; font-weight: 600; color: #2563eb;">
+                        Python 3, C++, C, Java, Go, Rust, JavaScript, TypeScript, C#, Pascal
                     </div>
                 </div>
 
-                <a href="submission.html" class="btn-my-solution">
-                    Lời giải của tôi
+                <a href="problems.html" class="btn-my-solution">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại Kho bài tập
                 </a>
             </aside>
         </main>
@@ -158,5 +130,96 @@
             <span>&copy; 2026 <strong>Local CP Studio</strong> — Nền tảng luyện tập thuật toán thi đấu.</span>
         </footer>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code') || 'PY001';
+            
+            const breadcrumbEl = document.getElementById('breadcrumb-problem-title');
+            const contentEl = document.getElementById('problem-content-area');
+            const sidebarCodeEl = document.getElementById('sidebar-problem-code');
+            const submitLinkEl = document.getElementById('btn-submit-link');
+            const chapterEl = document.getElementById('info-chapter');
+
+            if (submitLinkEl) {
+                submitLinkEl.href = `submission.html?code=${code}`;
+            }
+
+            try {
+                const res = await fetch(`/api/problem-bank/${code}`);
+                if (!res.ok) {
+                    throw new Error('Không thể tải bài tập');
+                }
+                const data = await res.json();
+
+                document.title = `[${data.code}] ${data.title} | Local CP Studio`;
+                if (breadcrumbEl) breadcrumbEl.textContent = `[${data.code}] ${data.title}`;
+                if (sidebarCodeEl) sidebarCodeEl.textContent = `Bài tập ${data.code}`;
+                if (chapterEl) chapterEl.textContent = data.chapter_title || 'Bài tập Lập trình';
+
+                // Render Markdown content
+                let statementHtml = '';
+                if (window.marked) {
+                    statementHtml = marked.parse(data.statement || '');
+                } else {
+                    statementHtml = `<pre>${data.statement || ''}</pre>`;
+                }
+
+                // Sample tests formatting
+                let sampleHtml = '';
+                if (data.tests && data.tests.length > 0) {
+                    data.tests.slice(0, 2).forEach((t, idx) => {
+                        const inText = String(t.input || '').replace(/"/g, '&quot;');
+                        sampleHtml += `
+                            <div style="margin-top: 18px;">
+                                <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; color: var(--arena-text-main);">Ví dụ mẫu ${idx + 1}:</div>
+                                <div style="border: 1px solid var(--arena-border); border-radius: 10px; overflow: hidden; margin-bottom: 10px;">
+                                    <div style="padding: 8px 14px; background: var(--arena-thead-bg); border-bottom: 1px solid var(--arena-border); display:flex; justify-content:space-between; align-items:center;">
+                                        <span style="font-size: 0.75rem; font-weight: 800; color: var(--arena-text-sub); letter-spacing: 0.06em;">SAMPLE INPUT ${idx + 1}</span>
+                                        <button onclick="navigator.clipboard.writeText(\`${t.input}\`); alert('Đã sao chép input!');" style="background:none; border:none; color:var(--arena-primary); cursor:pointer; font-size:0.75rem; font-weight:700;">SAO CHÉP</button>
+                                    </div>
+                                    <pre style="padding: 12px 14px; margin: 0; background: var(--arena-tab-hover); font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; color: var(--arena-text-main); white-space: pre-wrap;">${t.input}</pre>
+                                </div>
+                                <div style="border: 1px solid var(--arena-border); border-radius: 10px; overflow: hidden;">
+                                    <div style="padding: 8px 14px; background: var(--arena-thead-bg); border-bottom: 1px solid var(--arena-border); display:flex; justify-content:space-between; align-items:center;">
+                                        <span style="font-size: 0.75rem; font-weight: 800; color: var(--arena-text-sub); letter-spacing: 0.06em;">SAMPLE OUTPUT ${idx + 1}</span>
+                                        <button onclick="navigator.clipboard.writeText(\`${t.expected}\`); alert('Đã sao chép output!');" style="background:none; border:none; color:var(--arena-primary); cursor:pointer; font-size:0.75rem; font-weight:700;">SAO CHÉP</button>
+                                    </div>
+                                    <pre style="padding: 12px 14px; margin: 0; background: var(--arena-tab-hover); font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; color: var(--arena-text-main); white-space: pre-wrap;">${t.expected}</pre>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                contentEl.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <span style="font-family:'JetBrains Mono',monospace; font-size:0.85rem; font-weight:800; color:#2563eb; background:#dbeafe; padding:4px 10px; border-radius:8px;">${data.code}</span>
+                        <span style="font-size:0.85rem; color:var(--arena-text-sub); font-weight:600;"><i class="fa-solid fa-layer-group"></i> ${data.chapter_title || ''}</span>
+                    </div>
+                    <div class="problem-prose" style="line-height: 1.7; font-size: 0.95rem;">
+                        ${statementHtml}
+                    </div>
+                    <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--arena-border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                        <span style="font-size:0.88rem; color:var(--arena-text-sub);"><i class="fa-solid fa-vial"></i> Tổng số bộ test tự động: <strong>${data.test_count} tests</strong></span>
+                        <a href="submission.html?code=${data.code}" style="background:#2563eb; color:#fff; padding:8px 18px; border-radius:10px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                            <i class="fa-solid fa-paper-plane"></i> Nộp bài giải ngay
+                        </a>
+                    </div>
+                `;
+
+            } catch (err) {
+                console.error(err);
+                contentEl.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #ef4444;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; margin-bottom: 12px; display: block;"></i>
+                        <p style="font-weight: 700;">Không tìm thấy đề bài '${code}'.</p>
+                        <a href="problems.html" style="color: #2563eb; text-decoration: underline; font-weight: 600;">Về kho bài tập</a>
+                    </div>
+                `;
+            }
+        });
+    </script>
 </body>
 </html>

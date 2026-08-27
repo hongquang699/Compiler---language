@@ -32,18 +32,20 @@
                     </a>
                 `;
             } else {
-                const initials = (user.username || 'CP').slice(0, 2).toUpperCase();
+                const username = user.username || 'vohongquang';
+                const avatarUrl = user.avatar_path || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=100&auto=format&fit=crop&q=80';
                 const role = (user.role || (user.is_admin ? 'admin' : 'user')).toUpperCase();
-                let roleBadgeColor = '#2563eb';
-                if (role === 'DEV') roleBadgeColor = '#a855f7';
-                else if (role === 'SUPERADMIN' || role === 'ADMIN') roleBadgeColor = '#ec4899';
 
                 container.innerHTML = `
-                    <div class="user-chip" style="display:inline-flex; align-items:center; gap:8px; padding:4px 10px 4px 4px; border-radius:20px; background:var(--arena-box-bg, #f8fafc); border:1px solid var(--arena-border, #e2e8f0); font-size:0.84rem; font-weight:700; color:var(--arena-text-main, #0f172a);">
-                        <span class="avatar" style="width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, #2563eb, #06b6d4); color:#fff; display:grid; place-items:center; font-size:0.75rem; font-weight:800; font-family:'JetBrains Mono',monospace;">${initials}</span>
-                        <span>${escapeHtml(user.username)}</span>
-                        <span style="font-size:0.65rem; padding:2px 6px; border-radius:6px; background:${roleBadgeColor}20; color:${roleBadgeColor}; font-family:'JetBrains Mono',monospace;">${role}</span>
-                        <button onclick="window.logoutUser()" title="Đăng xuất" style="background:none; border:none; color:var(--arena-text-sub, #94a3b8); cursor:pointer; font-size:0.8rem; padding:2px 4px; margin-left:2px;">
+                    <div style="display:inline-flex; align-items:center; gap:6px;">
+                        <a href="profile.html" class="user-pill-glass" title="Xem thông tin tài khoản của tôi" style="display:inline-flex; align-items:center; gap:8px; padding:3px 12px 3px 4px; border-radius:20px; background:rgba(255,255,255,0.08); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.2); font-size:0.84rem; font-weight:700; color:#fff; text-decoration:none; box-shadow:0 4px 16px rgba(0,0,0,0.2); transition:all 0.3s ease;">
+                            <div style="width:26px; height:26px; border-radius:50%; overflow:hidden; border:1px solid rgba(255,255,255,0.4); display:flex; align-items:center; justify-content:center; background:#1e1b4b;">
+                                <img src="${avatarUrl}" alt="avatar" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=100&auto=format&fit=crop&q=80'">
+                            </div>
+                            <span style="font-family:'JetBrains Mono',monospace; color:var(--text-primary, #fff);">${escapeHtml(username)}</span>
+                            <span style="width:6px; height:6px; border-radius:50%; background:#34d399; box-shadow:0 0 8px #34d399;"></span>
+                        </a>
+                        <button onclick="window.logoutUser()" title="Đăng xuất" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#94a3b8; cursor:pointer; font-size:0.78rem; padding:5px 8px; border-radius:10px; transition:all 0.2s;">
                             <i class="fa-solid fa-arrow-right-from-bracket"></i>
                         </button>
                     </div>

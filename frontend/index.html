@@ -106,10 +106,12 @@
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
     <script src="js/theme.js"></script>
-    <link rel="stylesheet" href="css/style.css?v=7.0">
+    <link rel="stylesheet" href="css/style.css?v=11.0">
+    <link rel="stylesheet" href="css/glassmorphism-effects.css">
+    <script src="js/glassmorphism.js"></script>
 </head>
 
-<body class="usaco-theme">
+<body class="usaco-theme" spellcheck="false">
     <div class="app-ambient" aria-hidden="true">
         <div class="orb orb-cyan"></div>
         <div class="orb orb-violet"></div>
@@ -118,7 +120,7 @@
     </div>
 
     <header class="app-header">
-        <div class="header-left">
+        <a class="header-left" href="landing.html" title="Về Trang chủ SaaS">
             <div class="logo-badge">
                 <i class="fa-solid fa-code"></i>
             </div>
@@ -126,7 +128,7 @@
                 <span class="ide-brand">LOCAL CP</span>
                 <span class="ide-sub">Algorithm Studio</span>
             </div>
-        </div>
+        </a>
 
         <nav class="nav-tabs">
             <a class="nav-tab active" href="index.html#playground-tab" data-tab="playground-tab"><i class="fa-solid fa-laptop-code"></i> <span>Code IDE</span></a>
@@ -135,6 +137,7 @@
             <a class="nav-tab" href="index.html#rag-tab" data-tab="rag-tab"><i class="fa-solid fa-book-bookmark"></i> <span>Templates</span></a>
             <a class="nav-tab" href="index.html#vault-tab" data-tab="vault-tab"><i class="fa-solid fa-trophy"></i> <span>Vault</span></a>
             <a class="nav-tab" href="contest.html"><i class="fa-solid fa-flag-checkered"></i> <span>Cuộc thi</span></a>
+            <a class="nav-tab" href="community.html"><i class="fa-solid fa-people-group"></i> <span>Community</span></a>
             <a class="nav-tab" href="index.html#showcase-tab" data-tab="showcase-tab"><i class="fa-solid fa-circle-question"></i> <span>FAQ &amp; Giới thiệu</span></a>
             <a class="nav-tab hidden" id="admin-nav-btn" href="admin-console.html"><i class="fa-solid fa-shield-halved"></i> <span>Admin</span></a>
             <a class="nav-tab hidden" id="admin-prob-nav-btn" href="admin-problems.html"><i class="fa-solid fa-layer-group"></i> <span>Kho Bài tập</span></a>
@@ -177,7 +180,13 @@
 
             <div class="account-area">
                 <button class="btn-ide btn-ide-secondary btn-xs" id="auth-open-btn"><i class="fa-solid fa-user"></i> Đăng nhập</button>
-                <span class="account-name hidden" id="account-name"></span>
+                <a href="profile.html" class="user-pill-glass hidden" id="account-name" title="Tài khoản của tôi">
+                    <div class="user-pill-avatar">
+                        <img src="https://images.unsplash.com/photo-1578632767115-351597cf2477?w=100&auto=format&fit=crop&q=80" alt="avatar">
+                    </div>
+                    <span id="account-username">vohongquang</span>
+                    <span class="user-pill-dot"></span>
+                </a>
                 <button class="btn-mini hidden" id="auth-logout-btn" title="Đăng xuất"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
             </div>
         </div>
@@ -300,7 +309,10 @@
                 <div class="agent-problem-pane glass-panel">
                     <div class="panel-header-clean">
                         <h2><i class="fa-solid fa-file-lines"></i> Đề bài thuật toán</h2>
-                        <div class="header-tools">
+                        <div class="header-tools" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <div id="agent-ai-quota-badge" class="ai-quota-badge" title="Hạn mức sử dụng AI miễn phí (30 lượt). Mua gói Pro để dùng không giới hạn.">
+                                <i class="fa-solid fa-bolt"></i> <span id="agent-quota-text">30/30 lượt AI</span>
+                            </div>
                             <select id="agent-lang-selector" class="ide-select-sm">
                                 <option value="cpp">C++17</option>
                                 <option value="python">Python 3</option>
@@ -414,6 +426,12 @@
                     <div class="chat-history" id="chat-history-list"></div>
                 </div>
                 <div class="chat-main glass-panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 16px; border-bottom: 1px solid rgba(148,163,184,0.15); margin-bottom: 8px;">
+                        <span style="font-weight: 600; font-size: 0.88rem; color: var(--text-bright);"><i class="fa-solid fa-robot" style="color: var(--accent-cyan); margin-right: 6px;"></i> Trợ lý CP Grandmaster AI</span>
+                        <div id="chat-ai-quota-badge" class="ai-quota-badge" title="Hạn mức sử dụng AI miễn phí (30 lượt). Mua gói Pro để dùng không giới hạn.">
+                            <i class="fa-solid fa-bolt"></i> <span id="chat-quota-text">30/30 lượt AI</span>
+                        </div>
+                    </div>
                     <div class="chat-messages" id="chat-messages">
                         <div class="chat-welcome">
                             <div class="welcome-icon"><i class="fa-solid fa-robot"></i></div>
@@ -507,6 +525,42 @@
                     <div class="glass-panel" style="padding: 1rem; border-radius: 14px;">
                         <div class="panel-subtitle">Saved</div>
                         <h3 id="admin-total-saved">0</h3>
+                    </div>
+                </div>
+
+                <!-- Admin & Dev Payment Notifications Panel -->
+                <div class="glass-panel" style="padding: 18px; border-radius: 14px; margin-bottom: 20px; border: 1px solid rgba(56,189,248,0.3); background: rgba(14,24,44,0.75);">
+                    <div class="panel-header-clean" style="margin-bottom: 12px;">
+                        <div style="display:flex; align-items:center; gap: 10px;">
+                            <span style="width: 32px; height: 32px; border-radius: 8px; background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3); display:flex; align-items:center; justify-content:center; color: #fbbf24;">
+                                <i class="fa-solid fa-bell"></i>
+                            </span>
+                            <div>
+                                <h3 style="font-size: 1.05rem; color: var(--text-bright); margin: 0;">Thông báo Mua gói &amp; Nâng cấp quyền</h3>
+                                <p class="panel-subtitle" style="margin: 0; font-size: 0.78rem;">Danh sách yêu cầu chuyển khoản gửi đến Dev &amp; SuperAdmin (Tên tài khoản &amp; Tên người chuyển khoản)</p>
+                            </div>
+                        </div>
+                        <button id="admin-refresh-notifs-btn" class="btn-ide btn-ide-secondary btn-xs"><i class="fa-solid fa-rotate-right"></i> Làm mới</button>
+                    </div>
+                    <div class="table-wrap" style="overflow:auto; max-height: 280px;">
+                        <table style="width:100%; border-collapse: collapse; color: var(--text-primary); font-size: 0.82rem;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left; padding:0.6rem 0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Thời gian</th>
+                                    <th style="text-align:left; padding:0.6rem 0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Tài khoản (Acc)</th>
+                                    <th style="text-align:left; padding:0.6rem 0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Tên khi chuyển khoản</th>
+                                    <th style="text-align:left; padding:0.6rem 0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Gói dịch vụ</th>
+                                    <th style="text-align:left; padding:0.6rem 0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Số tiền (VNĐ)</th>
+                                    <th style="text-align:left; padding:0.6rem 0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Nội dung CK (Ref)</th>
+                                    <th style="text-align:center; padding:0.6rem 0.75rem; border-bottom:1px solid rgba(148,163,184,.2);">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-payment-notifications-body">
+                                <tr>
+                                    <td colspan="7" style="text-align:center; padding: 1.2rem; color: var(--text-muted);">Đang tải thông báo...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -629,8 +683,12 @@
                             <span>1. Local CP IDE là gì và khác gì so với các Online Judge khác?</span>
                             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                         </button>
-                        <div class="faq-answer">
-                            Local CP IDE là studio lập trình thuật toán chạy trực tiếp trên máy cục bộ của bạn hoặc máy chủ riêng tư. Tích hợp sẵn Monaco Editor chuẩn VS Code, trình biên dịch Sandbox siêu tốc (C++, Python, Rust, Java), và đặc biệt là AI Agent tự sửa lỗi thông minh mà không phụ thuộc vào internet công cộng.
+                        <div class="faq-answer-wrap">
+                            <div class="faq-answer-inner">
+                                <div class="faq-answer">
+                                    Local CP IDE là studio lập trình thuật toán chạy trực tiếp trên máy cục bộ của bạn hoặc máy chủ riêng tư. Tích hợp sẵn Monaco Editor chuẩn VS Code, trình biên dịch Sandbox siêu tốc (C++, Python, Rust, Java), và đặc biệt là AI Agent tự sửa lỗi thông minh mà không phụ thuộc vào internet công cộng.
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="faq-item">
@@ -638,8 +696,12 @@
                             <span>2. AI Agent hoạt động như thế nào và có gian lận trong cuộc thi không?</span>
                             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                         </button>
-                        <div class="faq-answer">
-                            AI Agent hoạt động qua 5 bước: Tra cứu thuật toán (RAG) &rarr; Lập kế hoạch (Plan) &rarr; Sinh mã nguồn &rarr; Chạy sandbox kiểm thử &rarr; Tự sửa code nếu có lỗi (Auto-fix). Khi bạn tham gia Cuộc thi (Contest), hệ thống bảo mật sẽ <strong>tự động khóa AI</strong> để đảm bảo tính công bằng 100%.
+                        <div class="faq-answer-wrap">
+                            <div class="faq-answer-inner">
+                                <div class="faq-answer">
+                                    AI Agent hoạt động qua 5 bước: Tra cứu thuật toán (RAG) &rarr; Lập kế hoạch (Plan) &rarr; Sinh mã nguồn &rarr; Chạy sandbox kiểm thử &rarr; Tự sửa code nếu có lỗi (Auto-fix). Khi bạn tham gia Cuộc thi (Contest), hệ thống bảo mật sẽ <strong>tự động khóa AI</strong> để đảm bảo tính công bằng 100%.
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="faq-item">
@@ -647,8 +709,12 @@
                             <span>3. Hệ thống hỗ trợ những ngôn ngữ lập trình nào?</span>
                             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                         </button>
-                        <div class="faq-answer">
-                            Hệ thống hỗ trợ toàn diện các ngôn ngữ thi đấu phổ biến nhất: C++17 (g++ O2), Python 3.12, Java 17 (OpenJDK), C11, Rust 2021 và Go 1.21 với cờ tối ưu hóa tốc độ cao.
+                        <div class="faq-answer-wrap">
+                            <div class="faq-answer-inner">
+                                <div class="faq-answer">
+                                    Hệ thống hỗ trợ toàn diện các ngôn ngữ thi đấu phổ biến nhất: C++17 (g++ O2), Python 3.12, Java 17 (OpenJDK), C11, Rust 2021 và Go 1.21 với cờ tối ưu hóa tốc độ cao.
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="faq-item">
@@ -656,8 +722,12 @@
                             <span>4. Mã nguồn và dữ liệu của tôi có được bảo mật không?</span>
                             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                         </button>
-                        <div class="faq-answer">
-                            Có. Chúng tôi tuân thủ chính sách Local-First. Code của bạn được lưu trong cơ sở dữ liệu SQLite cục bộ mã hóa, phiên làm việc được xác thực bằng JWT an toàn, không bị gửi cho bên thứ ba.
+                        <div class="faq-answer-wrap">
+                            <div class="faq-answer-inner">
+                                <div class="faq-answer">
+                                    Có. Chúng tôi tuân thủ chính sách Local-First. Code của bạn được lưu trong cơ sở dữ liệu SQLite cục bộ mã hóa, phiên làm việc được xác thực bằng JWT an toàn, không bị gửi cho bên thứ ba.
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="faq-item">
@@ -665,8 +735,12 @@
                             <span>5. Làm thế nào để tạo cuộc thi hoặc nạp bài tập từ ClueOJ?</span>
                             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                         </button>
-                        <div class="faq-answer">
-                            Tài khoản Quản trị viên (Admin) có thể vào tab Admin để tạo cuộc thi mới, cấu hình thời gian thi, hoặc dùng tính năng "Nạp problem ClueOJ" trực tiếp từ thư mục đề bài chuẩn của bạn.
+                        <div class="faq-answer-wrap">
+                            <div class="faq-answer-inner">
+                                <div class="faq-answer">
+                                    Tài khoản Quản trị viên (Admin) có thể vào tab Admin để tạo cuộc thi mới, cấu hình thời gian thi, hoặc dùng tính năng "Nạp problem ClueOJ" trực tiếp từ thư mục đề bài chuẩn của bạn.
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -802,6 +876,20 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Floating Scroll Up / Down Controller for Showcase Tab -->
+            <div class="showcase-scroll-controller" id="showcase-scroll-controller" title="Thanh điều khiển trượt trang">
+                <button class="scroll-ctrl-btn" id="showcase-scroll-top-btn" title="Cuộn lên đầu trang (Home)">
+                    <i class="fa-solid fa-arrow-up"></i>
+                </button>
+                <div class="scroll-progress-track" id="showcase-scroll-track" title="Nhấp hoặc kéo để trượt nhanh">
+                    <div class="scroll-progress-fill" id="showcase-scroll-fill"></div>
+                </div>
+                <span class="scroll-pct-badge" id="showcase-scroll-pct">0%</span>
+                <button class="scroll-ctrl-btn" id="showcase-scroll-bottom-btn" title="Cuộn xuống cuối trang (End)">
+                    <i class="fa-solid fa-arrow-down"></i>
+                </button>
+            </div>
         </section>
 
     </main>
@@ -873,6 +961,70 @@
                     <button class="btn-ide btn-ide-run btn-block" type="submit" id="auth-submit-btn"><span>Đăng nhập</span><i class="fa-solid fa-arrow-right"></i></button>
                 </form>
                 <p class="auth-footnote"><i class="fa-solid fa-circle-info"></i> Không lưu trữ mật khẩu trên trình duyệt của bạn.</p>
+            </div>
+    <!-- PAYMENT MODAL (VietQR Checkout & Upgrade) -->
+    <div class="auth-modal hidden" id="payment-modal" role="dialog" style="z-index: 10000;">
+        <div class="auth-card" style="max-width: 520px;">
+            <div class="auth-form-area" style="padding: 28px 24px;">
+                <button class="auth-close" id="close-payment-modal" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
+
+                <div class="auth-heading" style="text-align: center; margin-bottom: 16px;">
+                    <span class="auth-heading-icon" style="background: rgba(0,242,254,0.15); color: var(--accent-cyan);"><i class="fa-solid fa-bolt"></i></span>
+                    <div>
+                        <h2 id="payment-plan-title">Nâng cấp Pro Developer</h2>
+                        <p style="color: var(--text-muted); font-size: 0.82rem;">Mở khóa sử dụng AI không giới hạn &amp; mọi tính năng cao cấp</p>
+                    </div>
+                </div>
+
+                <!-- VietQR Display -->
+                <div class="payment-qr-container" style="text-align: center; margin: 12px 0;">
+                    <div style="background: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; box-shadow: 0 0 20px rgba(0,242,254,0.15);">
+                        <img src="https://img.vietqr.io/image/970418-21510003058863-compact2.png?amount=485000&accountName=VO%20HONG%20QUANG" alt="VietQR BIDV VO HONG QUANG" id="payment-qr-img" style="width: 220px; height: 220px; display: block; object-fit: contain;">
+                    </div>
+                    <div style="margin-top: 10px; text-align: center;">
+                        <strong style="color: var(--text-bright); font-size: 1rem; letter-spacing: 0.5px; display: block;">VO HONG QUANG</strong>
+                        <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 4px;">
+                            <span style="font-size: 0.72rem; color: var(--accent-cyan); background: rgba(0,242,254,0.12); border: 1px solid rgba(0,242,254,0.25); padding: 2px 8px; border-radius: 6px; font-weight: 600;">
+                                <i class="fa-solid fa-bolt"></i> VietQR · BIDV
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Details Table -->
+                <div class="payment-details-table">
+                    <div class="payment-details-row">
+                        <span><i class="fa-solid fa-user-shield" style="color: var(--accent-cyan); margin-right: 6px;"></i> Tài khoản kích hoạt:</span>
+                        <strong id="payment-user-display" style="color: var(--accent-cyan); font-family: var(--font-mono, monospace);">USER</strong>
+                    </div>
+                    <div class="payment-details-row">
+                        <span><i class="fa-solid fa-money-bill-wave" style="color: var(--accent-cyan); margin-right: 6px;"></i> Số tiền thanh toán:</span>
+                        <strong id="payment-amount">485.000đ</strong>
+                    </div>
+                    <div class="payment-details-row">
+                        <span><i class="fa-solid fa-message" style="color: var(--accent-cyan); margin-right: 6px;"></i> Nội dung chuyển khoản:</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="payment-ref-pill" id="payment-ref">LOCALCP USER PRO</span>
+                            <button id="copy-ref-btn" class="btn-mini" title="Sao chép nội dung"><i class="fa-solid fa-copy"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sender Name Input Field -->
+                <div style="margin: 14px 0 12px; text-align: left;">
+                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-bright); margin-bottom: 6px;">
+                        <i class="fa-solid fa-signature" style="color: var(--accent-cyan); margin-right: 4px;"></i> Họ và tên người chuyển khoản: <span style="color: #f87171;">*</span>
+                    </label>
+                    <input type="text" id="payment-sender-name" placeholder="VD: NGUYEN VAN A (tên tài khoản ngân hàng)" style="width: 100%; background: rgba(10, 18, 35, 0.85); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 10px 14px; color: var(--text-bright); font-size: 0.88rem; outline: none; transition: border-color 0.2s;" required autocomplete="name" />
+                    <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 4px;">
+                        <i class="fa-solid fa-bell" style="color: #fbbf24;"></i> Yêu cầu kèm tên tài khoản &amp; tên chuyển khoản sẽ được gửi trực tiếp đến <strong>Dev &amp; SuperAdmin</strong>.
+                    </small>
+                </div>
+
+                <p class="auth-error hidden" id="payment-error" style="margin-bottom: 12px;"></p>
+                <button class="btn-ide btn-ide-run btn-block btn-confirm-payment" id="confirm-payment-btn">
+                    <i class="fa-solid fa-check-circle"></i> Tôi đã chuyển khoản — Xác nhận kích hoạt ngay
+                </button>
             </div>
         </div>
     </div>

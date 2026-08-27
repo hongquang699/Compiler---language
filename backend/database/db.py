@@ -182,9 +182,14 @@ class DatabaseManager:
                     time_limit REAL NOT NULL DEFAULT 2,
                     memory_limit INTEGER NOT NULL DEFAULT 256,
                     sort_order INTEGER NOT NULL DEFAULT 0,
+                    is_hidden INTEGER NOT NULL DEFAULT 0,
                     FOREIGN KEY (competition_id) REFERENCES competitions(id) ON DELETE CASCADE
                 )
             """)
+            try:
+                cursor.execute("ALTER TABLE competition_problems ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0")
+            except Exception:
+                pass
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS problem_tests (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -205,6 +210,120 @@ class DatabaseManager:
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS security_threat_scores (
+                    ip TEXT PRIMARY KEY,
+                    score INTEGER NOT NULL DEFAULT 0,
+                    last_violation TEXT,
+                    violation_count INTEGER NOT NULL DEFAULT 0,
+                    status TEXT NOT NULL DEFAULT 'ACTIVE',
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            # Payments table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS payments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    plan TEXT NOT NULL,
+                    amount_vnd INTEGER NOT NULL,
+                    ref_code TEXT NOT NULL,
+                    sender_name TEXT DEFAULT '',
+                    status TEXT NOT NULL DEFAULT 'COMPLETED',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            # Admin & Dev Notifications table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS admin_notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type TEXT NOT NULL DEFAULT 'GENERAL',
+                    title TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    data_json TEXT,
+                    is_read INTEGER NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            # Communities table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS communities (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE,
+                    description TEXT NOT NULL,
+                    privacy_mode TEXT NOT NULL DEFAULT 'public',
+                    created_by INTEGER NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            # Community Members table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS community_members (
+                    community_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    role TEXT NOT NULL DEFAULT 'member',
+                    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (community_id, user_id),
+                    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            # Community Join Requests table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS community_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    community_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS anti_cheat_reports (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    competition_id INTEGER NOT NULL,
+                    problem_id INTEGER,
+                    submission_id_1 INTEGER,
+                    submission_id_2 INTEGER,
+                    user_id_1 INTEGER,
+                    user_id_2 INTEGER,
+                    username_1 TEXT,
+                    username_2 TEXT,
+                    similarity_score REAL NOT NULL,
+                    matched_tokens INTEGER DEFAULT 0,
+                    verdict TEXT NOT NULL DEFAULT 'FLAGGED',
+                    details TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (competition_id) REFERENCES competitions(id) ON DELETE CASCADE
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS honeypot_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ip TEXT NOT NULL,
+                    path TEXT NOT NULL,
+                    method TEXT NOT NULL,
+                    user_agent TEXT,
+                    payload TEXT,
+                    action_taken TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS sentinel_actions_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    action_type TEXT NOT NULL,
+                    target_ip TEXT,
+                    target_user_id INTEGER,
+                    reason TEXT,
+                    details TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
             self._add_column_if_missing(cursor, "sessions", "user_id", "INTEGER")
             self._add_column_if_missing(cursor, "solved_problems", "user_id", "INTEGER")
             self._add_column_if_missing(cursor, "submissions", "user_id", "INTEGER")
@@ -218,12 +337,20 @@ class DatabaseManager:
             self._add_column_if_missing(cursor, "users", "is_admin", "INTEGER NOT NULL DEFAULT 0")
             self._add_column_if_missing(cursor, "users", "is_locked", "INTEGER NOT NULL DEFAULT 0")
             self._add_column_if_missing(cursor, "users", "avatar_path", "TEXT DEFAULT ''")
+            self._add_column_if_missing(cursor, "users", "bio", "TEXT DEFAULT ''")
+            self._add_column_if_missing(cursor, "users", "fullname", "TEXT DEFAULT 'Võ Hồng Quang'")
+            self._add_column_if_missing(cursor, "users", "timezone", "TEXT DEFAULT 'Ho_Chi_Minh'")
+            self._add_column_if_missing(cursor, "users", "language", "TEXT DEFAULT 'C++17'")
+            self._add_column_if_missing(cursor, "users", "editor_theme", "TEXT DEFAULT 'Github'")
+            self._add_column_if_missing(cursor, "users", "last_name_change", "TEXT DEFAULT ''")
             self._add_column_if_missing(cursor, "users", "email", "TEXT")
             self._add_column_if_missing(cursor, "competitions", "key", "TEXT")
             self._add_column_if_missing(cursor, "competitions", "format", "TEXT DEFAULT 'icpc'")
             self._add_column_if_missing(cursor, "competitions", "is_rated", "INTEGER DEFAULT 1")
             self._add_column_if_missing(cursor, "competitions", "access_code", "TEXT DEFAULT ''")
             self._add_column_if_missing(cursor, "competitions", "scoreboard_visibility", "TEXT DEFAULT 'visible'")
+            self._add_column_if_missing(cursor, "payments", "sender_name", "TEXT DEFAULT ''")
+            self._add_column_if_missing(cursor, "users", "ai_usage_count", "INTEGER NOT NULL DEFAULT 0")
             conn.commit()
             self._ensure_default_admin()
             self._ensure_default_clueoj_contest()
@@ -521,20 +648,23 @@ class MemoryStore:
                 FROM users
                 LEFT JOIN solved_problems ON solved_problems.user_id = users.id
                 LEFT JOIN submissions ON submissions.user_id = users.id
-                WHERE users.is_locked = 0 OR users.is_locked IS NULL
+                WHERE (users.is_locked = 0 OR users.is_locked IS NULL)
+                  AND (users.is_admin = 0 OR users.is_admin IS NULL)
+                  AND LOWER(COALESCE(users.role, '')) NOT IN ('admin', 'superadmin', 'dev', 'developer', 'moderator', 'staff')
+                  AND LOWER(users.username) NOT IN ('admin', 'superadmin', 'dev', 'developer', 'root', 'staff')
                 GROUP BY users.id, users.username, users.role, users.is_admin, users.created_at
                 ORDER BY total_score DESC, solved_count DESC, users.created_at ASC
                 """
             ).fetchall()
             result = []
             for index, row in enumerate(rows, start=1):
-                role = row["role"] or ("admin" if row["is_admin"] else "user")
+                role = row["role"] or "user"
                 result.append({
                     "rank": index,
                     "id": row["id"],
                     "username": row["username"],
                     "role": role,
-                    "is_admin": bool(row["is_admin"]),
+                    "is_admin": False,
                     "solved_count": row["solved_count"] or 0,
                     "total_score": row["total_score"] or 0,
                     "joined_at": row["created_at"]
@@ -577,6 +707,186 @@ class MemoryStore:
                 "submissions": [dict(r) for r in submissions],
                 "ips": self.list_user_ips(user_id),
             }
+
+    def get_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            row = conn.execute(
+                "SELECT id, username, email, role, is_admin, is_locked, avatar_path FROM users WHERE username = ? COLLATE NOCASE",
+                (username.strip(),),
+            ).fetchone()
+            if not row:
+                return None
+            return {
+                "id": row["id"],
+                "username": row["username"],
+                "email": row["email"],
+                "role": row["role"] or ("admin" if row["is_admin"] else "user"),
+                "is_admin": bool(row["is_admin"]),
+                "is_locked": bool(row["is_locked"]),
+                "avatar_path": row["avatar_path"] or "",
+            }
+
+    def get_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            row = conn.execute(
+                "SELECT id, username, email, role, is_admin, is_locked, avatar_path FROM users WHERE id = ?",
+                (user_id,),
+            ).fetchone()
+            if not row:
+                return None
+            return {
+                "id": row["id"],
+                "username": row["username"],
+                "email": row["email"],
+                "role": row["role"] or ("admin" if row["is_admin"] else "user"),
+                "is_admin": bool(row["is_admin"]),
+                "is_locked": bool(row["is_locked"]),
+                "avatar_path": row["avatar_path"] or "",
+            }
+
+    def get_user_profile_stats(self, user_id: int) -> Optional[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            user = conn.execute(
+                """
+                SELECT id, username, email, role, is_admin, avatar_path, 
+                       COALESCE(bio, '') as bio,
+                       COALESCE(NULLIF(fullname, ''), username) as fullname,
+                       COALESCE(timezone, 'Ho_Chi_Minh') as timezone,
+                       COALESCE(language, 'C++17') as language,
+                       COALESCE(editor_theme, 'Github') as editor_theme,
+                       COALESCE(NULLIF(last_name_change, ''), created_at) as last_name_change,
+                       created_at 
+                FROM users WHERE id = ?
+                """,
+                (user_id,),
+            ).fetchone()
+            if not user:
+                return None
+            
+            # Solved problems count
+            solved_row = conn.execute(
+                "SELECT COUNT(DISTINCT id) as count FROM solved_problems WHERE user_id = ?",
+                (user_id,)
+            ).fetchone()
+            solved_count = solved_row["count"] if solved_row else 0
+
+            # Submissions count & scores
+            sub_stats = conn.execute(
+                "SELECT COUNT(*) as total_sub, COALESCE(SUM(score), 0) as sum_score, COALESCE(MAX(score), 0) as max_score, COALESCE(MIN(score), 0) as min_score FROM submissions WHERE user_id = ?",
+                (user_id,)
+            ).fetchone() if conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='submissions'").fetchone() else None
+            
+            total_submissions = sub_stats["total_sub"] if sub_stats else 0
+            sum_score = sub_stats["sum_score"] if sub_stats else 0
+            total_score = int(sum_score + (solved_count * 100))
+
+            # Contests count
+            contest_row = conn.execute(
+                "SELECT COUNT(DISTINCT competition_id) as count FROM submissions WHERE user_id = ? AND competition_id IS NOT NULL",
+                (user_id,)
+            ).fetchone() if conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='submissions'").fetchone() else None
+            competitions_count = contest_row["count"] if contest_row else 0
+
+            # Global rank calculation
+            standings = self.list_global_standings()
+            user_rank = 1
+            for idx, item in enumerate(standings, start=1):
+                if item["id"] == user_id:
+                    user_rank = idx
+                    break
+
+            # Solved problems list
+            solved_list = conn.execute(
+                "SELECT id, title, category, verdict, created_at FROM solved_problems WHERE user_id = ? ORDER BY id DESC LIMIT 50",
+                (user_id,)
+            ).fetchall() if conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='solved_problems'").fetchone() else []
+
+            # Activity rows (combine submissions & solved_problems)
+            activity_rows = conn.execute(
+                """
+                SELECT DATE(created_at) as sub_date, COUNT(*) as count 
+                FROM (
+                    SELECT created_at FROM submissions WHERE user_id = ?
+                    UNION ALL
+                    SELECT created_at FROM solved_problems WHERE user_id = ?
+                )
+                WHERE created_at >= DATE('now', '-365 days')
+                GROUP BY DATE(created_at)
+                ORDER BY sub_date ASC
+                """,
+                (user_id, user_id)
+            ).fetchall() if conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='submissions'").fetchone() else []
+
+            heatmap_data = {row["sub_date"]: row["count"] for row in activity_rows}
+
+            return {
+                "user": {
+                    "id": user["id"],
+                    "username": user["username"],
+                    "fullname": user["fullname"] or user["username"],
+                    "email": user["email"] or "",
+                    "role": user["role"] or ("admin" if user["is_admin"] else "user"),
+                    "is_admin": bool(user["is_admin"]),
+                    "avatar_path": user["avatar_path"] or "",
+                    "bio": user["bio"] or "",
+                    "timezone": user["timezone"] or "Ho_Chi_Minh",
+                    "language": user["language"] or "C++17",
+                    "editor_theme": user["editor_theme"] or "Github",
+                    "last_name_change": user["last_name_change"] or user["created_at"],
+                    "created_at": user["created_at"],
+                },
+                "stats": {
+                    "solved_count": solved_count,
+                    "total_score": total_score,
+                    "rank": user_rank,
+                    "total_submissions": total_submissions,
+                },
+                "solved_problems": [dict(r) for r in solved_list],
+                "heatmap": heatmap_data,
+            }
+
+    def update_user_profile(
+        self,
+        user_id: int,
+        fullname: Optional[str] = None,
+        bio: Optional[str] = None,
+        timezone: Optional[str] = None,
+        language: Optional[str] = None,
+        editor_theme: Optional[str] = None,
+        avatar_path: Optional[str] = None,
+    ) -> bool:
+        with self.db.get_connection() as conn:
+            fields = []
+            values = []
+            if fullname is not None:
+                fields.append("fullname = ?")
+                values.append(fullname)
+            if bio is not None:
+                fields.append("bio = ?")
+                values.append(bio)
+            if timezone is not None:
+                fields.append("timezone = ?")
+                values.append(timezone)
+            if language is not None:
+                fields.append("language = ?")
+                values.append(language)
+            if editor_theme is not None:
+                fields.append("editor_theme = ?")
+                values.append(editor_theme)
+            if avatar_path is not None:
+                fields.append("avatar_path = ?")
+                values.append(avatar_path)
+            
+            if not fields:
+                return True
+            
+            values.append(user_id)
+            cursor = conn.execute(
+                f"UPDATE users SET {', '.join(fields)} WHERE id = ?",
+                tuple(values),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
 
     def lock_user(self, user_id: int, locked: bool) -> bool:
         with self.db.get_connection() as conn:
@@ -829,7 +1139,7 @@ class MemoryStore:
             rows = conn.execute(
                 """
                 SELECT p.id, p.competition_id, p.code, p.title, p.statement, p.points, 
-                       p.time_limit, p.memory_limit, p.sort_order,
+                       p.time_limit, p.memory_limit, p.sort_order, p.is_hidden,
                        c.title as contest_title,
                        (SELECT COUNT(*) FROM problem_tests t WHERE t.problem_id = p.id) as test_count
                 FROM competition_problems p
@@ -844,7 +1154,7 @@ class MemoryStore:
             row = conn.execute(
                 """
                 SELECT p.id, p.competition_id, p.code, p.title, p.statement, p.points, 
-                       p.time_limit, p.memory_limit, p.sort_order,
+                       p.time_limit, p.memory_limit, p.sort_order, p.is_hidden,
                        c.title as contest_title
                 FROM competition_problems p
                 LEFT JOIN competitions c ON p.competition_id = c.id
@@ -862,7 +1172,7 @@ class MemoryStore:
             res["tests"] = [dict(t) for t in test_rows]
             return res
 
-    def create_bank_problem(self, title: str, statement: str, points: int = 100, time_limit: float = 1.0, memory_limit: int = 256, code: str = "A", competition_id: Optional[int] = None, tests: Optional[List[Dict[str, Any]]] = None) -> int:
+    def create_bank_problem(self, title: str, statement: str, points: int = 100, time_limit: float = 1.0, memory_limit: int = 256, code: str = "A", competition_id: Optional[int] = None, tests: Optional[List[Dict[str, Any]]] = None, is_hidden: int = 0) -> int:
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             if competition_id is None:
@@ -870,10 +1180,10 @@ class MemoryStore:
                 competition_id = c_row["id"] if c_row else 1
             cursor.execute(
                 """
-                INSERT INTO competition_problems (competition_id, code, title, statement, points, time_limit, memory_limit, sort_order)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+                INSERT INTO competition_problems (competition_id, code, title, statement, points, time_limit, memory_limit, sort_order, is_hidden)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)
                 """,
-                (competition_id, code, title, statement, points, time_limit, memory_limit),
+                (competition_id, code, title, statement, points, time_limit, memory_limit, 1 if is_hidden else 0),
             )
             prob_id = cursor.lastrowid
             if tests:
@@ -884,18 +1194,20 @@ class MemoryStore:
             conn.commit()
             return prob_id
 
-    def update_bank_problem(self, problem_id: int, title: str, statement: str, points: int = 100, time_limit: float = 1.0, memory_limit: int = 256, code: str = "A", tests: Optional[List[Dict[str, Any]]] = None) -> bool:
+    def update_bank_problem(self, problem_id: int, title: str, statement: str, points: int = 100, time_limit: float = 1.0, memory_limit: int = 256, code: str = "A", tests: Optional[List[Dict[str, Any]]] = None, is_hidden: Optional[int] = None) -> bool:
         with self.db.get_connection() as conn:
-            existing = conn.execute("SELECT id FROM competition_problems WHERE id = ?", (problem_id,)).fetchone()
+            existing = conn.execute("SELECT id, is_hidden FROM competition_problems WHERE id = ?", (problem_id,)).fetchone()
             if not existing:
                 return False
+            
+            final_hidden = existing["is_hidden"] if is_hidden is None else (1 if is_hidden else 0)
             conn.execute(
                 """
                 UPDATE competition_problems 
-                SET title = ?, statement = ?, points = ?, time_limit = ?, memory_limit = ?, code = ?
+                SET title = ?, statement = ?, points = ?, time_limit = ?, memory_limit = ?, code = ?, is_hidden = ?
                 WHERE id = ?
                 """,
-                (title, statement, points, time_limit, memory_limit, code, problem_id),
+                (title, statement, points, time_limit, memory_limit, code, final_hidden, problem_id),
             )
             if tests is not None:
                 conn.execute("DELETE FROM problem_tests WHERE problem_id = ?", (problem_id,))
@@ -905,6 +1217,42 @@ class MemoryStore:
                 )
             conn.commit()
             return True
+
+    def toggle_problem_visibility(self, problem_id: int, is_hidden: Optional[bool] = None) -> Optional[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            existing = conn.execute("SELECT id, code, title, is_hidden FROM competition_problems WHERE id = ?", (problem_id,)).fetchone()
+            if not existing:
+                return None
+            
+            if is_hidden is None:
+                new_hidden = 0 if existing["is_hidden"] else 1
+            else:
+                new_hidden = 1 if is_hidden else 0
+                
+            conn.execute("UPDATE competition_problems SET is_hidden = ? WHERE id = ?", (new_hidden, problem_id))
+            conn.commit()
+            return {
+                "id": existing["id"],
+                "code": existing["code"],
+                "title": existing["title"],
+                "is_hidden": bool(new_hidden)
+            }
+
+    def bulk_problems_action(self, problem_ids: List[int], action: str) -> Dict[str, Any]:
+        if not problem_ids:
+            return {"success": True, "affected": 0}
+            
+        with self.db.get_connection() as conn:
+            placeholders = ",".join("?" for _ in problem_ids)
+            if action == "hide":
+                conn.execute(f"UPDATE competition_problems SET is_hidden = 1 WHERE id IN ({placeholders})", problem_ids)
+            elif action == "unhide":
+                conn.execute(f"UPDATE competition_problems SET is_hidden = 0 WHERE id IN ({placeholders})", problem_ids)
+            elif action == "delete":
+                conn.execute(f"DELETE FROM problem_tests WHERE problem_id IN ({placeholders})", problem_ids)
+                conn.execute(f"DELETE FROM competition_problems WHERE id IN ({placeholders})", problem_ids)
+            conn.commit()
+            return {"success": True, "affected": len(problem_ids), "action": action}
 
     def delete_problem(self, problem_id: int) -> bool:
         with self.db.get_connection() as conn:
@@ -974,10 +1322,10 @@ class MemoryStore:
             rows = conn.execute(
                 """
                 SELECT s.id, s.user_id, u.username, s.competition_id, s.language,
-                       s.verdict, s.score, s.execution_time_ms, s.memory_kb,
-                       s.passed_tests, s.total_tests, s.created_at
+                       s.verdict, s.score, s.execution_time_ms, s.memory_used_kb AS memory_kb,
+                       s.passed_tests, s.total_tests, s.created_at, s.code, s.compiler_output
                 FROM submissions s
-                JOIN users u ON u.id = s.user_id
+                LEFT JOIN users u ON u.id = s.user_id
                 WHERE s.competition_id = ?
                 ORDER BY s.id DESC
                 LIMIT ?
@@ -985,6 +1333,60 @@ class MemoryStore:
                 (competition_id, limit),
             ).fetchall()
             return [dict(row) for row in rows]
+
+    def list_all_submissions(self, limit: int = 100) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT s.id, s.session_id, s.user_id, COALESCE(u.username, 'Thí sinh') AS username,
+                       s.competition_id, COALESCE(c.title, 'Bài tập tự do') AS competition_title,
+                       s.language, s.verdict, s.score, s.execution_time_ms, s.memory_used_kb AS memory_kb,
+                       s.passed_tests, s.total_tests, s.created_at, s.code, s.compiler_output
+                FROM submissions s
+                LEFT JOIN users u ON u.id = s.user_id
+                LEFT JOIN competitions c ON c.id = s.competition_id
+                ORDER BY s.id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def list_user_submissions(self, user_id: int, limit: int = 100) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT s.id, s.session_id, s.user_id, COALESCE(u.username, 'Thí sinh') AS username,
+                       s.competition_id, COALESCE(c.title, 'Bài tập tự do') AS competition_title,
+                       s.language, s.verdict, s.score, s.execution_time_ms, s.memory_used_kb AS memory_kb,
+                       s.passed_tests, s.total_tests, s.created_at, s.code, s.compiler_output
+                FROM submissions s
+                LEFT JOIN users u ON u.id = s.user_id
+                LEFT JOIN competitions c ON c.id = s.competition_id
+                WHERE s.user_id = ?
+                ORDER BY s.id DESC
+                LIMIT ?
+                """,
+                (user_id, limit),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def get_submission_detail(self, submission_id: int) -> Optional[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT s.id, s.session_id, s.user_id, COALESCE(u.username, 'Thí sinh') AS username,
+                       s.competition_id, COALESCE(c.title, 'Bài tập tự do') AS competition_title,
+                       s.language, s.verdict, s.score, s.execution_time_ms, s.memory_used_kb AS memory_kb,
+                       s.passed_tests, s.total_tests, s.created_at, s.code, s.compiler_output
+                FROM submissions s
+                LEFT JOIN users u ON u.id = s.user_id
+                LEFT JOIN competitions c ON c.id = s.competition_id
+                WHERE s.id = ?
+                """,
+                (submission_id,),
+            ).fetchone()
+            return dict(row) if row else None
 
     def reset_server_state(self) -> None:
         with self.db.get_connection() as conn:
@@ -1048,3 +1450,462 @@ class MemoryStore:
                 "SELECT ip, reason, blocked_until, created_at FROM blocked_ips WHERE blocked_until > datetime('now') ORDER BY created_at DESC"
             ).fetchall()
             return [dict(row) for row in rows]
+
+    def list_anti_cheat_reports(self, competition_id: Optional[int] = None, limit: int = 100) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            if competition_id:
+                rows = conn.execute(
+                    """
+                    SELECT r.*, c.title AS competition_title
+                    FROM anti_cheat_reports r
+                    LEFT JOIN competitions c ON c.id = r.competition_id
+                    WHERE r.competition_id = ?
+                    ORDER BY r.id DESC LIMIT ?
+                    """,
+                    (competition_id, limit),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """
+                    SELECT r.*, c.title AS competition_title
+                    FROM anti_cheat_reports r
+                    LEFT JOIN competitions c ON c.id = r.competition_id
+                    ORDER BY r.id DESC LIMIT ?
+                    """,
+                    (limit,),
+                ).fetchall()
+            return [dict(row) for row in rows]
+
+    def update_anti_cheat_verdict(self, report_id: int, verdict: str, details: str = "") -> bool:
+        with self.db.get_connection() as conn:
+            cursor = conn.execute(
+                "UPDATE anti_cheat_reports SET verdict = ?, details = COALESCE(NULLIF(?, ''), details) WHERE id = ?",
+                (verdict, details, report_id),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def list_honeypot_logs(self, limit: int = 100) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM honeypot_logs ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def list_sentinel_actions(self, limit: int = 100) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM sentinel_actions_log ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def get_threat_scores(self, limit: int = 50) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM security_threat_scores ORDER BY score DESC, updated_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def reset_threat_score(self, ip: str) -> bool:
+        with self.db.get_connection() as conn:
+            cursor = conn.execute("DELETE FROM security_threat_scores WHERE ip = ?", (ip,))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def get_locked_users(self) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                "SELECT id, username, email, role, is_locked, created_at FROM users WHERE is_locked = 1 ORDER BY id DESC"
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def unban_user_and_ip(self, user_id: Optional[int] = None, ip: Optional[str] = None) -> bool:
+        with self.db.get_connection() as conn:
+            if user_id:
+                conn.execute("UPDATE users SET is_locked = 0 WHERE id = ?", (user_id,))
+            if ip:
+                conn.execute("DELETE FROM blocked_ips WHERE ip = ?", (ip,))
+                conn.execute("DELETE FROM security_threat_scores WHERE ip = ?", (ip,))
+            conn.commit()
+            return True
+
+    # =========================================================================
+    # Payment Methods
+    # =========================================================================
+    PLAN_ROLES = {
+        "pro": "pro",
+        "enterprise": "enterprise",
+    }
+    PLAN_AMOUNTS = {
+        "pro": 485000,
+        "enterprise": 2490000,
+    }
+    CAN_CREATE_COMMUNITY_ROLES = {"pro", "enterprise", "admin", "superadmin", "dev"}
+    PRIVILEGED_ROLES = {"admin", "superadmin", "dev"}
+
+    def confirm_payment(self, user_id: int, plan: str, ref_code: str, sender_name: str = "") -> Dict[str, Any]:
+        """Record a payment, notify dev & superadmin, and upgrade user's role safely."""
+        import json
+        plan = plan.lower()
+        if plan not in self.PLAN_ROLES:
+            raise ValueError(f"Unknown plan: {plan}")
+        amount_vnd = self.PLAN_AMOUNTS[plan]
+        plan_role = self.PLAN_ROLES[plan]
+        sender_name = (sender_name or "").strip()
+
+        with self.db.get_connection() as conn:
+            user_row = conn.execute("SELECT id, username, email, role, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+            username = user_row["username"] if user_row else f"User#{user_id}"
+            current_role = user_row["role"] if user_row else "user"
+
+            # Preserve dev and superadmin roles so they never get demoted
+            if current_role in ("dev", "superadmin", "admin"):
+                new_role = current_role
+            else:
+                new_role = plan_role
+
+            conn.execute(
+                "INSERT INTO payments (user_id, plan, amount_vnd, ref_code, sender_name, status) VALUES (?, ?, ?, ?, ?, 'COMPLETED')",
+                (user_id, plan, amount_vnd, ref_code, sender_name),
+            )
+            conn.execute(
+                "UPDATE users SET role = ? WHERE id = ?",
+                (new_role, user_id),
+            )
+
+            # Create notification for Dev and SuperAdmin
+            plan_name_display = "Pro Developer (485.000đ)" if plan == "pro" else "Enterprise / Campus (2.490.000đ)"
+            notif_title = f"🔔 [MUA GÓI {plan.upper()}] Tài khoản '{username}' vừa chuyển khoản"
+            notif_msg = (
+                f"Tài khoản '{username}' vừa hoàn tất thanh toán gói {plan_name_display}.\n"
+                f"• Tên tài khoản: {username}\n"
+                f"• Họ tên khi chuyển khoản: {sender_name or 'Chưa cung cấp'}\n"
+                f"• Nội dung chuyển khoản: {ref_code}\n"
+                f"• Số tiền: {amount_vnd:,} VNĐ"
+            )
+            data_json = json.dumps({
+                "user_id": user_id,
+                "username": username,
+                "sender_name": sender_name,
+                "plan": plan,
+                "amount_vnd": amount_vnd,
+                "ref_code": ref_code,
+            })
+
+            conn.execute(
+                "INSERT INTO admin_notifications (type, title, message, data_json, is_read) VALUES ('PAYMENT_UPGRADE', ?, ?, ?, 0)",
+                (notif_title, notif_msg, data_json),
+            )
+
+            # Also log to security events / system audit log
+            conn.execute(
+                "INSERT INTO security_events (ip, method, path, user_agent, status_code, reason) VALUES (?, ?, ?, ?, ?, ?)",
+                ("127.0.0.1", "POST", "/api/payment/confirm", "Payment System", 200, f"[PAYMENT] Acc: {username} | Tên CK: {sender_name or 'N/A'} | Gói: {plan.upper()} | Ref: {ref_code}"),
+            )
+
+            conn.commit()
+        return {
+            "plan": plan, 
+            "role": new_role, 
+            "amount_vnd": amount_vnd,
+            "username": username,
+            "sender_name": sender_name,
+            "ref_code": ref_code
+        }
+
+    def get_admin_notifications(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Return latest notifications for Dev and SuperAdmin."""
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                "SELECT id, type, title, message, data_json, is_read, created_at FROM admin_notifications ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    def mark_notification_read(self, notification_id: int) -> bool:
+        with self.db.get_connection() as conn:
+            conn.execute("UPDATE admin_notifications SET is_read = 1 WHERE id = ?", (notification_id,))
+            conn.commit()
+            return True
+
+    def get_user_payments(self, user_id: int) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM payments WHERE user_id = ? ORDER BY id DESC",
+                (user_id,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    # =========================================================================
+    # AI Token & Usage Limit Methods (Free = 30 uses, Dev/SuperAdmin/Admin/Pro/Enterprise = Unlimited)
+    # =========================================================================
+    FREE_AI_REQUEST_LIMIT = 30
+    UNLIMITED_AI_ROLES = {"pro", "enterprise", "admin", "superadmin", "dev", "developer", "administrator"}
+
+    def get_user_ai_quota(self, user_id: int) -> Dict[str, Any]:
+        """Return AI usage quota status for a user."""
+        with self.db.get_connection() as conn:
+            user = conn.execute(
+                "SELECT id, username, role, is_admin, COALESCE(ai_usage_count, 0) AS ai_usage_count FROM users WHERE id = ?",
+                (user_id,),
+            ).fetchone()
+            if not user:
+                return {"unlimited": False, "limit": self.FREE_AI_REQUEST_LIMIT, "used": 0, "remaining": 0, "role": "user"}
+
+            username = (user["username"] or "").strip().lower()
+            role = (user["role"] or "user").strip().lower()
+            is_admin = bool(user["is_admin"])
+            is_unlimited = is_admin or (role in self.UNLIMITED_AI_ROLES) or (username in {"dev", "admin", "superadmin"})
+            used = int(user["ai_usage_count"] or 0)
+
+            if is_unlimited:
+                return {
+                    "unlimited": True,
+                    "role": role if role in self.UNLIMITED_AI_ROLES else ("admin" if is_admin else "dev"),
+                    "limit": None,
+                    "used": used,
+                    "remaining": None
+                }
+            else:
+                remaining = max(0, self.FREE_AI_REQUEST_LIMIT - used)
+                return {
+                    "unlimited": False,
+                    "role": role,
+                    "limit": self.FREE_AI_REQUEST_LIMIT,
+                    "used": used,
+                    "remaining": remaining
+                }
+
+    def check_and_increment_ai_usage(self, user_id: int) -> Dict[str, Any]:
+        """Check AI quota. If free user and exceeds 30, raise PermissionError. Dev/SuperAdmin/Admin/Pro/Enterprise are Unlimited."""
+        with self.db.get_connection() as conn:
+            user = conn.execute(
+                "SELECT id, username, role, is_admin, COALESCE(ai_usage_count, 0) AS ai_usage_count FROM users WHERE id = ?",
+                (user_id,),
+            ).fetchone()
+            if not user:
+                raise PermissionError("Tài khoản không tồn tại.")
+
+            username = (user["username"] or "").strip().lower()
+            role = (user["role"] or "user").strip().lower()
+            is_admin = bool(user["is_admin"])
+            is_unlimited = is_admin or (role in self.UNLIMITED_AI_ROLES) or (username in {"dev", "admin", "superadmin"})
+            used = int(user["ai_usage_count"] or 0)
+
+            if not is_unlimited:
+                if used >= self.FREE_AI_REQUEST_LIMIT:
+                    raise PermissionError(
+                        f"Bạn đã sử dụng hết {self.FREE_AI_REQUEST_LIMIT} lượt AI miễn phí ({used}/{self.FREE_AI_REQUEST_LIMIT} lượt). "
+                        "Vui lòng nâng cấp lên gói Pro Developer hoặc Enterprise để sử dụng AI không giới hạn!"
+                    )
+                new_used = used + 1
+                conn.execute("UPDATE users SET ai_usage_count = ? WHERE id = ?", (new_used, user_id))
+                conn.commit()
+                return {
+                    "unlimited": False,
+                    "used": new_used,
+                    "remaining": max(0, self.FREE_AI_REQUEST_LIMIT - new_used)
+                }
+            else:
+                new_used = used + 1
+                conn.execute("UPDATE users SET ai_usage_count = ? WHERE id = ?", (new_used, user_id))
+                conn.commit()
+                return {
+                    "unlimited": True,
+                    "role": role if role in self.UNLIMITED_AI_ROLES else ("admin" if is_admin else "dev"),
+                    "used": new_used,
+                    "remaining": None
+                }
+
+    def reset_ai_usage(self, user_id: int) -> bool:
+        """Reset AI usage count to 0 (admin / dev tool)."""
+        with self.db.get_connection() as conn:
+            conn.execute("UPDATE users SET ai_usage_count = 0 WHERE id = ?", (user_id,))
+            conn.commit()
+            return True
+
+    # =========================================================================
+    # Community Methods
+    # =========================================================================
+    def can_create_community(self, user_id: int) -> bool:
+        """Return True if the user is allowed to create communities."""
+        with self.db.get_connection() as conn:
+            row = conn.execute("SELECT role FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not row:
+            return False
+        return row["role"] in self.CAN_CREATE_COMMUNITY_ROLES
+
+    def create_community(self, name: str, description: str, privacy_mode: str, created_by: int) -> Dict[str, Any]:
+        if not self.can_create_community(created_by):
+            raise PermissionError("Bạn cần gói Pro, Enterprise hoặc quyền Admin để tạo Community.")
+        privacy_mode = privacy_mode if privacy_mode in ("public", "private") else "public"
+        with self.db.get_connection() as conn:
+            cursor = conn.execute(
+                "INSERT INTO communities (name, description, privacy_mode, created_by) VALUES (?, ?, ?, ?)",
+                (name, description, privacy_mode, created_by),
+            )
+            community_id = cursor.lastrowid
+            conn.execute(
+                "INSERT INTO community_members (community_id, user_id, role) VALUES (?, ?, 'owner')",
+                (community_id, created_by),
+            )
+            conn.commit()
+        return {"id": community_id, "name": name, "description": description, "privacy_mode": privacy_mode}
+
+    def list_communities(self, viewer_user_id: Optional[int] = None, viewer_role: str = "user") -> List[Dict[str, Any]]:
+        """
+        dev / superadmin see ALL communities.
+        Others see public communities + private communities they are a member of.
+        """
+        with self.db.get_connection() as conn:
+            if viewer_role in ("dev", "superadmin"):
+                rows = conn.execute("""
+                    SELECT c.*, u.username AS owner_name,
+                           (SELECT COUNT(*) FROM community_members cm WHERE cm.community_id = c.id) AS member_count
+                    FROM communities c
+                    LEFT JOIN users u ON u.id = c.created_by
+                    ORDER BY c.id DESC
+                """).fetchall()
+            else:
+                rows = conn.execute("""
+                    SELECT c.*, u.username AS owner_name,
+                           (SELECT COUNT(*) FROM community_members cm WHERE cm.community_id = c.id) AS member_count
+                    FROM communities c
+                    LEFT JOIN users u ON u.id = c.created_by
+                    WHERE c.privacy_mode = 'public'
+                       OR EXISTS (
+                           SELECT 1 FROM community_members m
+                           WHERE m.community_id = c.id AND m.user_id = ?
+                       )
+                    ORDER BY c.id DESC
+                """, (viewer_user_id,)).fetchall()
+            return [dict(r) for r in rows]
+
+    def get_community(self, community_id: int) -> Optional[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            row = conn.execute("""
+                SELECT c.*, u.username AS owner_name,
+                       (SELECT COUNT(*) FROM community_members cm WHERE cm.community_id = c.id) AS member_count
+                FROM communities c
+                LEFT JOIN users u ON u.id = c.created_by
+                WHERE c.id = ?
+            """, (community_id,)).fetchone()
+            return dict(row) if row else None
+
+    def join_community(self, community_id: int, user_id: int) -> Dict[str, Any]:
+        """Join a public community directly or submit a join request for private."""
+        community = self.get_community(community_id)
+        if not community:
+            raise ValueError("Community không tồn tại.")
+        with self.db.get_connection() as conn:
+            existing = conn.execute(
+                "SELECT role FROM community_members WHERE community_id = ? AND user_id = ?",
+                (community_id, user_id),
+            ).fetchone()
+            if existing:
+                return {"status": "already_member", "role": existing["role"]}
+
+            if community["privacy_mode"] == "public":
+                conn.execute(
+                    "INSERT OR IGNORE INTO community_members (community_id, user_id, role) VALUES (?, ?, 'member')",
+                    (community_id, user_id),
+                )
+                conn.commit()
+                return {"status": "joined"}
+            else:
+                existing_req = conn.execute(
+                    "SELECT id, status FROM community_requests WHERE community_id = ? AND user_id = ?",
+                    (community_id, user_id),
+                ).fetchone()
+                if existing_req:
+                    return {"status": "request_exists", "request_status": existing_req["status"]}
+                conn.execute(
+                    "INSERT INTO community_requests (community_id, user_id, status) VALUES (?, ?, 'pending')",
+                    (community_id, user_id),
+                )
+                conn.commit()
+                return {"status": "pending_request"}
+
+    def list_join_requests(self, community_id: int, reviewer_user_id: int, reviewer_role: str) -> List[Dict[str, Any]]:
+        """Return pending join requests. Only community owners/admins and privileged roles can see these."""
+        with self.db.get_connection() as conn:
+            is_owner = conn.execute(
+                "SELECT 1 FROM community_members WHERE community_id = ? AND user_id = ? AND role IN ('owner', 'admin')",
+                (community_id, reviewer_user_id),
+            ).fetchone()
+            if not is_owner and reviewer_role not in self.PRIVILEGED_ROLES:
+                raise PermissionError("Không đủ quyền xem danh sách yêu cầu.")
+            rows = conn.execute("""
+                SELECT cr.id, cr.community_id, cr.user_id, cr.status, cr.created_at,
+                       u.username, u.email
+                FROM community_requests cr
+                JOIN users u ON u.id = cr.user_id
+                WHERE cr.community_id = ? AND cr.status = 'pending'
+                ORDER BY cr.id ASC
+            """, (community_id,)).fetchall()
+            return [dict(r) for r in rows]
+
+    def process_join_request(self, request_id: int, status: str, reviewer_user_id: int, reviewer_role: str) -> bool:
+        """Approve ('approved') or reject ('rejected') a join request."""
+        if status not in ("approved", "rejected"):
+            raise ValueError("status phải là 'approved' hoặc 'rejected'.")
+        with self.db.get_connection() as conn:
+            req = conn.execute(
+                "SELECT * FROM community_requests WHERE id = ?", (request_id,)
+            ).fetchone()
+            if not req:
+                raise ValueError("Yêu cầu không tồn tại.")
+            is_owner = conn.execute(
+                "SELECT 1 FROM community_members WHERE community_id = ? AND user_id = ? AND role IN ('owner', 'admin')",
+                (req["community_id"], reviewer_user_id),
+            ).fetchone()
+            if not is_owner and reviewer_role not in self.PRIVILEGED_ROLES:
+                raise PermissionError("Không đủ quyền duyệt yêu cầu.")
+            conn.execute(
+                "UPDATE community_requests SET status = ? WHERE id = ?",
+                (status, request_id),
+            )
+            if status == "approved":
+                conn.execute(
+                    "INSERT OR IGNORE INTO community_members (community_id, user_id, role) VALUES (?, ?, 'member')",
+                    (req["community_id"], req["user_id"]),
+                )
+            conn.commit()
+            return True
+
+    def list_community_members(self, community_id: int, viewer_user_id: Optional[int], viewer_role: str) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            community = conn.execute("SELECT privacy_mode FROM communities WHERE id = ?", (community_id,)).fetchone()
+            if not community:
+                raise ValueError("Community không tồn tại.")
+            if community["privacy_mode"] == "private" and viewer_role not in self.PRIVILEGED_ROLES:
+                is_member = conn.execute(
+                    "SELECT 1 FROM community_members WHERE community_id = ? AND user_id = ?",
+                    (community_id, viewer_user_id),
+                ).fetchone()
+                if not is_member:
+                    raise PermissionError("Bạn chưa là thành viên của community này.")
+            rows = conn.execute("""
+                SELECT cm.user_id, cm.role, cm.joined_at, u.username, u.email, u.avatar_path
+                FROM community_members cm
+                JOIN users u ON u.id = cm.user_id
+                WHERE cm.community_id = ?
+                ORDER BY CASE cm.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, cm.joined_at ASC
+            """, (community_id,)).fetchall()
+            return [dict(r) for r in rows]
+
+    def delete_community(self, community_id: int, requester_user_id: int, requester_role: str) -> bool:
+        with self.db.get_connection() as conn:
+            is_owner = conn.execute(
+                "SELECT 1 FROM community_members WHERE community_id = ? AND user_id = ? AND role = 'owner'",
+                (community_id, requester_user_id),
+            ).fetchone()
+            if not is_owner and requester_role not in self.PRIVILEGED_ROLES:
+                raise PermissionError("Chỉ Owner hoặc Admin hệ thống mới có thể xóa community.")
+            conn.execute("DELETE FROM communities WHERE id = ?", (community_id,))
+            conn.commit()
+            return True
+

@@ -4,17 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Workspace - Thông tin Cuộc thi | LOCAL CP Studio</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
-    <script src="js/theme.js"></script>
-    <script src="js/auth-nav.js"></script>
     <link rel="stylesheet" href="css/workspace.css?v=10.0">
 </head>
 <body class="ws-body">
 <div class="ws-shell">
-    <!-- Top Workspace Navbar (Matching Screenshot 1 & 2) -->
+    <!-- Top Workspace Navbar -->
     <header class="ws-topbar">
         <div class="ws-brand-col">
             <span class="ws-label">WORKSPACE</span>
@@ -39,7 +39,7 @@
     </header>
 
     <main class="ws-content">
-        <!-- Countdown Banner (Matching Screenshot 3) -->
+        <!-- Countdown Banner -->
         <div class="ws-countdown-banner">
             <div class="ws-countdown-badges">
                 <span class="ws-badge-item"><i class="fa-regular fa-calendar"></i> <span id="ws-date-str">24 tháng 8, 2026</span></span>
@@ -49,7 +49,7 @@
             <div class="ws-countdown-sub" id="ws-time-sub">Đang tính toán thời gian...</div>
         </div>
 
-        <!-- Description Card (Matching Screenshot 3) -->
+        <!-- Description Card -->
         <div class="ws-card">
             <div class="ws-card-subtitle">Mô tả cuộc thi</div>
             <div id="ws-desc-content" class="ws-prose">Đang tải mô tả...</div>
@@ -73,7 +73,7 @@
             </div>
         </div>
 
-        <!-- Comments Section (Matching Screenshot 3) -->
+        <!-- Comments Section -->
         <div class="ws-comments-card">
             <div class="ws-comments-header">
                 <div class="ws-comments-avatar"><i class="fa-solid fa-comment"></i></div>
@@ -100,103 +100,9 @@
     </main>
 </div>
 
-<script>
-const params = new URLSearchParams(window.location.search);
-const contestId = params.get('id') || '3';
-let countdownInterval = null;
-
-function goPage(page) {
-    window.location.href = page + '?id=' + contestId;
-}
-
-function escapeHtml(str) {
-    return String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-}
-
-async function loadContest() {
-    const token = localStorage.getItem('local_cp_token');
-    const headers = token ? { Authorization: 'Bearer ' + token } : {};
-    try {
-        const res = await fetch('/api/competitions/' + contestId, { headers });
-        if (!res.ok) {
-            document.getElementById('ws-title').textContent = 'Không tìm thấy cuộc thi';
-            return;
-        }
-        const data = await res.json();
-        document.title = (data.title || 'Cuộc thi') + ' | LOCAL CP Studio';
-        document.getElementById('ws-title').textContent = data.title || 'Cuộc thi ClueOJ';
-        
-        const stmt = data.statement || 'Không có mô tả chi tiết cho cuộc thi này.';
-        document.getElementById('ws-desc-content').innerHTML = typeof marked !== 'undefined' ? marked.parse(stmt) : stmt.replace(/\n/g, '<br>');
-
-        startCountdown(data.starts_at, data.ends_at);
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-function startCountdown(startStr, endStr) {
-    if (countdownInterval) clearInterval(countdownInterval);
-    const start = startStr ? new Date(startStr) : null;
-    const end = endStr ? new Date(endStr) : null;
-
-    if (start) {
-        document.getElementById('ws-date-str').textContent = start.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' });
-        document.getElementById('ws-time-str').textContent = start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    } else {
-        document.getElementById('ws-date-str').textContent = 'Linh hoạt';
-        document.getElementById('ws-time-str').textContent = '--:--';
-    }
-
-    const tick = () => {
-        const now = new Date();
-        if (end && now < end) {
-            const diff = Math.max(0, Math.floor((end - now) / 1000));
-            const h = String(Math.floor(diff / 3600)).padStart(2, '0');
-            const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
-            const s = String(diff % 60).padStart(2, '0');
-            document.getElementById('ws-time-diff').textContent = `You have ${h}:${m}:${s} remaining.`;
-            document.getElementById('ws-time-sub').textContent = end.toLocaleString('vi-VN') + ' +07';
-        } else if (start && now < start) {
-            const diff = Math.max(0, Math.floor((start - now) / 1000));
-            const h = String(Math.floor(diff / 3600)).padStart(2, '0');
-            const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
-            const s = String(diff % 60).padStart(2, '0');
-            document.getElementById('ws-time-diff').textContent = `Starts in ${h}:${m}:${s}`;
-            document.getElementById('ws-time-sub').textContent = 'Tính từ ' + start.toLocaleString('vi-VN');
-        } else if (!start && !end) {
-            document.getElementById('ws-time-diff').textContent = 'Linh hoạt';
-            document.getElementById('ws-time-sub').textContent = 'Cuộc thi không giới hạn thời gian.';
-        } else {
-            document.getElementById('ws-time-diff').textContent = 'ĐÃ KẾT THÚC';
-            document.getElementById('ws-time-sub').textContent = 'Cuộc thi đã kết thúc.';
-            clearInterval(countdownInterval);
-        }
-    };
-    tick();
-    countdownInterval = setInterval(tick, 1000);
-}
-
-function addComment() {
-    const text = document.getElementById('comment-input').value.trim();
-    if (!text) return;
-    const list = document.getElementById('comments-list');
-    const now = new Date().toLocaleString('vi-VN');
-    const commentHtml = `
-        <div style="padding: 12px 0; border-bottom: 1px solid var(--ws-border);">
-            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                <strong style="color:var(--ws-text-main); font-size:0.88rem;">Thí sinh</strong>
-                <span style="color:var(--ws-text-sub); font-size:0.75rem;">${now}</span>
-            </div>
-            <p style="color:var(--ws-text-muted); font-size:0.88rem; margin:0;">${escapeHtml(text)}</p>
-        </div>
-    `;
-    if (list.querySelector('p')) list.innerHTML = '';
-    list.innerHTML += commentHtml;
-    document.getElementById('comment-input').value = '';
-}
-
-loadContest();
-</script>
+<!-- Modular Script Imports -->
+<script src="js/theme.js"></script>
+<script src="js/auth-nav.js"></script>
+<script src="js/workspace-info.js?v=1.0"></script>
 </body>
 </html>

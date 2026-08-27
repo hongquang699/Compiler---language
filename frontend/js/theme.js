@@ -13,6 +13,8 @@
     
     document.documentElement.setAttribute('data-theme', savedTheme);
     document.documentElement.dataset.theme = savedTheme;
+    document.documentElement.spellcheck = false;
+    if (document.body) document.body.spellcheck = false;
 
     // 2. Update toggle button icon/text
     function updateThemeUI() {

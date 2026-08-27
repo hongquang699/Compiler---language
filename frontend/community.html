@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Hub — Local CP AI</title>
+    <meta name="description" content="Cộng đồng lập trình viên thi đấu của Local CP AI. Tạo nhóm học tập, luyện tập và thi đấu cùng nhau.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css?v=11.0">
+    <link rel="stylesheet" href="css/glassmorphism-effects.css">
+    <script src="js/theme.js"></script>
+</head>
+<body class="usaco-theme" spellcheck="false">
+    <div class="app-ambient" aria-hidden="true">
+        <div class="orb orb-cyan"></div>
+        <div class="orb orb-violet"></div>
+        <div class="orb orb-emerald"></div>
+        <div class="mesh-grid"></div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="app-header">
+        <a class="header-left" href="landing.html" title="Về Trang chủ SaaS">
+            <div class="logo-badge"><i class="fa-solid fa-code"></i></div>
+            <div class="header-title-box">
+                <span class="ide-brand">LOCAL CP AI</span>
+                <span class="ide-sub">Community Hub</span>
+            </div>
+        </a>
+        <nav class="nav-tabs">
+            <a class="nav-tab" href="index.html#playground-tab"><i class="fa-solid fa-laptop-code"></i> <span>Code IDE</span></a>
+            <a class="nav-tab" href="index.html#agent-tab"><i class="fa-solid fa-wand-magic-sparkles"></i> <span>AI Agent</span></a>
+            <a class="nav-tab active" href="community.html"><i class="fa-solid fa-people-group"></i> <span>Community</span></a>
+            <a class="nav-tab" href="contest.html"><i class="fa-solid fa-flag-checkered"></i> <span>Cuộc thi</span></a>
+        </nav>
+        <div class="header-right">
+            <div class="status-indicator-badge" id="status-badge">
+                <span class="status-dot green"></span><span>Sẵn sàng</span>
+            </div>
+            <div class="account-area">
+                <button class="btn-ide btn-ide-secondary btn-xs" id="auth-open-btn"><i class="fa-solid fa-user"></i> Đăng nhập</button>
+                <a href="profile.html" class="user-pill-glass hidden" id="account-name">
+                    <div class="user-pill-avatar"><img id="user-avatar-img" src="" alt="avatar"></div>
+                    <span id="account-username">User</span>
+                    <span id="account-role-badge" class="bento-tag" style="font-size:0.65rem;"></span>
+                </a>
+                <button class="btn-mini hidden" id="auth-logout-btn" title="Đăng xuất"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container" style="max-width:1200px;margin:0 auto;padding-top:18px;">
+
+        <!-- PAGE HEADER -->
+        <div class="hero-cta-strip" style="margin-bottom:20px;">
+            <div class="hero-cta-left">
+                <span class="hero-cta-tag"><i class="fa-solid fa-people-group"></i> Community Hub</span>
+                <span class="hero-cta-title">Cộng đồng Lập trình Thi đấu <strong>Local CP AI</strong></span>
+                <div class="response-promise-badges">
+                    <span class="promise-pill"><i class="fa-solid fa-globe"></i> Cộng đồng công khai</span>
+                    <span class="promise-pill"><i class="fa-solid fa-lock"></i> Nhóm riêng tư</span>
+                    <span class="promise-pill"><i class="fa-solid fa-shield-halved"></i> Xét duyệt thành viên</span>
+                </div>
+            </div>
+            <div class="hero-cta-actions">
+                <button class="btn-ide btn-ide-run btn-sm" id="create-community-btn">
+                    <i class="fa-solid fa-plus"></i> Tạo Community
+                </button>
+            </div>
+        </div>
+
+        <!-- FILTER BAR -->
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;">
+            <div class="rag-search-box" style="flex:1;min-width:200px;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" id="community-search" placeholder="Tìm kiếm community..." autocomplete="off">
+            </div>
+            <select id="community-filter" class="header-select">
+                <option value="all">Tất cả</option>
+                <option value="public">Công khai</option>
+                <option value="private">Riêng tư</option>
+            </select>
+            <button class="btn-ide btn-ide-ghost btn-xs" id="refresh-btn" title="Tải lại"><i class="fa-solid fa-rotate-right"></i></button>
+        </div>
+
+        <!-- COMMUNITY GRID -->
+        <div class="community-grid" id="community-grid">
+            <div class="community-empty-state" id="community-empty">
+                <i class="fa-solid fa-people-group" style="font-size:3rem;color:var(--text-muted);margin-bottom:16px;"></i>
+                <h3 style="color:var(--text-secondary);">Chưa có community nào</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;">Hãy là người đầu tiên tạo cộng đồng lập trình thi đấu!</p>
+                <button class="btn-ide btn-ide-run btn-sm" onclick="document.getElementById('create-community-btn').click()" style="margin-top:14px;">
+                    <i class="fa-solid fa-plus"></i> Tạo Community đầu tiên
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ======================================================================
+         CREATE COMMUNITY MODAL
+    ====================================================================== -->
+    <div class="auth-modal hidden" id="create-community-modal" role="dialog">
+        <div class="auth-card" style="width: min(800px, 95vw); max-width: 800px;">
+            <aside class="auth-showcase" aria-hidden="true">
+                <div class="auth-showcase-glow"></div>
+                <div class="auth-showcase-brand"><span class="auth-showcase-mark"><i class="fa-solid fa-people-group"></i></span> COMMUNITY</div>
+                <div class="auth-showcase-copy">
+                    <span class="auth-kicker">TẠO CỘNG ĐỒNG</span>
+                    <h2>Kết nối.<br><em>Học cùng nhau.</em></h2>
+                    <p>Lập nhóm học tập hoặc đội tuyển thi đấu Competitive Programming chuyên nghiệp.</p>
+                </div>
+                <div class="auth-perks">
+                    <span><i class="fa-solid fa-globe"></i> Chế độ Công khai</span>
+                    <span><i class="fa-solid fa-lock"></i> Chế độ Riêng tư</span>
+                    <span><i class="fa-solid fa-shield-halved"></i> Xét duyệt thành viên</span>
+                </div>
+            </aside>
+            <div class="auth-form-area" style="padding: 36px 38px 28px;">
+                <button class="auth-close" id="close-create-modal" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
+                <div class="auth-heading" style="margin-bottom: 20px;">
+                    <span class="auth-heading-icon"><i class="fa-solid fa-people-group"></i></span>
+                    <div>
+                        <h2 style="font-size: 1.35rem; color: var(--text-bright); margin-bottom: 2px;">Tạo Community mới</h2>
+                        <p style="color: var(--text-muted); font-size: 0.82rem;">Điền thông tin để khởi tạo cộng đồng của bạn.</p>
+                    </div>
+                </div>
+                <form id="create-community-form" style="display:grid;gap:14px;">
+                    <div class="auth-field">
+                        <label for="comm-name">Tên Community</label>
+                        <div class="auth-input-wrap">
+                            <i class="fa-solid fa-people-group"></i>
+                            <input id="comm-name" type="text" placeholder="USACO Elite Study Club" maxlength="60" required>
+                        </div>
+                    </div>
+                    <div class="auth-field">
+                        <label for="comm-desc">Mô tả mục tiêu</label>
+                        <div class="auth-input-wrap" style="align-items:flex-start;">
+                            <i class="fa-solid fa-align-left" style="margin-top:10px;"></i>
+                            <textarea id="comm-desc" placeholder="Cộng đồng ôn thi học sinh giỏi quốc gia &amp; ICPC..." rows="3" style="flex:1;background:var(--bg-input);border:none;outline:none;color:var(--text-primary);font:0.85rem var(--font-ui);resize:vertical;padding:8px 0;" required></textarea>
+                        </div>
+                    </div>
+                    <div class="auth-field">
+                        <label>Chế độ truy cập</label>
+                        <div style="display:flex;gap:12px;">
+                            <label class="privacy-option-card" id="opt-public">
+                                <input type="radio" name="privacy" value="public" checked>
+                                <div class="privacy-icon"><i class="fa-solid fa-globe"></i></div>
+                                <div>
+                                    <strong>Công khai (Public)</strong>
+                                    <p>Ai cũng có thể tham gia ngay</p>
+                                </div>
+                            </label>
+                            <label class="privacy-option-card" id="opt-private">
+                                <input type="radio" name="privacy" value="private">
+                                <div class="privacy-icon"><i class="fa-solid fa-lock"></i></div>
+                                <div>
+                                    <strong>Riêng tư (Private)</strong>
+                                    <p>Cần phê duyệt để tham gia</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <p class="auth-error hidden" id="create-community-error"></p>
+                    <button type="submit" class="btn-ide btn-ide-run btn-block" style="min-height: 44px; margin-top: 4px;">
+                        <i class="fa-solid fa-plus"></i> Khởi tạo Community
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         COMMUNITY DETAIL MODAL
+    ====================================================================== -->
+    <div class="auth-modal hidden" id="community-detail-modal" role="dialog">
+        <div style="max-width:760px;width:95vw;background:linear-gradient(145deg,#0d1a33,#08101e);border:1px solid rgba(0,242,254,.25);border-radius:22px;overflow:hidden;position:relative;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 25px 80px rgba(0,0,0,.7);">
+            <div style="padding:26px 30px 0;display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <div id="detail-privacy-badge" class="community-privacy-badge"></div>
+                    <h2 id="detail-name" style="color:var(--text-bright);margin:10px 0 4px;font-size:1.4rem;"></h2>
+                    <p id="detail-owner" style="color:var(--text-muted);font-size:0.82rem;"></p>
+                </div>
+                <button onclick="document.getElementById('community-detail-modal').classList.add('hidden')" style="background:none;border:none;color:var(--text-secondary);font-size:1.3rem;cursor:pointer;padding:4px 8px;" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p id="detail-desc" style="color:var(--text-secondary);padding:14px 30px;font-size:0.9rem;line-height:1.6;border-bottom:1px solid rgba(148,185,255,.12);margin:0;"></p>
+
+            <!-- Detail Tabs -->
+            <div style="display:flex;gap:0;border-bottom:1px solid rgba(148,185,255,.12);">
+                <button class="detail-tab active" data-target="tab-members"><i class="fa-solid fa-users"></i> Thành viên</button>
+                <button class="detail-tab" data-target="tab-requests" id="requests-tab-btn"><i class="fa-solid fa-user-clock"></i> Xét duyệt yêu cầu</button>
+            </div>
+            <div style="flex:1;overflow-y:auto;padding:20px 30px;">
+                <div id="tab-members" class="detail-tab-content active">
+                    <div id="members-list" style="display:grid;gap:10px;"></div>
+                </div>
+                <div id="tab-requests" class="detail-tab-content hidden">
+                    <div id="requests-list" style="display:grid;gap:10px;"></div>
+                </div>
+            </div>
+            <div style="padding:16px 30px;border-top:1px solid rgba(148,185,255,.12);display:flex;gap:12px;justify-content:flex-end;">
+                <button class="btn-ide btn-ide-secondary btn-sm" id="detail-join-btn"><i class="fa-solid fa-user-plus"></i> Tham gia</button>
+                <button class="btn-ide btn-ide-danger btn-sm hidden" id="detail-delete-btn"><i class="fa-solid fa-trash"></i> Xóa Community</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         PAYMENT / UPGRADE MODAL (EXPANDED WIDE LAYOUT)
+    ====================================================================== -->
+    <div class="auth-modal hidden" id="payment-modal" role="dialog" style="z-index: 10000;">
+        <div class="auth-card payment-card-wide">
+            <aside class="auth-showcase" aria-hidden="true">
+                <div class="auth-showcase-glow" style="background:radial-gradient(circle at 60% 40%, rgba(127,0,255,.6) 0%, transparent 60%);"></div>
+                <div class="auth-showcase-brand"><span class="auth-showcase-mark"><i class="fa-solid fa-crown"></i></span> LOCAL CP SAAS</div>
+                <div class="auth-showcase-copy">
+                    <span class="auth-kicker">NÂNG CẤP TÀI KHOẢN</span>
+                    <h2>Mở khóa<br><em>Community Hub.</em></h2>
+                    <p>Quét mã VietQR để thanh toán và nhận quyền tạo Community ngay lập tức.</p>
+                </div>
+                <div class="auth-perks">
+                    <span><i class="fa-solid fa-people-group"></i> Quyền tạo &amp; Quản lý Community</span>
+                    <span><i class="fa-solid fa-wand-magic-sparkles"></i> AI Agent tự sửa lỗi không giới hạn</span>
+                    <span><i class="fa-solid fa-server"></i> 5 Worker máy chấm ClueOJ song song</span>
+                    <span><i class="fa-solid fa-cloud-arrow-up"></i> Đồng bộ kho Solved Vault</span>
+                </div>
+            </aside>
+            <div class="auth-form-area">
+                <button class="auth-close" id="close-payment-modal" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
+                <div class="auth-heading" style="margin-bottom: 20px;">
+                    <span class="auth-heading-icon" style="background: rgba(0,242,254,0.12); color: var(--accent-cyan);"><i class="fa-solid fa-qrcode"></i></span>
+                    <div>
+                        <h2 id="payment-plan-title" style="font-size: 1.35rem; color: var(--text-bright); margin-bottom: 2px;">Nâng cấp Pro Developer</h2>
+                        <p style="color: var(--text-muted); font-size: 0.82rem;">Quét mã VietQR và xác nhận kích hoạt tài khoản bên dưới.</p>
+                    </div>
+                </div>
+
+                <!-- QR Code Display -->
+                <div class="payment-qr-box">
+                    <img src="assets/payment-qr.png" alt="QR thanh toán VO HONG QUANG" class="payment-qr-img">
+                    <div style="margin-top: 12px; text-align: center;">
+                        <strong style="color: var(--text-bright); font-size: 1.05rem; letter-spacing: 0.5px; display: block;">VO HONG QUANG</strong>
+                        <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 6px;">
+                            <span style="font-size: 0.75rem; color: var(--accent-cyan); background: rgba(0,242,254,0.12); border: 1px solid rgba(0,242,254,0.25); padding: 3px 10px; border-radius: 6px; font-weight: 600;">
+                                <i class="fa-solid fa-bolt"></i> VietQR · ZaloPay · BIDV
+                            </span>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 0.76rem; margin-top: 6px;">Nhận tiền tức thì từ mọi App Ngân hàng &amp; Ví điện tử</p>
+                    </div>
+                </div>
+
+                <!-- Payment Info -->
+                <div class="payment-details-table">
+                    <div class="payment-details-row">
+                        <span><i class="fa-solid fa-user-shield" style="color: var(--accent-cyan); margin-right: 6px;"></i> Tài khoản kích hoạt:</span>
+                        <strong id="payment-user-display" style="color: var(--accent-cyan); font-family: var(--font-mono, monospace);">USER</strong>
+                    </div>
+                    <div class="payment-details-row">
+                        <span><i class="fa-solid fa-money-bill-wave" style="color: var(--accent-cyan); margin-right: 6px;"></i> Số tiền thanh toán:</span>
+                        <strong id="payment-amount">485.000đ</strong>
+                    </div>
+                    <div class="payment-details-row">
+                        <span><i class="fa-solid fa-message" style="color: var(--accent-cyan); margin-right: 6px;"></i> Nội dung chuyển khoản:</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="payment-ref-pill" id="payment-ref">LOCALCP USER PRO</span>
+                            <button onclick="navigator.clipboard.writeText(document.getElementById('payment-ref').textContent)" class="btn-mini" title="Sao chép"><i class="fa-solid fa-copy"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sender Name Input Field -->
+                <div style="margin: 14px 0 12px; text-align: left;">
+                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-bright); margin-bottom: 6px;">
+                        <i class="fa-solid fa-signature" style="color: var(--accent-cyan); margin-right: 4px;"></i> Họ và tên người chuyển khoản: <span style="color: #f87171;">*</span>
+                    </label>
+                    <input type="text" id="payment-sender-name" placeholder="VD: NGUYEN VAN A (tên tài khoản ngân hàng)" style="width: 100%; background: rgba(10, 18, 35, 0.85); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 10px 14px; color: var(--text-bright); font-size: 0.88rem; outline: none; transition: border-color 0.2s;" required autocomplete="name" />
+                    <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 4px;">
+                        <i class="fa-solid fa-bell" style="color: #fbbf24;"></i> Yêu cầu kèm tên tài khoản &amp; tên chuyển khoản sẽ được gửi trực tiếp đến <strong>Dev &amp; SuperAdmin</strong>.
+                    </small>
+                </div>
+
+                <p style="color: var(--text-muted); font-size: 0.78rem; text-align: center; margin-bottom: 14px; line-height: 1.5;">
+                    <i class="fa-solid fa-circle-check" style="color: var(--accent-green); margin-right: 4px;"></i> Sau khi chuyển khoản, bấm nút bên dưới để gửi thông báo xác nhận đến quản trị viên.
+                </p>
+                <p class="auth-error hidden" id="payment-error" style="margin-bottom: 12px;"></p>
+                <button class="btn-ide btn-ide-run btn-block btn-confirm-payment" id="confirm-payment-btn">
+                    <i class="fa-solid fa-check-circle"></i> Tôi đã chuyển khoản — Xác nhận kích hoạt ngay
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH MODAL (inherited) -->
+    <div class="auth-modal hidden" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+        <div class="auth-card">
+            <aside class="auth-showcase" aria-hidden="true">
+                <div class="auth-showcase-glow"></div>
+                <div class="auth-showcase-brand"><span class="auth-showcase-mark"><i class="fa-solid fa-code"></i></span> LOCAL CP</div>
+                <div class="auth-showcase-copy">
+                    <span class="auth-kicker">YOUR ALGORITHM WORKSPACE</span>
+                    <h2>Code better.<br><em>Think deeper.</em></h2>
+                    <p>Đăng nhập để tạo và quản lý Community của bạn.</p>
+                </div>
+                <div class="auth-perks">
+                    <span><i class="fa-solid fa-shield-halved"></i> Phiên làm việc riêng tư</span>
+                    <span><i class="fa-solid fa-people-group"></i> Quản lý Community</span>
+                    <span><i class="fa-solid fa-bolt"></i> Truy cập AI Assistant</span>
+                </div>
+            </aside>
+            <div class="auth-form-area">
+                <button class="auth-close" id="auth-close-btn"><i class="fa-solid fa-xmark"></i></button>
+                <div class="auth-heading"><span class="auth-heading-icon"><i class="fa-solid fa-key"></i></span><div><h2 id="auth-title">Đăng nhập</h2><p>Chào mừng bạn trở lại với Local CP.</p></div></div>
+                <div class="auth-tabs"><button class="auth-tab active" data-auth-mode="login">Đăng nhập</button><button class="auth-tab" data-auth-mode="register">Tạo tài khoản</button></div>
+                <form id="auth-form">
+                    <div class="auth-field"><label for="auth-username">Tên tài khoản</label><div class="auth-input-wrap"><i class="fa-regular fa-user"></i><input id="auth-username" type="text" minlength="3" maxlength="64" autocomplete="username" placeholder="Nhập tên tài khoản" required></div></div>
+                    <div class="auth-field"><label for="auth-password">Mật khẩu</label><div class="password-field auth-input-wrap"><i class="fa-solid fa-lock"></i><input id="auth-password" type="password" minlength="6" autocomplete="current-password" placeholder="Tối thiểu 6 ký tự" required><button type="button" class="btn-mini password-toggle" id="auth-password-toggle"><i class="fa-solid fa-eye"></i></button></div></div>
+                    <p class="auth-error hidden" id="auth-error"></p>
+                    <button class="btn-ide btn-ide-run btn-block" type="submit" id="auth-submit-btn"><span>Đăng nhập</span><i class="fa-solid fa-arrow-right"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="global-site-footer">
+        <div><span>&copy; 2026 <strong>Local CP AI</strong> — Community Hub</span></div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;">
+            <a href="landing.html">Trang chủ SaaS</a>
+            <a href="index.html">Web IDE</a>
+            <a href="contest.html">Cuộc thi</a>
+            <a href="privacy.html">Bảo mật</a>
+        </div>
+    </footer>
+
+    <script src="js/community.js?v=1.0"></script>
+</body>
+</html>
