@@ -49,7 +49,12 @@ const state = {
             timeMs: 0
         }
     ],
-    auth: { token: localStorage.getItem("local_cp_token"), user: null }
+    auth: { 
+        token: localStorage.getItem("local_cp_token"), 
+        user: (() => { 
+            try { return JSON.parse(localStorage.getItem("local_cp_user")); } catch(_) { return null; } 
+        })() 
+    }
 };
 
 function authFetch(url, options = {}) {
@@ -797,6 +802,7 @@ function initAuthModule() {
             if (!res.ok) throw new Error(data.detail || "Không thể xác thực.");
             state.auth = { token: data.token, user: data.user };
             localStorage.setItem("local_cp_token", data.token);
+            localStorage.setItem("local_cp_user", JSON.stringify(data.user));
             updateAuthUI();
             modal.classList.add("hidden");
             loadChatSessions();
@@ -806,7 +812,22 @@ function initAuthModule() {
             error.classList.remove("hidden");
         }
     });
-    if (state.auth.token) authFetch("/api/auth/me").then(res => res.ok ? res.json() : Promise.reject()).then(user => { state.auth.user = user; updateAuthUI(); }).catch(() => { state.auth = { token: null, user: null }; localStorage.removeItem("local_cp_token"); });
+    if (state.auth.token) {
+        authFetch("/api/auth/me")
+            .then(res => res.ok ? res.json() : Promise.reject())
+            .then(data => {
+                const u = data.user || data;
+                state.auth.user = u;
+                localStorage.setItem("local_cp_user", JSON.stringify(u));
+                updateAuthUI();
+            })
+            .catch(() => {
+                state.auth = { token: null, user: null };
+                localStorage.removeItem("local_cp_token");
+                localStorage.removeItem("local_cp_user");
+                updateAuthUI();
+            });
+    }
     updateAuthUI();
 }
 
@@ -822,10 +843,34 @@ function updateAuthUI() {
         document.getElementById("account-name").textContent = loggedIn ? state.auth.user.username : "";
     }
     document.getElementById("auth-logout-btn").classList.toggle("hidden", !loggedIn);
+    const role = (state.auth.user?.role || "").toLowerCase();
+    const canAccessAdmin = Boolean(
+        loggedIn && state.auth.user && 
+        (state.auth.user.is_admin || ["dev", "superadmin", "admin"].includes(role) || state.auth.user.can_access_admin)
+    );
+
     const adminNavBtn = document.getElementById("admin-nav-btn");
-    if (adminNavBtn) adminNavBtn.classList.toggle("hidden", !isAdmin);
-    document.querySelector("#admin-tab")?.classList.toggle("hidden", !isAdmin);
-    document.getElementById("header-model-picker")?.classList.toggle("hidden", !isAdmin);
+    if (adminNavBtn) {
+        adminNavBtn.classList.toggle("hidden", !canAccessAdmin);
+        if (canAccessAdmin) {
+            adminNavBtn.href = "admin.html";
+            if (role === "dev") {
+                adminNavBtn.innerHTML = `<i class="fa-solid fa-code" style="color:#c084fc;"></i> <span>Dev Console</span>`;
+                adminNavBtn.title = "Khu vực Quản trị Root DEV (Local / Authorized IP)";
+            } else if (role === "superadmin") {
+                adminNavBtn.innerHTML = `<i class="fa-solid fa-crown" style="color:#f472b6;"></i> <span>SuperAdmin</span>`;
+                adminNavBtn.title = "Khu vực Tổng Quản trị SuperAdmin";
+            } else {
+                adminNavBtn.innerHTML = `<i class="fa-solid fa-shield-halved" style="color:#38bdf8;"></i> <span>Quản trị</span>`;
+                adminNavBtn.title = "Khu vực Quản trị Admin Workspace";
+            }
+            adminNavBtn.style.display = "inline-flex";
+        } else {
+            adminNavBtn.style.display = "none";
+        }
+    }
+    document.querySelector("#admin-tab")?.classList.toggle("hidden", !canAccessAdmin);
+    document.getElementById("header-model-picker")?.classList.toggle("hidden", !canAccessAdmin);
     const aiLocked = Boolean(loggedIn && state.auth.user.competition_joined && !isAdmin);
     ["agent-tab", "chat-tab"].forEach(tabId => {
         const tab = document.querySelector(`[data-tab="${tabId}"]`);
@@ -2355,7 +2400,7 @@ function initPaymentModalIndex() {
 
                 if (res.ok) {
                     modal.classList.add("hidden");
-                    alert(`🎉 Gửi xác nhận thành công!\n\nThông báo đã được chuyển đến Dev & SuperAdmin với tên tài khoản '${data.username || state.auth.user?.username}' và tên chuyển khoản '${senderName}'.\n\nGói ${plan.toUpperCase()} (Không giới hạn AI) đã được kích hoạt thành công!`);
+                    alert(`🎉 Gửi yêu cầu xác nhận thành công!\n\nThông báo đã được gửi đến Dev & SuperAdmin:\n• Tên tài khoản: @${data.username || state.auth.user?.username}\n• Tên người chuyển khoản: ${senderName}\n• Mã Ref: ${refCode}\n• Gói: ${plan.toUpperCase()}\n\nDev và SuperAdmin sẽ kiểm tra đối soát giao dịch và phê duyệt kích hoạt gói cho bạn trong giây lát!`);
                     await fetchAndRenderAIQuota();
                 } else {
                     if (errorEl) {
@@ -2376,3 +2421,11 @@ function initPaymentModalIndex() {
         });
     }
 }
+
+// Secret Admin Console Hotkey: Ctrl + Shift + A (or Alt + A)
+document.addEventListener("keydown", (e) => {
+    if (((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "A" || e.key === "a")) || (e.altKey && (e.key === "a" || e.key === "A"))) {
+        e.preventDefault();
+        window.location.href = "admin-console.html";
+    }
+});

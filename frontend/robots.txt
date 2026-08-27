@@ -1,6 +1,22 @@
 User-agent: *
 Allow: /
-Disallow: /api/
 Disallow: /admin-console.html
+Disallow: /admin.html
+Disallow: /admin-problems.html
+Disallow: /admin-github.html
+Disallow: /pages/admin.html
+Disallow: /api/
+
+User-agent: Googlebot
+Disallow: /admin-console.html
+Disallow: /admin.html
+Disallow: /admin-problems.html
+Disallow: /admin-github.html
+Disallow: /pages/admin.html
+Disallow: /api/
+
+User-agent: Googlebot-Image
+Disallow: /admin-console.html
+Disallow: /admin.html
 
 Sitemap: http://localhost:8000/sitemap.xml

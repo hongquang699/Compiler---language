@@ -431,6 +431,20 @@ body.usaco-theme {
 .nav-tab i { font-size: 0.78rem; opacity: 0.85; text-decoration: none !important; }
 .nav-tab span { text-decoration: none !important; border-bottom: none !important; }
 
+.nav-tab.admin-access-pill {
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+    color: #38bdf8;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.18);
+    font-weight: 700;
+}
+.nav-tab.admin-access-pill:hover {
+    background: rgba(56, 189, 248, 0.25) !important;
+    color: #fff !important;
+    border-color: rgba(56, 189, 248, 0.6) !important;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+}
+
 .password-field { position: relative; display: flex; align-items: center; }
 .password-field input { width: 100%; padding-right: 42px; }
 .password-toggle { position: absolute; right: 6px; color: var(--text-secondary); }

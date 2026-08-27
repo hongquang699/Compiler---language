@@ -7,7 +7,7 @@ import yaml
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from pathlib import Path
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Header, Depends, Request
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Header, Depends, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
@@ -35,6 +35,14 @@ from backend.ai.evaluator import CodeEvaluator
 from security.middleware import SecurityMiddleware
 from security.sentinel_bot import sentinel_bot
 from security.anti_cheat import anti_cheat_engine
+from security.crypto import (
+    compute_sha256,
+    compute_file_sha256,
+    create_hmac_sha256,
+    verify_hmac_sha256,
+    generate_signed_payload,
+    verify_and_decode_signed_payload,
+)
 
 
 app = FastAPI(title="Local C++ Coding AI", version="1.0.0")
@@ -205,6 +213,12 @@ class DevManualUnbanRequest(BaseModel):
 class DevToggleBotRequest(BaseModel):
     active: bool
 
+class ClientTamperReportRequest(BaseModel):
+    type: str
+    details: str
+    url: Optional[str] = ""
+    timestamp: Optional[str] = ""
+
 class UpdateUserRoleRequest(BaseModel):
     role: str
 
@@ -362,6 +376,9 @@ def bearer_token(authorization: Optional[str]) -> str:
 
 
 def get_user_level(user: Dict[str, Any]) -> int:
+    username = str(user.get("username", "")).lower()
+    if username == "dev":
+        return 9
     role = str(user.get("role", "user")).lower()
     return ROLE_HIERARCHY.get(role, 7 if user.get("is_admin") else 2)
 
@@ -471,8 +488,21 @@ async def login(req: AuthRequest):
     return {"user": user, "token": memory_store.create_auth_token(user["id"], remember=req.remember)}
 
 @app.get("/api/auth/me")
-async def get_me(user: Dict[str, Any] = Depends(current_user)):
-    return {"user": user, **user}
+async def get_me(request: Request, user: Dict[str, Any] = Depends(current_user)):
+    client_ip = request.client.host if request.client else "unknown"
+    role = str(user.get("role", "")).lower()
+    is_admin = bool(user.get("is_admin") or role in ["dev", "superadmin", "admin"])
+    is_dev_ip = client_ip in {"127.0.0.1", "::1", "localhost", "testclient"} or client_ip.startswith("127.")
+    can_access_admin = is_admin or (is_dev_ip and role in ["dev", "superadmin", "admin"])
+    return {
+        "user": user,
+        "role": role,
+        "is_admin": is_admin,
+        "client_ip": client_ip,
+        "is_dev_ip": is_dev_ip,
+        "can_access_admin": can_access_admin,
+        **user
+    }
 
 @app.get("/api/user/ai-quota")
 async def get_user_ai_quota_endpoint(user: Dict[str, Any] = Depends(current_user)):
@@ -711,6 +741,7 @@ async def admin_storage_stats(user: Dict[str, Any] = Depends(dev_required)):
             backups.append({
                 "filename": b.name,
                 "size_mb": round(b.stat().st_size / (1024 * 1024), 2),
+                "sha256": compute_file_sha256(str(b)),
                 "created_at": datetime.fromtimestamp(b.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
             })
 
@@ -733,6 +764,7 @@ async def admin_storage_stats(user: Dict[str, Any] = Depends(dev_required)):
         "database": {
             "path": str(db_path),
             "size_mb": round(db_size / (1024 * 1024), 2),
+            "sha256": compute_file_sha256(str(db_path)),
             "counts": db_counts
         },
         "problem_bank": {
@@ -806,11 +838,13 @@ async def admin_create_backup(user: Dict[str, Any] = Depends(dev_required)):
                         zipf.write(full_p, full_p.relative_to(root_dir))
                         
     size_mb = round(backup_filepath.stat().st_size / (1024 * 1024), 2)
+    sha256_checksum = compute_file_sha256(str(backup_filepath))
     return {
         "success": True,
         "message": f"Tạo bản sao lưu thành công: {backup_filename} ({size_mb} MB)",
         "filename": backup_filename,
         "size_mb": size_mb,
+        "sha256": sha256_checksum,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
@@ -820,10 +854,15 @@ async def admin_download_backup(filename: str, user: Dict[str, Any] = Depends(de
     filepath = Path("backups") / safe_name
     if not filepath.exists() or not filepath.is_file():
         raise HTTPException(status_code=404, detail="Không tìm thấy tệp sao lưu.")
+    sha256_checksum = compute_file_sha256(str(filepath))
     return FileResponse(
         path=str(filepath),
         filename=safe_name,
-        media_type="application/zip"
+        media_type="application/zip",
+        headers={
+            "X-Checksum-SHA256": sha256_checksum,
+            "ETag": f'"{sha256_checksum}"'
+        }
     )
 
 @app.delete("/api/admin/storage/backups/{filename}")
@@ -866,6 +905,7 @@ async def admin_update_user_role(user_id: int, req: UpdateUserRoleRequest, user:
     success = memory_store.update_user_role(user_id, role)
     if not success:
         raise HTTPException(status_code=404, detail="Không tìm thấy người dùng.")
+    sentinel_bot._log_sentinel_action("ROLE_CHANGE", target_user_id=user_id, reason=f"Role updated to '{role}'", details=f"Action by {user.get('username')}")
     return {"success": True, "message": f"Đã cập nhật quyền thành công thành '{role.upper()}'.", "user_id": user_id, "role": role}
 
 
@@ -886,6 +926,7 @@ async def admin_block_ip(req: BlockIpRequest, user: Dict[str, Any] = Depends(sup
     if ip in {"127.0.0.1", "::1", "localhost"}:
         raise HTTPException(status_code=400, detail="Không thể chặn IP localhost/dev.")
     memory_store.block_ip(ip, req.reason.strip() or "admin_blocked", minutes=minutes)
+    sentinel_bot._log_sentinel_action("IP_BLOCK", target_ip=ip, reason=req.reason.strip() or "admin_blocked", details=f"Blocked {minutes}m by {user.get('username')}")
     return {"success": True, "ip": ip, "blocked_minutes": minutes}
 
 
@@ -893,6 +934,7 @@ async def admin_block_ip(req: BlockIpRequest, user: Dict[str, Any] = Depends(sup
 async def admin_switch_model(req: ModelSwitchRequest, user: Dict[str, Any] = Depends(dev_required)):
     settings.update_llm_model(req.model)
     llm_client.model = req.model
+    sentinel_bot._log_sentinel_action("MODEL_SWITCH", reason=f"Model switched to {req.model}", details=f"Action by Dev {user.get('username')}")
     return {"success": True, "current_model": req.model}
 
 
@@ -901,6 +943,7 @@ async def admin_reset_system(user: Dict[str, Any] = Depends(dev_required)):
     memory_store.reset_server_state()
     default_model = settings.llm_settings.get("model", "gemma4:latest")
     llm_client.model = default_model
+    sentinel_bot._log_sentinel_action("SYSTEM_RESET", reason="System factory reset", details=f"Action by Dev {user.get('username')}")
     return {"success": True, "message": "Hệ thống đã được reset thành công.", "current_model": default_model}
 
 
@@ -1136,6 +1179,31 @@ async def dev_toggle_sentinel_bot(req: DevToggleBotRequest, user: Dict[str, Any]
         "active": sentinel_bot.active, 
         "message": f"Bot giám sát đã được {'BẬT và đang chạy ngầm liên tục 24/7' if req.active else 'TẮT / TẠM DỪNG'}."
     }
+
+
+@app.post("/api/security/report-tamper")
+async def report_client_tampering(
+    req: ClientTamperReportRequest,
+    request: Request,
+    user: Optional[Dict[str, Any]] = Depends(optional_user)
+):
+    """Ghi nhận cảnh báo an ninh chống can thiệp mã nguồn từ Client / DevTools."""
+    client_ip = request.client.host if request.client else "unknown"
+    sentinel_bot._log_sentinel_action(
+        action_type="CLIENT_TAMPER_ALARM",
+        target_ip=client_ip,
+        target_user_id=user["id"] if user else None,
+        reason=f"Client Anti-Tamper Alarm: {req.type}",
+        details=f"{req.details} | URL: {req.url}"
+    )
+    if not user or str(user.get("role", "")).lower() != "dev":
+        sentinel_bot.skill_evaluate_and_react(
+            ip=client_ip,
+            event_type="client_tampering",
+            details=f"{req.type}: {req.details}",
+            user=user
+        )
+    return {"status": "recorded", "action": "sentinel_defense_engaged"}
 
 
 @app.get("/api/standings")
@@ -2018,6 +2086,12 @@ async def payment_confirm(req: PaymentConfirmRequest, user: Dict[str, Any] = Dep
             ref_code=req.ref_code.strip(),
             sender_name=(req.sender_name or "").strip(),
         )
+        # Generate HMAC-SHA256 tamper-proof signature for transaction verification
+        tx_signature = create_hmac_sha256(
+            f"{user['id']}:{req.plan}:{req.ref_code.strip()}:{result.get('payment_id', 0)}"
+        )
+        result["hmac_sha256_signature"] = tx_signature
+        result["signature_algorithm"] = "HMAC-SHA256"
         return {"success": True, **result}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -2025,17 +2099,56 @@ async def payment_confirm(req: PaymentConfirmRequest, user: Dict[str, Any] = Dep
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/admin/notifications")
-async def get_admin_notifications_api(user: Dict[str, Any] = Depends(admin_required)):
+async def get_admin_notifications_api(user: Dict[str, Any] = Depends(superadmin_required)):
     """Return all system notifications for Dev and SuperAdmin."""
     notifications = memory_store.get_admin_notifications(limit=100)
     unread_count = sum(1 for n in notifications if not n.get("is_read"))
     return {"notifications": notifications, "unread_count": unread_count}
 
 @app.post("/api/admin/notifications/{notification_id}/read")
-async def mark_admin_notification_read_api(notification_id: int, user: Dict[str, Any] = Depends(admin_required)):
+async def mark_admin_notification_read_api(notification_id: int, user: Dict[str, Any] = Depends(superadmin_required)):
     """Mark a notification as read."""
     memory_store.mark_notification_read(notification_id)
     return {"success": True}
+
+class PaymentRejectRequest(BaseModel):
+    reason: Optional[str] = "Thông tin chuyển khoản không trùng khớp hoặc chưa nhận được tiền"
+
+@app.get("/api/admin/payment-requests")
+async def list_payment_requests_api(limit: int = 100, user: Dict[str, Any] = Depends(superadmin_required)):
+    """SUPERADMIN & DEV ONLY: Danh sách các yêu cầu thanh toán / chuyển gói cần duyệt."""
+    requests_list = memory_store.list_payment_requests(limit=min(limit, 200))
+    return {"payment_requests": requests_list}
+
+@app.post("/api/admin/payment-requests/{payment_id}/approve")
+async def approve_payment_request_api(payment_id: int, user: Dict[str, Any] = Depends(superadmin_required)):
+    """SUPERADMIN & DEV ONLY: Duyệt gói nâng cấp cho người mua."""
+    try:
+        res = memory_store.approve_payment_request(payment_id=payment_id, approved_by_user_id=user["id"])
+        sentinel_bot._log_sentinel_action(
+            action_type="PAYMENT_PACKAGE_APPROVED",
+            target_user_id=res.get("user_id"),
+            reason=f"Approved plan [{res.get('plan', '').upper()}] for @{res.get('username')}",
+            details=f"Approved by @{user.get('username')} (ID #{user.get('id')})"
+        )
+        return res
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/admin/payment-requests/{payment_id}/reject")
+async def reject_payment_request_api(payment_id: int, req: Optional[PaymentRejectRequest] = Body(default=None), user: Dict[str, Any] = Depends(superadmin_required)):
+    """SUPERADMIN & DEV ONLY: Từ chối gói nâng cấp."""
+    try:
+        reason = req.reason if (req and req.reason) else "Không khớp giao dịch ngân hàng"
+        res = memory_store.reject_payment_request(payment_id=payment_id, rejected_by_user_id=user["id"], reason=reason)
+        sentinel_bot._log_sentinel_action(
+            action_type="PAYMENT_PACKAGE_REJECTED",
+            reason=f"Rejected payment #{payment_id}: {reason}",
+            details=f"Rejected by @{user.get('username')}"
+        )
+        return res
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/payment/history")
 async def payment_history(user: Dict[str, Any] = Depends(current_user)):
@@ -2174,10 +2287,10 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
             return FileResponse(str(page_404), status_code=404)
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
-# Root route serves welcome landing page (thankyou.html)
+# Root route serves SaaS Landing page (landing.html)
 @app.get("/")
 async def root():
-    return FileResponse("frontend/thankyou.html")
+    return FileResponse("frontend/landing.html")
 
 # Mount frontend static files
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

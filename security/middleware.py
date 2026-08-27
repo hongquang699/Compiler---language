@@ -123,6 +123,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet, noimageindex"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
@@ -145,6 +146,21 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         user_agent = request.headers.get("user-agent", "")
         action = request.method
         query_string = request.url.query or ""
+
+        # ── LAYER 0.5: Dangerous Method & Null Byte Sanitizer ──────────────
+        if action.upper() in {"TRACE", "TRACK", "CONNECT", "DEBUG"}:
+            return JSONResponse(status_code=405, content={"detail": "HTTP Method Not Allowed by Security Sentinel."})
+
+        if "%00" in route or "\x00" in route or "..%2f" in route.lower() or "..%5c" in route.lower():
+            self.db.log_security_event(
+                ip=client_ip,
+                method=action,
+                path=route,
+                user_agent=user_agent,
+                status_code=400,
+                reason="null_byte_path_traversal_blocked",
+            )
+            return JSONResponse(status_code=400, content={"detail": "Bad Request: Malformed path encoding."})
 
         # ── LAYER 0: Dev-Immunity Rule & User Context ──────────────────────
         user = self._extract_user_from_token(request)

@@ -528,21 +528,20 @@ function initPaymentModal() {
 
                 const data = await res.json();
                 confirmBtn.disabled = false;
-                confirmBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Tôi đã chuyển khoản — Xác nhận kích hoạt ngay';
+                confirmBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Tôi đã chuyển khoản — Gửi yêu cầu phê duyệt gói';
 
                 if (res.ok) {
                     modal.classList.add('hidden');
-                    alert(`🎉 Gửi xác nhận thành công!\n\nThông báo đã được chuyển đến Dev & SuperAdmin với tên tài khoản '${data.username || 'bạn'}' và tên chuyển khoản '${senderName}'. Gói ${currentPlan.toUpperCase()} đã được kích hoạt.`);
-                    window.location.href = 'community.html';
+                    alert(`🎉 Đã gửi yêu cầu thanh toán thành công!\n\nThông báo đã được chuyển đến Dev & SuperAdmin:\n• Tên tài khoản: @${data.username || 'bạn'}\n• Tên người chuyển: ${senderName}\n• Gói: ${currentPlan.toUpperCase()}\n• Trạng thái: CHỜ DUYỆT (PENDING)\n\n⚠️ LƯU Ý: Gói của bạn CHƯA được kích hoạt ngay. Dev và SuperAdmin sẽ kiểm tra đối soát tài khoản ngân hàng và duyệt gói trong Admin Console trước khi tài khoản được nâng cấp!`);
                 } else {
                     if (errorEl) {
-                        errorEl.textContent = data.detail || 'Lỗi xác nhận thanh toán.';
+                        errorEl.textContent = data.detail || 'Lỗi gửi yêu cầu thanh toán.';
                         errorEl.classList.remove('hidden');
                     }
                 }
             } catch (err) {
                 confirmBtn.disabled = false;
-                confirmBtn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Tôi đã chuyển khoản — Xác nhận kích hoạt ngay';
+                confirmBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Tôi đã chuyển khoản — Gửi yêu cầu phê duyệt gói';
                 if (errorEl) {
                     errorEl.textContent = 'Không thể kết nối máy chủ.';
                     errorEl.classList.remove('hidden');

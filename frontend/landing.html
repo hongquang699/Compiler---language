@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="css/glassmorphism-effects.css">
     <script src="js/theme.js"></script>
     <script src="js/glassmorphism.js"></script>
-    <script src="js/landing.js" defer></script>
+    <script src="js/landing.js?v=50.0" defer></script>
 </head>
 
 <body class="usaco-theme" spellcheck="false">
@@ -540,7 +540,7 @@ int main() {
                 <div class="auth-showcase-copy">
                     <span class="auth-kicker">NÂNG CẤP TÀI KHOẢN</span>
                     <h2>Kích hoạt<br><em>Gói dịch vụ.</em></h2>
-                    <p>Quét mã VietQR để thanh toán và hệ thống nâng cấp quyền tự động cho tài khoản của bạn.</p>
+                    <p>Quét mã VietQR để thanh toán, sau đó gửi thông báo kèm họ tên chuyển khoản để Dev &amp; SuperAdmin đối soát và phê duyệt.</p>
                 </div>
                 <div class="auth-perks">
                     <span><i class="fa-solid fa-people-group"></i> Quyền tạo &amp; Quản lý Community</span>
@@ -555,7 +555,7 @@ int main() {
                     <span class="auth-heading-icon" style="background: rgba(0,242,254,0.12); color: var(--accent-cyan);"><i class="fa-solid fa-qrcode"></i></span>
                     <div>
                         <h2 id="payment-plan-title" style="font-size: 1.35rem; color: var(--text-bright); margin-bottom: 2px;">Nâng cấp Pro Developer</h2>
-                        <p style="color: var(--text-muted); font-size: 0.82rem;">Quét mã VietQR và xác nhận kích hoạt tài khoản bên dưới.</p>
+                        <p style="color: var(--text-muted); font-size: 0.82rem;">Quét mã VietQR và gửi thông tin xác nhận cho Dev &amp; SuperAdmin xét duyệt.</p>
                     </div>
                 </div>
 
@@ -599,16 +599,16 @@ int main() {
                     </label>
                     <input type="text" id="payment-sender-name" placeholder="VD: NGUYEN VAN A (tên tài khoản ngân hàng)" style="width: 100%; background: rgba(10, 18, 35, 0.85); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 10px 14px; color: var(--text-bright); font-size: 0.88rem; outline: none; transition: border-color 0.2s;" required autocomplete="name" />
                     <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 4px;">
-                        <i class="fa-solid fa-bell" style="color: #fbbf24;"></i> Yêu cầu kèm tên tài khoản &amp; tên chuyển khoản sẽ được gửi trực tiếp đến <strong>Dev &amp; SuperAdmin</strong>.
+                        <i class="fa-solid fa-shield-halved" style="color: #fbbf24;"></i> Hệ thống không tự động kích hoạt. Yêu cầu kèm tên tài khoản &amp; tên chuyển khoản sẽ được gửi trực tiếp đến <strong>Dev &amp; SuperAdmin</strong> để đối soát và xét duyệt thủ công.
                     </small>
                 </div>
 
                 <p style="color: var(--text-muted); font-size: 0.78rem; text-align: center; margin-bottom: 14px; line-height: 1.5;">
-                    <i class="fa-solid fa-circle-check" style="color: var(--accent-green); margin-right: 4px;"></i> Sau khi chuyển khoản, bấm nút bên dưới để gửi thông báo xác nhận đến quản trị viên.
+                    <i class="fa-solid fa-clock-rotate-left" style="color: #fbbf24; margin-right: 4px;"></i> Sau khi chuyển khoản, bấm nút bên dưới để gửi thông báo yêu cầu duyệt đến Dev &amp; SuperAdmin.
                 </p>
                 <p class="auth-error hidden" id="payment-error" style="margin-bottom: 12px;"></p>
                 <button class="btn-ide btn-ide-run btn-block btn-confirm-payment" id="confirm-payment-btn">
-                    <i class="fa-solid fa-check-circle"></i> Tôi đã chuyển khoản — Xác nhận kích hoạt ngay
+                    <i class="fa-solid fa-paper-plane"></i> Tôi đã chuyển khoản — Gửi yêu cầu phê duyệt gói
                 </button>
             </div>
         </div>

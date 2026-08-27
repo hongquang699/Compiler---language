@@ -27,6 +27,7 @@ const views = {
     github: "Sao lưu GitHub & Auto Push Studio",
     members: "Thành viên & Tài khoản",
     security: "Bảo mật & Kiểm soát IP",
+    notifs: "Quản lý Thông Báo & Duyệt Nâng Cấp Gói",
     monitoring: "Giám sát Máy chấm",
     system: "Cấu hình & Hệ thống",
     anticheat_monitor: "Giám sát Hệ thống Chống Gian lận (Dev Only)",
@@ -43,17 +44,19 @@ function roleBadge(role, isAdmin) {
     if (r === "superadmin") return '<span class="badge superadmin"><i class="fa-solid fa-crown"></i> SUPERADMIN</span>';
     if (r === "admin" || (isAdmin && r !== "pro" && r !== "enterprise" && r !== "dev" && r !== "superadmin")) return '<span class="badge admin"><i class="fa-solid fa-user-shield"></i> ADMIN</span>';
     if (r === "pro") return '<span class="badge pro"><i class="fa-solid fa-bolt"></i> PRO</span>';
-    if (r === "enterprise") return '<span class="badge enterprise"><i class="fa-solid fa-building-columns"></i> ENTERPRISE</span>';
-    if (r === "contestant") return '<span class="badge contestant"><i class="fa-solid fa-trophy"></i> CONTESTANT</span>';
-    if (r === "moderator") return '<span class="badge moderator"><i class="fa-solid fa-shield"></i> MODERATOR</span>';
+    if (r === "enterprise") return '<span class="badge" style="background:#fbbf24; color:#000; font-weight:700;"><i class="fa-solid fa-gem"></i> ENTERPRISE</span>';
     return '<span class="badge user"><i class="fa-solid fa-user"></i> USER</span>';
 }
 
 function userLevel(user) {
-    if (!user) return 1;
-    const map = { guest: 1, user: 2, member: 2, contestant: 3, uploader: 4, translator: 5, moderator: 6, admin: 7, superadmin: 8, dev: 9 };
-    const r = (user.role || "user").toLowerCase();
-    return map[r] ?? (user.is_admin ? 7 : 2);
+    if (!user) return 0;
+    const r = (user.role || (user.is_admin ? "admin" : "user")).toLowerCase();
+    if (r === "dev" || (user.username || "").toLowerCase() === "dev") return 9;
+    if (r === "superadmin") return 8;
+    if (r === "admin" || user.is_admin) return 7;
+    if (r === "enterprise") return 5;
+    if (r === "pro") return 3;
+    return 1;
 }
 
 // ── ROLE PARTITIONING LAYOUT ENGINE ─────────────────────────────────────────
@@ -77,7 +80,7 @@ function applyRoleLayout(user) {
         bannerDesc.textContent = "Toàn quyền điều khiển: Giám sát 5 Máy chấm Judge, Cấu hình Mô hình AI, Nhật ký Bảo mật & Quản trị Hệ thống.";
         bannerTag.innerHTML = roleBadge("dev", true);
 
-        showNavButtons(["overview", "contests", "problems", "external_problems", "submissions", "github", "members", "security", "monitoring", "system", "anticheat_monitor", "web_monitor", "bot_actions", "data_storage"]);
+        showNavButtons(["overview", "contests", "problems", "external_problems", "submissions", "github", "members", "security", "notifs", "monitoring", "system", "anticheat_monitor", "web_monitor", "bot_actions", "data_storage"]);
         showElements(["card-stat-blocked", "card-role-breakdown", "card-ai-model-overview", "btn-quick-model-switch", "card-system-model-config", "reset-system"]);
         document.getElementById("members-panel-title").textContent = "Thành viên & Quản lý Toàn quyền";
         document.getElementById("members-panel-desc").textContent = "Phân quyền vai trò, Khóa/Mở khóa và Xóa tài khoản vĩnh viễn (Chế độ Dev Master).";
@@ -89,7 +92,7 @@ function applyRoleLayout(user) {
         bannerDesc.textContent = "Không gian Tổng Quản trị: Quản lý Cuộc thi, Phân quyền Thí sinh, Khóa tài khoản & Kiểm soát An ninh IP.";
         bannerTag.innerHTML = roleBadge("superadmin", true);
 
-        showNavButtons(["overview", "contests", "problems", "external_problems", "submissions", "members", "security", "system"]);
+        showNavButtons(["overview", "contests", "problems", "external_problems", "submissions", "members", "security", "notifs", "system"]);
         showElements(["card-stat-blocked", "card-role-breakdown"]);
         hideElements(["btn-quick-model-switch", "card-system-model-config", "reset-system"]);
         document.getElementById("members-panel-title").textContent = "Quản lý Thành viên & Phân quyền";
@@ -147,7 +150,10 @@ async function checkAuthAndLoad() {
 
         const level = userLevel(user);
         if (level < 7) {
-            showLoginModal("Tài khoản '" + user.username + "' không có quyền Quản trị (yêu cầu Admin, SuperAdmin hoặc Dev).");
+            showLoginModal("⛔ TÀI KHOẢN '" + escapeHtml(user.username) + "' KHÔNG CÓ QUYỀN QUẢN TRỊ. Bạn sẽ được chuyển hướng về trang chủ...");
+            setTimeout(() => {
+                window.location.replace("index.html?error=unauthorized");
+            }, 2000);
             return;
         }
 
@@ -269,6 +275,7 @@ document.getElementById("admin-login-form")?.addEventListener("submit", async (e
         const data = await res.json();
         if (res.ok && data.token) {
             localStorage.setItem("local_cp_token", data.token);
+            if (data.user) localStorage.setItem("local_cp_user", JSON.stringify(data.user));
             msgEl.hidden = true;
             await checkAuthAndLoad();
         } else {
@@ -1917,6 +1924,7 @@ document.querySelectorAll(".admin-nav,[data-go]").forEach(btn => btn.addEventLis
     if (view === "problems") loadProblemsBank();
     if (view === "anticheat_monitor") loadAntiCheatMonitor();
     if (view === "data_storage") loadStorageStats();
+    if (view === "notifs") loadAdminNotifications();
     if (view === "web_monitor" || view === "bot_actions") {
         loadWebSecurityMonitor();
         devWebMonitorInterval = setInterval(loadWebSecurityMonitor, 3000);
@@ -2735,5 +2743,203 @@ window.copySingleTestExpected = function(encodedExp) {
 document.getElementById("tc-inspector-search")?.addEventListener("input", renderInspectorTestCards);
 document.getElementById("tc-inspector-filter")?.addEventListener("change", renderInspectorTestCards);
 
+// =========================================================================
+// THÔNG BÁO & DUYỆT GÓI WORKSPACE (DEV & SUPERADMIN ONLY)
+// =========================================================================
+async function loadAdminNotifications() {
+    const role = (currentUser?.role || "").toLowerCase();
+    const level = currentUser ? userLevel(currentUser) : 0;
+    if (role !== "dev" && role !== "superadmin" && level < 8) return;
+
+    try {
+        const [reqsRes, notifsRes] = await Promise.all([
+            request("/api/admin/payment-requests"),
+            request("/api/admin/notifications")
+        ]);
+
+        let pendingList = [];
+        if (reqsRes && reqsRes.ok) {
+            const data = await reqsRes.json();
+            pendingList = data.payment_requests || [];
+        }
+
+        let allNotifs = [];
+        if (notifsRes && notifsRes.ok) {
+            const nData = await notifsRes.json();
+            allNotifs = nData.notifications || [];
+        }
+
+        renderPendingPaymentRequests(pendingList);
+        renderNotifsHistory(allNotifs, pendingList);
+
+        // Update sidebar notification badge
+        const pendingCount = pendingList.filter(p => (p.status || "").toUpperCase() === "PENDING").length;
+        const badgeEl = document.getElementById("sidebar-notif-badge");
+        const countEl = document.getElementById("pending-requests-count");
+        if (countEl) countEl.textContent = pendingCount;
+        if (badgeEl) {
+            badgeEl.textContent = pendingCount;
+            badgeEl.style.display = pendingCount > 0 ? "inline-block" : "none";
+        }
+    } catch (err) {
+        console.error("Failed to load admin notifications:", err);
+    }
+}
+
+function renderPendingPaymentRequests(requests) {
+    const container = document.getElementById("pending-requests-container");
+    if (!container) return;
+
+    const pending = requests.filter(r => (r.status || "").toUpperCase() === "PENDING");
+    if (pending.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:36px 20px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px dashed rgba(255,255,255,0.1);">
+                <i class="fa-solid fa-circle-check" style="font-size:2rem; color:#10b981; margin-bottom:10px;"></i>
+                <h4 style="margin:0 0 6px; color:#f8fafc; font-size:1rem;">Tất cả yêu cầu chuyển gói đã được xử lý!</h4>
+                <p style="margin:0; font-size:0.84rem; color:var(--text-secondary);">Hiện không có yêu cầu mua gói Pro / Enterprise nào đang chờ duyệt.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = pending.map(p => {
+        const plan = (p.plan || "").toLowerCase();
+        const planBadge = plan === "enterprise"
+            ? '<span class="badge" style="background:#fbbf24; color:#000; font-weight:800; padding:4px 10px; font-size:0.8rem;"><i class="fa-solid fa-gem"></i> ENTERPRISE (2.490.000đ)</span>'
+            : '<span class="badge pro" style="font-weight:700; padding:4px 10px; font-size:0.8rem;"><i class="fa-solid fa-bolt"></i> PRO (485.000đ)</span>';
+        
+        return `
+            <div class="pending-pay-card" style="background:rgba(15,23,42,0.8); border:1px solid rgba(244,114,182,0.3); border-radius:12px; padding:18px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                <div style="flex:1; min-width:280px;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+                        <span style="font-weight:700; font-size:1.05rem; color:#f8fafc;">@${escapeHtml(p.username || 'user')}</span>
+                        <span style="font-size:0.8rem; color:var(--text-secondary);">(${escapeHtml(p.email || 'Không có email')})</span>
+                        ${roleBadge(p.current_role)}
+                        <i class="fa-solid fa-arrow-right" style="color:var(--text-secondary); font-size:0.75rem;"></i>
+                        ${planBadge}
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:8px 16px; background:rgba(0,0,0,0.3); border-radius:8px; padding:10px 14px; font-size:0.84rem; border:1px solid rgba(255,255,255,0.06);">
+                        <div><span style="color:var(--text-secondary);">👤 Tên người chuyển:</span> <b style="color:#fbbf24;">${escapeHtml(p.sender_name || 'Chưa nhập')}</b></div>
+                        <div><span style="color:var(--text-secondary);">🏷️ Mã nội dung CK:</span> <code style="color:#38bdf8; background:rgba(56,189,248,0.1); padding:2px 6px; border-radius:4px;">${escapeHtml(p.ref_code)}</code></div>
+                        <div><span style="color:var(--text-secondary);">💰 Số tiền:</span> <b style="color:#34d399;">${Number(p.amount_vnd || 0).toLocaleString()} VNĐ</b></div>
+                        <div><span style="color:var(--text-secondary);">🕒 Thời gian:</span> <span style="color:var(--text-secondary);">${escapeHtml(p.created_at || '')}</span></div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button type="button" class="admin-button primary btn-approve-pay" data-id="${p.id}" data-user="${escapeHtml(p.username)}" data-plan="${escapeHtml(p.plan)}" style="background:linear-gradient(135deg, #059669, #10b981); border:none; padding:10px 18px; font-weight:700; border-radius:8px; box-shadow:0 4px 12px rgba(16,185,129,0.35); cursor:pointer;">
+                        <i class="fa-solid fa-circle-check"></i> Đồng Ý Duyệt Gói
+                    </button>
+                    <button type="button" class="admin-button danger btn-reject-pay" data-id="${p.id}" data-user="${escapeHtml(p.username)}" style="padding:10px 16px; font-weight:600; border-radius:8px; cursor:pointer;">
+                        <i class="fa-solid fa-circle-xmark"></i> Từ Chối
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    // Attach approve / reject click listeners
+    container.querySelectorAll(".btn-approve-pay").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const payId = btn.dataset.id;
+            const uname = btn.dataset.user;
+            const plan = btn.dataset.plan;
+            if (!confirm(`Xác nhận DUYỆT nâng cấp gói [${plan.toUpperCase()}] cho tài khoản @${uname}?`)) return;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang duyệt...';
+            try {
+                const res = await request(`/api/admin/payment-requests/${payId}/approve`, { method: "POST" });
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert(`Đã duyệt thành công và nâng cấp tài khoản @${uname} lên gói [${plan.toUpperCase()}]!`, "success");
+                    loadAdminNotifications();
+                    if (document.querySelector('.admin-view[data-view-panel="members"]')?.classList.contains("active")) loadMembers();
+                } else {
+                    showAlert(data.detail || "Không thể duyệt gói.", "danger");
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đồng Ý Duyệt Gói';
+                }
+            } catch (err) {
+                showAlert("Lỗi máy chủ: " + err.message, "danger");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đồng Ý Duyệt Gói';
+            }
+        });
+    });
+
+    container.querySelectorAll(".btn-reject-pay").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const payId = btn.dataset.id;
+            const uname = btn.dataset.user;
+            const reason = prompt(`Nhập lý do từ chối giao dịch của @${uname}:`, "Không tìm thấy giao dịch chuyển khoản");
+            if (reason === null) return;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+            try {
+                const res = await request(`/api/admin/payment-requests/${payId}/reject`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert(`Đã từ chối giao dịch #${payId} của @${uname}.`, "warn");
+                    loadAdminNotifications();
+                } else {
+                    showAlert(data.detail || "Không thể từ chối.", "danger");
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Từ Chối';
+                }
+            } catch (err) {
+                showAlert("Lỗi máy chủ: " + err.message, "danger");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Từ Chối';
+            }
+        });
+    });
+}
+
+function renderNotifsHistory(notifications, paymentRequests) {
+    const tbody = document.getElementById("notifs-history-tbody");
+    if (!tbody) return;
+
+    if (!paymentRequests || paymentRequests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-secondary); padding:24px;">Chưa có lịch sử giao dịch nào.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = paymentRequests.map(p => {
+        const st = (p.status || "").toUpperCase();
+        let statusBadge = '<span class="badge warn"><i class="fa-solid fa-clock"></i> Chờ duyệt</span>';
+        if (st === "APPROVED" || st === "COMPLETED") statusBadge = '<span class="badge success" style="background:#10b981; color:#fff;"><i class="fa-solid fa-check"></i> Đã duyệt</span>';
+        if (st === "REJECTED") statusBadge = '<span class="badge danger" style="background:#ef4444; color:#fff;"><i class="fa-solid fa-xmark"></i> Đã từ chối</span>';
+
+        const planBadge = (p.plan || "").toLowerCase() === "enterprise"
+            ? '<span class="badge" style="background:#fbbf24; color:#000; font-weight:700;">ENTERPRISE</span>'
+            : '<span class="badge pro">PRO</span>';
+
+        return `
+            <tr>
+                <td style="font-family:var(--font-code); font-size:0.8rem; color:var(--text-secondary);">#${p.id}</td>
+                <td><span class="badge" style="background:rgba(244,114,182,0.15); color:#f472b6; border:1px solid rgba(244,114,182,0.3);">MUA GÓI</span></td>
+                <td><b>Yêu cầu nâng cấp ${p.plan ? p.plan.toUpperCase() : ''}</b></td>
+                <td><b>@${escapeHtml(p.username || 'user')}</b></td>
+                <td style="color:#fbbf24; font-weight:600;">${escapeHtml(p.sender_name || 'N/A')}</td>
+                <td>${planBadge} <span style="font-size:0.8rem; color:var(--text-secondary);">(${Number(p.amount_vnd || 0).toLocaleString()}đ)</span></td>
+                <td><code style="color:#38bdf8; font-family:var(--font-code); font-size:0.8rem;">${escapeHtml(p.ref_code)}</code></td>
+                <td>${statusBadge}</td>
+                <td style="font-size:0.8rem; color:var(--text-secondary); white-space:nowrap;">${escapeHtml(p.created_at || '')}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+document.getElementById("btn-refresh-notifs")?.addEventListener("click", loadAdminNotifications);
+
 // ── INITIAL BOOT ──────────────────────────────────────────────────────────
-checkAuthAndLoad();
+checkAuthAndLoad().then(() => {
+    // Load notifications count badge for dev/superadmin on boot
+    const level = currentUser ? userLevel(currentUser) : 0;
+    if (level >= 8) {
+        loadAdminNotifications();
+    }
+});

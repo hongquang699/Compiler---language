@@ -3,9 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Local CP</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, max-snippet:0">
+    <meta name="bingbot" content="noindex, nofollow">
+    <title>CLUEOJ GATEKEEPER — Xác thực Quyền Quản trị</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #030712;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .gatekeeper-card {
+            width: 100%;
+            max-width: 460px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+        .shield-icon {
+            width: 68px;
+            height: 68px;
+            margin: 0 auto 18px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: all 0.3s ease;
+        }
+        .shield-icon.checking {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
+        }
+        .shield-icon.success {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            box-shadow: 0 0 25px rgba(34, 197, 94, 0.25);
+        }
+        .shield-icon.denied {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+        }
+        h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; color: #fff; }
+        p.subtitle { font-size: 0.85rem; color: #94a3b8; line-height: 1.5; margin-bottom: 20px; }
+        .status-box {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-return {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f8fafc;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-return:hover { background: rgba(255, 255, 255, 0.15); }
+    </style>
 </head>
 <body>
-    <script>window.location.replace("../admin-console.html");</script>
+    <div class="gatekeeper-card" id="gatekeeper-box">
+        <div class="shield-icon checking" id="status-icon">
+            <i class="fa-solid fa-shield-halved fa-spin"></i>
+        </div>
+        <h2 id="status-title">Kiểm tra Quyền Quản trị</h2>
+        <p class="subtitle" id="status-desc">Hệ thống đang thẩm tra vai trò người dùng trước khi cấp quyền chuyển hướng...</p>
+        
+        <div class="status-box" id="status-msg">
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+            <span>Đang gửi token xác thực đến máy chủ...</span>
+        </div>
+
+        <div id="action-area" style="display:none;">
+            <a href="../index.html" class="btn-return"><i class="fa-solid fa-arrow-left"></i> Quay lại IDE Studio</a>
+        </div>
+    </div>
+
+    <script>
+        (async function checkRoleAndRedirect() {
+            const iconEl = document.getElementById("status-icon");
+            const titleEl = document.getElementById("status-title");
+            const descEl = document.getElementById("status-desc");
+            const msgEl = document.getElementById("status-msg");
+            const actionEl = document.getElementById("action-area");
+
+            const token = localStorage.getItem("local_cp_token");
+            if (!token) {
+                denyAccess("Chưa đăng nhập. Vui lòng đăng nhập tài khoản Quản trị để tiếp tục.");
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/auth/me", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+
+                if (!res.ok) {
+                    denyAccess("Phiên đăng nhập không hợp lệ hoặc đã hết hạn.");
+                    return;
+                }
+
+                const data = await res.json();
+                const user = data.user || data;
+                const role = (user.role || (user.is_admin ? "admin" : "user")).toLowerCase();
+                const isPrivileged = user.is_admin || ["admin", "superadmin", "dev"].includes(role);
+
+                if (!isPrivileged) {
+                    denyAccess(`Tài khoản '@${user.username || "user"}' có vai trò [${role.toUpperCase()}], KHÔNG PHẢI Quản trị viên. Từ chối chuyển hướng!`);
+                    return;
+                }
+
+                // Authorized!
+                localStorage.setItem("local_cp_user", JSON.stringify(user));
+                iconEl.className = "shield-icon success";
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                titleEl.textContent = "Xác thực Thành công!";
+                descEl.textContent = `Chào mừng ${role.toUpperCase()} @${user.username}. Đang chuyển hướng vào bảng điều khiển...`;
+                msgEl.innerHTML = `<i class="fa-solid fa-shield-check" style="color:#4ade80;"></i> <span style="color:#4ade80;">ROLE: ${role.toUpperCase()} — Đang mở Admin Console...</span>`;
+                
+                setTimeout(() => {
+                    window.location.href = "../admin-console.html";
+                }, 300);
+
+            } catch (err) {
+                denyAccess("Lỗi kết nối đến máy chủ xác thực: " + err.message);
+            }
+
+            function denyAccess(reason) {
+                iconEl.className = "shield-icon denied";
+                iconEl.innerHTML = '<i class="fa-solid fa-ban"></i>';
+                titleEl.textContent = "Từ chối Quyền Truy Cập";
+                titleEl.style.color = "#f87171";
+                descEl.textContent = "Bạn không có quyền truy cập vào khu vực Quản trị ClueOJ Studio.";
+                msgEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#f87171;"></i> <span style="color:#f87171;">${reason}</span>`;
+                actionEl.style.display = "block";
+
+                // Auto-redirect back to index after 3 seconds
+                setTimeout(() => {
+                    window.location.replace("../index.html?error=unauthorized_admin_access");
+                }, 3000);
+            }
+        })();
+    </script>
 </body>
 </html>

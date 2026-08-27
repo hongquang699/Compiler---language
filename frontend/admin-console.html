@@ -3,12 +3,16 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, max-snippet:0">
+    <meta name="bingbot" content="noindex, nofollow">
     <title>ClueOJ Control Center | Multi-Role Admin Console</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="js/theme.js"></script>
+    <script src="js/web-armor.js"></script>
     <link rel="stylesheet" href="css/style.css?v=11.0">
     <link rel="stylesheet" href="css/admin.css?v=11.0">
     <link rel="stylesheet" href="css/glassmorphism-effects.css">
@@ -127,6 +131,7 @@
                 <button class="admin-nav" data-view="github"><i class="fa-brands fa-github"></i> Sao lưu GitHub</button>
                 <button class="admin-nav" data-view="members"><i class="fa-solid fa-users"></i> Thành viên</button>
                 <button class="admin-nav" data-view="security"><i class="fa-solid fa-shield-halved"></i> Bảo mật &amp; IP</button>
+                <button class="admin-nav superadmin-only" data-view="notifs" style="color: #f472b6;"><i class="fa-solid fa-bell"></i> Thông Báo &amp; Duyệt Gói <span class="badge" id="sidebar-notif-badge" style="background:#ef4444; color:#fff; font-size:0.65rem; margin-left:auto; display:none;">0</span></button>
                 <button class="admin-nav" data-view="monitoring"><i class="fa-solid fa-tower-broadcast"></i> Giám sát Máy chấm</button>
                 <button class="admin-nav" data-view="system"><i class="fa-solid fa-sliders"></i> Cấu hình Hệ thống</button>
                 <button class="admin-nav" data-view="anticheat_monitor"><i class="fa-solid fa-user-secret" style="color:#c084fc;"></i> Giám sát Chống Gian lận <span class="badge dev" style="font-size:0.62rem; margin-left:auto;">DEV</span></button>
@@ -1189,6 +1194,65 @@
                             </thead>
                             <tbody id="dev-web-action-stream-tbody">
                                 <tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-secondary);">Đang tải dữ liệu stream...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== THÔNG BÁO & DUYỆT GÓI VIEW (SUPERADMIN & DEV ONLY) ==================== -->
+            <section class="admin-view" data-view-panel="notifs">
+                <div class="view-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px 20px;">
+                    <div>
+                        <h2 style="font-size:1.3rem; margin:0 0 4px; display:flex; align-items:center; gap:10px; color: #f472b6;">
+                            <i class="fa-solid fa-bell"></i> Quản lý Thông Báo &amp; Duyệt Nâng Cấp Gói
+                            <span class="badge superadmin" style="font-size:0.7rem; background:rgba(244,114,182,0.2); color:#f472b6; border:1px solid #f472b6;">DEV &amp; SUPERADMIN ONLY</span>
+                        </h2>
+                        <p style="color:var(--text-secondary); margin:0; font-size:0.85rem;">Xác thực giao dịch chuyển khoản VietQR, đối soát họ tên người gửi và thực hiện phê duyệt nâng cấp hoặc từ chối gói của người mua.</p>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="admin-button secondary" id="btn-refresh-notifs" style="padding:8px 16px; font-size:0.84rem;"><i class="fa-solid fa-arrows-rotate"></i> Làm mới</button>
+                    </div>
+                </div>
+
+                <!-- PENDING APPROVAL REQUESTS CARD -->
+                <div class="admin-card" style="margin-bottom:24px; border:1px solid rgba(244, 114, 182, 0.35); background: rgba(15, 23, 42, 0.7); box-shadow: 0 10px 30px rgba(244,114,182,0.08);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+                        <h3 style="margin:0; font-size:1.1rem; color:#f472b6; display:flex; align-items:center; gap:8px;">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Yêu Cầu Mua Gói Chờ Phê Duyệt (<span id="pending-requests-count">0</span>)
+                        </h3>
+                        <span style="font-size:0.8rem; color:var(--text-secondary);"><i class="fa-solid fa-shield-halved" style="color:#f472b6;"></i> Chỉ tài khoản Dev và SuperAdmin có quyền thực thi</span>
+                    </div>
+                    <div id="pending-requests-container" style="display:flex; flex-direction:column; gap:14px;">
+                        <div style="text-align:center; padding:30px; color:var(--text-secondary);">
+                            <i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem; margin-bottom:10px; color:#f472b6;"></i>
+                            <p>Đang tải danh sách yêu cầu mua gói...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ALL SYSTEM NOTIFICATIONS & LOGS -->
+                <div class="admin-card">
+                    <h3 style="margin:0 0 16px; font-size:1.05rem; color:var(--text-bright); display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-list-check"></i> Toàn Bộ Lịch Sử Thông Báo &amp; Yêu Cầu Giao Dịch
+                    </h3>
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Loại</th>
+                                    <th>Thông báo</th>
+                                    <th>Tài khoản</th>
+                                    <th>Tên người CK</th>
+                                    <th>Gói / Số tiền</th>
+                                    <th>Mã Ref CK</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thời gian</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notifs-history-tbody">
+                                <tr><td colspan="9" style="text-align:center; color:var(--text-secondary); padding:20px;">Đang tải lịch sử thông báo...</td></tr>
                             </tbody>
                         </table>
                     </div>

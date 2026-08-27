@@ -348,8 +348,13 @@ class DatabaseManager:
             self._add_column_if_missing(cursor, "competitions", "format", "TEXT DEFAULT 'icpc'")
             self._add_column_if_missing(cursor, "competitions", "is_rated", "INTEGER DEFAULT 1")
             self._add_column_if_missing(cursor, "competitions", "access_code", "TEXT DEFAULT ''")
-            self._add_column_if_missing(cursor, "competitions", "scoreboard_visibility", "TEXT DEFAULT 'visible'")
             self._add_column_if_missing(cursor, "payments", "sender_name", "TEXT DEFAULT ''")
+            self._add_column_if_missing(cursor, "payments", "approved_by", "INTEGER")
+            self._add_column_if_missing(cursor, "payments", "approved_at", "TIMESTAMP")
+            self._add_column_if_missing(cursor, "payments", "notes", "TEXT DEFAULT ''")
+            self._add_column_if_missing(cursor, "admin_notifications", "action_status", "TEXT DEFAULT 'PENDING'")
+            self._add_column_if_missing(cursor, "admin_notifications", "payment_id", "INTEGER")
+            self._add_column_if_missing(cursor, "admin_notifications", "action_by", "INTEGER")
             self._add_column_if_missing(cursor, "users", "ai_usage_count", "INTEGER NOT NULL DEFAULT 0")
             self._add_column_if_missing(cursor, "users", "ai_usage_month", "TEXT NOT NULL DEFAULT ''")
             conn.commit()
@@ -1548,13 +1553,16 @@ class MemoryStore:
     PRIVILEGED_ROLES = {"admin", "superadmin", "dev"}
 
     def confirm_payment(self, user_id: int, plan: str, ref_code: str, sender_name: str = "") -> Dict[str, Any]:
-        """Record a payment, notify dev & superadmin, and upgrade user's role safely."""
+        """Record a pending payment request, notify dev & superadmin, awaiting approval."""
+        return self.create_payment_request(user_id=user_id, plan=plan, ref_code=ref_code, sender_name=sender_name)
+
+    def create_payment_request(self, user_id: int, plan: str, ref_code: str, sender_name: str = "") -> Dict[str, Any]:
+        """Create a pending payment request, notify dev & superadmin, awaiting approval."""
         import json
         plan = plan.lower()
         if plan not in self.PLAN_ROLES:
             raise ValueError(f"Unknown plan: {plan}")
         amount_vnd = self.PLAN_AMOUNTS[plan]
-        plan_role = self.PLAN_ROLES[plan]
         sender_name = (sender_name or "").strip()
 
         with self.db.get_connection() as conn:
@@ -1562,66 +1570,153 @@ class MemoryStore:
             username = user_row["username"] if user_row else f"User#{user_id}"
             current_role = user_row["role"] if user_row else "user"
 
-            # Preserve dev and superadmin roles so they never get demoted
+            # Insert payment as PENDING
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO payments (user_id, plan, amount_vnd, ref_code, sender_name, status) VALUES (?, ?, ?, ?, ?, 'PENDING')",
+                (user_id, plan, amount_vnd, ref_code, sender_name),
+            )
+            payment_id = cur.lastrowid
+
+            # Create notification for Dev and SuperAdmin with action buttons
+            plan_name_display = "Pro Developer (485.000đ)" if plan == "pro" else "Enterprise / Campus (2.490.000đ)"
+            notif_title = f"🔔 [YÊU CẦU MUA GÓI {plan.upper()}] Tài khoản '{username}' vừa chuyển khoản"
+            notif_msg = (
+                f"Tài khoản '{username}' vừa gửi yêu cầu nâng cấp gói {plan_name_display}.\n"
+                f"• Tên tài khoản: {username}\n"
+                f"• Họ tên khi chuyển khoản: {sender_name or 'Chưa cung cấp'}\n"
+                f"• Nội dung chuyển khoản: {ref_code}\n"
+                f"• Số tiền: {amount_vnd:,} VNĐ\n"
+                f"• Trạng thái: Đang chờ Dev / SuperAdmin xác nhận số dư và duyệt gói."
+            )
+            data_json = json.dumps({
+                "payment_id": payment_id,
+                "user_id": user_id,
+                "username": username,
+                "current_role": current_role,
+                "sender_name": sender_name,
+                "plan": plan,
+                "amount_vnd": amount_vnd,
+                "ref_code": ref_code,
+                "status": "PENDING"
+            })
+
+            conn.execute(
+                "INSERT INTO admin_notifications (type, title, message, data_json, is_read, action_status, payment_id) VALUES ('PAYMENT_REQUEST', ?, ?, ?, 0, 'PENDING', ?)",
+                (notif_title, notif_msg, data_json, payment_id),
+            )
+
+            # Log to security events
+            conn.execute(
+                "INSERT INTO security_events (ip, method, path, user_agent, status_code, reason) VALUES (?, ?, ?, ?, ?, ?)",
+                ("127.0.0.1", "POST", "/api/payment/confirm", "Payment System", 200, f"[PAYMENT_REQUEST] Acc: {username} | Tên CK: {sender_name or 'N/A'} | Gói: {plan.upper()} | Ref: {ref_code} | Status: PENDING"),
+            )
+            conn.commit()
+
+        return {
+            "payment_id": payment_id,
+            "status": "PENDING",
+            "plan": plan,
+            "role": current_role,
+            "amount_vnd": amount_vnd,
+            "username": username,
+            "sender_name": sender_name,
+            "ref_code": ref_code,
+            "message": "Yêu cầu nâng cấp gói đã được gửi thành công! Quản trị viên (Dev & SuperAdmin) đang kiểm tra giao dịch và sẽ duyệt gói cho bạn trong giây lát."
+        }
+
+    def approve_payment_request(self, payment_id: int, approved_by_user_id: int) -> Dict[str, Any]:
+        """Approve payment request, upgrade user to target plan, and mark notification."""
+        import json
+        with self.db.get_connection() as conn:
+            p = conn.execute("SELECT * FROM payments WHERE id = ?", (payment_id,)).fetchone()
+            if not p:
+                raise ValueError(f"Không tìm thấy giao dịch ID #{payment_id}")
+            if p["status"] == "APPROVED":
+                return {"success": True, "already_approved": True, "message": "Giao dịch này đã được duyệt trước đó."}
+
+            user_id = p["user_id"]
+            plan = p["plan"].lower()
+            plan_role = self.PLAN_ROLES.get(plan, "pro")
+
+            user_row = conn.execute("SELECT id, username, role FROM users WHERE id = ?", (user_id,)).fetchone()
+            username = user_row["username"] if user_row else f"User#{user_id}"
+            current_role = user_row["role"] if user_row else "user"
+
+            # Upgrade role (preserve dev / superadmin / admin)
             if current_role in ("dev", "superadmin", "admin"):
                 new_role = current_role
             else:
                 new_role = plan_role
 
             conn.execute(
-                "INSERT INTO payments (user_id, plan, amount_vnd, ref_code, sender_name, status) VALUES (?, ?, ?, ?, ?, 'COMPLETED')",
-                (user_id, plan, amount_vnd, ref_code, sender_name),
+                "UPDATE payments SET status = 'APPROVED', approved_by = ?, approved_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (approved_by_user_id, payment_id),
             )
             conn.execute(
                 "UPDATE users SET role = ? WHERE id = ?",
                 (new_role, user_id),
             )
-
-            # Create notification for Dev and SuperAdmin
-            plan_name_display = "Pro Developer (485.000đ)" if plan == "pro" else "Enterprise / Campus (2.490.000đ)"
-            notif_title = f"🔔 [MUA GÓI {plan.upper()}] Tài khoản '{username}' vừa chuyển khoản"
-            notif_msg = (
-                f"Tài khoản '{username}' vừa hoàn tất thanh toán gói {plan_name_display}.\n"
-                f"• Tên tài khoản: {username}\n"
-                f"• Họ tên khi chuyển khoản: {sender_name or 'Chưa cung cấp'}\n"
-                f"• Nội dung chuyển khoản: {ref_code}\n"
-                f"• Số tiền: {amount_vnd:,} VNĐ"
-            )
-            data_json = json.dumps({
-                "user_id": user_id,
-                "username": username,
-                "sender_name": sender_name,
-                "plan": plan,
-                "amount_vnd": amount_vnd,
-                "ref_code": ref_code,
-            })
-
             conn.execute(
-                "INSERT INTO admin_notifications (type, title, message, data_json, is_read) VALUES ('PAYMENT_UPGRADE', ?, ?, ?, 0)",
-                (notif_title, notif_msg, data_json),
+                "UPDATE admin_notifications SET action_status = 'APPROVED', is_read = 1, action_by = ? WHERE payment_id = ? OR (type = 'PAYMENT_REQUEST' AND data_json LIKE ?)",
+                (approved_by_user_id, payment_id, f'%"payment_id": {payment_id}%'),
             )
-
-            # Also log to security events / system audit log
-            conn.execute(
-                "INSERT INTO security_events (ip, method, path, user_agent, status_code, reason) VALUES (?, ?, ?, ?, ?, ?)",
-                ("127.0.0.1", "POST", "/api/payment/confirm", "Payment System", 200, f"[PAYMENT] Acc: {username} | Tên CK: {sender_name or 'N/A'} | Gói: {plan.upper()} | Ref: {ref_code}"),
-            )
-
             conn.commit()
+
         return {
-            "plan": plan, 
-            "role": new_role, 
-            "amount_vnd": amount_vnd,
+            "success": True,
+            "payment_id": payment_id,
+            "status": "APPROVED",
+            "user_id": user_id,
             "username": username,
-            "sender_name": sender_name,
-            "ref_code": ref_code
+            "new_role": new_role,
+            "plan": plan,
+            "message": f"Đã duyệt thành công và nâng cấp tài khoản '{username}' lên gói [{new_role.upper()}]."
         }
+
+    def reject_payment_request(self, payment_id: int, rejected_by_user_id: int, reason: str = "") -> Dict[str, Any]:
+        """Reject payment request, leave user role unchanged."""
+        with self.db.get_connection() as conn:
+            p = conn.execute("SELECT * FROM payments WHERE id = ?", (payment_id,)).fetchone()
+            if not p:
+                raise ValueError(f"Không tìm thấy giao dịch ID #{payment_id}")
+            
+            conn.execute(
+                "UPDATE payments SET status = 'REJECTED', approved_by = ?, approved_at = CURRENT_TIMESTAMP, notes = ? WHERE id = ?",
+                (rejected_by_user_id, reason, payment_id),
+            )
+            conn.execute(
+                "UPDATE admin_notifications SET action_status = 'REJECTED', is_read = 1, action_by = ? WHERE payment_id = ? OR (type = 'PAYMENT_REQUEST' AND data_json LIKE ?)",
+                (rejected_by_user_id, payment_id, f'%"payment_id": {payment_id}%'),
+            )
+            conn.commit()
+
+        return {
+            "success": True,
+            "payment_id": payment_id,
+            "status": "REJECTED",
+            "reason": reason,
+            "message": f"Đã từ chối giao dịch #{payment_id}."
+        }
+
+    def list_payment_requests(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """List all payment requests with user info and approval statuses."""
+        with self.db.get_connection() as conn:
+            rows = conn.execute("""
+                SELECT p.id, p.user_id, u.username, u.email, u.role AS current_role,
+                       p.plan, p.amount_vnd, p.ref_code, p.sender_name, p.status, p.approved_by, p.approved_at, p.notes, p.created_at
+                FROM payments p
+                LEFT JOIN users u ON p.user_id = u.id
+                ORDER BY p.id DESC
+                LIMIT ?
+            """, (limit,)).fetchall()
+            return [dict(r) for r in rows]
 
     def get_admin_notifications(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Return latest notifications for Dev and SuperAdmin."""
         with self.db.get_connection() as conn:
             rows = conn.execute(
-                "SELECT id, type, title, message, data_json, is_read, created_at FROM admin_notifications ORDER BY id DESC LIMIT ?",
+                "SELECT id, type, title, message, data_json, is_read, action_status, payment_id, created_at FROM admin_notifications ORDER BY id DESC LIMIT ?",
                 (limit,),
             ).fetchall()
             return [dict(r) for r in rows]
@@ -1757,16 +1852,22 @@ class MemoryStore:
     # Community Methods
     # =========================================================================
     def can_create_community(self, user_id: int) -> bool:
-        """Return True if the user is allowed to create communities."""
+        """Return True if the user is allowed to create communities (Pro, Enterprise, Admin, SuperAdmin, Dev)."""
         with self.db.get_connection() as conn:
-            row = conn.execute("SELECT role FROM users WHERE id = ?", (user_id,)).fetchone()
+            row = conn.execute("SELECT id, username, role, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
         if not row:
             return False
-        return row["role"] in self.CAN_CREATE_COMMUNITY_ROLES
+        username = str(row["username"] or "").lower()
+        if username == "dev":
+            return True
+        if bool(row["is_admin"]):
+            return True
+        role = str(row["role"] or "user").lower()
+        return role in self.CAN_CREATE_COMMUNITY_ROLES
 
     def create_community(self, name: str, description: str, privacy_mode: str, created_by: int) -> Dict[str, Any]:
         if not self.can_create_community(created_by):
-            raise PermissionError("Bạn cần gói Pro, Enterprise hoặc quyền Admin để tạo Community.")
+            raise PermissionError("Tính năng tạo Community chỉ dành riêng cho tài khoản đã nâng cấp gói PRO / ENTERPRISE hoặc tài khoản ADMIN / SUPERADMIN / DEV.")
         privacy_mode = privacy_mode if privacy_mode in ("public", "private") else "public"
         with self.db.get_connection() as conn:
             cursor = conn.execute(

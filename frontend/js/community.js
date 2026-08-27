@@ -420,22 +420,21 @@ async function confirmPayment() {
         });
         const data = await res.json();
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Tôi đã chuyển khoản — Xác nhận kích hoạt ngay';
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Tôi đã chuyển khoản — Gửi yêu cầu phê duyệt gói';
 
         if (res.ok) {
             document.getElementById('payment-modal').classList.add('hidden');
-            showToast(`🎉 Gửi thông báo thành công! Dev & SuperAdmin đã nhận được yêu cầu của '${data.username || currentUser?.username}' (Tên CK: '${senderName}'). Gói ${data.plan?.toUpperCase()} đã được kích hoạt.`);
-            // Reload user info
+            showToast(`🎉 Đã gửi yêu cầu xét duyệt gói ${data.plan?.toUpperCase()} thành công đến Dev & SuperAdmin. Tài khoản sẽ được nâng cấp ngay sau khi quản trị viên phê duyệt.`);
             await loadCurrentUser();
         } else {
             if (errEl) {
-                errEl.textContent = data.detail || 'Lỗi xác nhận thanh toán.';
+                errEl.textContent = data.detail || 'Lỗi gửi yêu cầu thanh toán.';
                 errEl.classList.remove('hidden');
             }
         }
     } catch (e) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Tôi đã chuyển khoản — Xác nhận kích hoạt ngay';
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Tôi đã chuyển khoản — Gửi yêu cầu phê duyệt gói';
         if (errEl) {
             errEl.textContent = 'Không thể kết nối máy chủ.';
             errEl.classList.remove('hidden');

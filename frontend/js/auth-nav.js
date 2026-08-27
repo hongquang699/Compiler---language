@@ -49,11 +49,6 @@
                             <i class="fa-solid fa-arrow-right-from-bracket"></i>
                         </button>
                     </div>
-                `;
-                const adminBtns = document.querySelectorAll('#admin-nav-btn, #admin-prob-nav-btn');
-                if (user.is_admin || ['admin', 'superadmin', 'dev'].includes(role.toLowerCase())) {
-                    adminBtns.forEach(btn => btn.classList.remove('hidden'));
-                }
             }
         });
     }
