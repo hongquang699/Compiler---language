@@ -1,9 +1,10 @@
-# 🤖 COMPILER---LANGUAGE — Competitive Programming & Algorithm SaaS Studio
+﻿# 🤖 COMPILER---LANGUAGE — Competitive Programming & Online Judge Ecosystem
 
-> **An Autonomous, Local-First AI Competitive Programming & Online Judge Ecosystem (C++, Python 3, Java, C, Rust, Go) with Real-Time Multi-Agent Pipelines, RAG Knowledge Hub, ClueOJ Contest Engine, Military-Grade Cybersecurity, VietQR Subscription Approval Workflow, and Community Hub.**
+> **An Autonomous, Local-First AI Competitive Programming Platform & Online Judge Ecosystem (C++17/20, Python 3, Java, C, Rust, Go, Pascal, JS, TS, C#) featuring Decoupled Modular Architecture, DMOJ/OJ-Master Judge Engine, Subtasks IOI Scoring, Custom Checkers, Multi-Agent AI Pipelines, RAG Knowledge Hub, VietQR Subscription Flow, and Developer Community Hub.**
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://python.org)
+[![DMOJ Judge](https://img.shields.io/badge/Judge_Engine-DMOJ_%26_VNOJ-orange?style=flat-square)](https://github.com/DMOJ/judge)
 [![SQLite](https://img.shields.io/badge/SQLite3-Database-003B57?style=flat-square&logo=sqlite)](https://sqlite.org)
 [![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-IDE-1e1e1e?style=flat-square&logo=visualstudiocode)](https://microsoft.github.io/monaco-editor/)
 [![VietQR](https://img.shields.io/badge/VietQR-Manual_Approval-00b14f?style=flat-square)](https://vietqr.io)
@@ -12,23 +13,50 @@
 
 ---
 
-## 🌟 Core Architecture & Features
+## 🌟 Core Architecture & Feature Matrix
 
-### 1. 🧠 Multi-Agent Autonomous Problem Solver
-- **Automated Problem Formulation**: Parses raw text or problem statement images (OCR Vision), extracts Input/Output specifications, constraints, and edge-cases.
+### 1. ⚙️ Decoupled Modular Backend Architecture
+To prevent errors in one subsystem from cascading and affecting the entire web platform, the monolithic backend is decomposed into **10 isolated APIRouters**:
+- `routers/auth.py`: User registration, Email OTP verification, login, JWT session management, user profile & submission histories.
+- `routers/admin.py`: System administration, judge cluster node monitoring, backup/restore, GitHub sync, and model settings.
+- `routers/problems.py`: Problem bank management, problem detail, testcase ZIP import/export, custom checkers, subtasks configuration, and rejudge engine.
+- `routers/contests.py`: Contest creation, live arena, leaderboard, clarifications Q&A, and scoreboard freeze.
+- `routers/community.py`: Developer groups, Club management, Forum discussion threads, hierarchical comments, and upvote/downvote reactions.
+- `routers/ai.py`: Streaming AI chat, autonomous multi-step solver pipeline, vision OCR problem extraction, and code translation.
+- `routers/rag.py`: Algorithm template retrieval, vector search, and document upload.
+- `routers/payments.py`: VietQR subscription checkout, approval/rejection console for SuperAdmin/Dev.
+- `routers/security.py`: Sentinel Bot SOC dashboard, IP blocking, anti-cheat detection, honeypot traps, and Dev immunity rule.
+- `routers/upload.py`: Profile avatars, problem images, and AI session attachments.
+- `core/dependencies.py`: Unified dependency injection and singletons management.
+
+---
+
+### 2. 🏛️ DMOJ & OJ-Master Judge Subsystem (`backend/judge/`)
+Integrated with the complete judge protocol and grading engine from **DMOJ / VNOI Online Judge**:
+- **Standard & Advanced Graders (`backend/judge/graders/`)**:
+  - `StandardGrader`: Token-by-token comparison (whitespace and newline agnostic).
+  - `ExactGrader`: Byte-for-byte exact character matching.
+  - `FloatGrader`: Floating-point comparator with relative and absolute tolerance ($\epsilon = 10^{-6}$).
+  - `CustomScriptGrader`: Executes custom Python checker scripts (`def check(inp, exp, out) -> bool`).
+- **Contest Scoring Formats (`backend/judge/contest_format/`)**:
+  - `ICPCContestFormat`: Solved problems count + 20-minute penalty per failed attempt.
+  - `IOIContestFormat`: Subtask-based scoring where points are awarded only when all test cases in a subtask pass.
+  - `VNOJContestFormat`: Standard VNOI contest scoring with 5-minute penalty and best submission tracking.
+  - `AtCoderContestFormat`: Maximum points + completion time tiebreaker.
+- **Judge Protocol & Optimization**:
+  - **Short-Circuiting**: Automatically terminates subsequent test cases in a failed batch (`SC - Short-Circuited`), saving critical compute resources.
+  - **Load Balancer (`balancer.py`)**: Least-load distribution across judge worker nodes with latency tracking and automatic failover.
+  - **Bridge Event Dispatcher (`protocol.py`)**: Real-time packet streaming (`grading-begin`, `test-case-status`, `batch-end`, `grading-end`).
+
+---
+
+### 3. 🧠 Multi-Agent Autonomous Problem Solver
+- **Automated Problem Formulation**: Parses raw text or problem statement images (OCR Vision), extracting constraints, I/O specifications, and edge cases.
 - **Complexity Planning**: Uses the $10^8$ ops/second rule to design asymptotically optimal algorithms ($O(1)$, $O(\log N)$, $O(N)$, $O(N \log N)$).
-- **Self-Healing & Auto-Debugging Loop**: Continuously compiles and tests solutions against sample and generated testcases. Automatically intercepts `WA`, `TLE`, `MLE`, `RTE` (SIGSEGV, SIGFPE), and `CE` errors, feeding diagnostics back into the LLM until reaching `AC`.
-- **Cross-Language Solution Converter**: Seamlessly translates algorithms between **C++17/20, Python 3, Java 17, C11, Rust, and Go**.
+- **Self-Healing & Auto-Debugging Loop**: Continuously compiles and tests solutions against sample and generated test cases. Automatically intercepts `WA`, `TLE`, `MLE`, `RTE` (SIGSEGV, SIGFPE), and `CE`, feeding diagnostics back into the LLM until reaching `AC`.
+- **Cross-Language Converter**: Seamlessly translates algorithms between **C++17/20, Python 3, Java 17, C11, Rust, Go, JavaScript, TypeScript, C#, and Pascal**.
 
-### 2. ⚡ Multi-Language Sandbox & 5-Worker Judge Pool
-- **Native Host Toolchains**: Auto-detects and orchestrates system compilers: `g++` (C++17/C++20 with `-O2`), `gcc`, `python3`, `javac/java`, `go`, and `Node.js`.
-- **High-Precision Sandbox**: Process-level resource monitoring (CPU time limits, peak RAM/resident set size tracking, syscall filtering).
-- **Distributed Judge Pool**: 5 independent concurrent judge workers for high-throughput stress testing and contest submissions.
-
-### 3. 🏆 ClueOJ Contest Builder & Problem Bank
-- **Official Contest Management**: Full support for ICPC & IOI contest formats, rated/unrated modes, access codes, and freeze/unfreeze scoreboards.
-- **ClueOJ Problem Import**: One-click import from ClueOJ folders containing `init.yml`, test archives, and problem statements.
-- **AI Testcase Synthesizer**: Generates boundary cases, extreme constraints ($N = 10^5$, negative numbers, disconnected graphs), and expected outputs from reference logic.
+---
 
 ### 4. 💳 VietQR Subscription & Manual Admin Approval Workflow
 - **Monthly Token Quota System**:
@@ -43,10 +71,15 @@
      - `[ ✕ Reject with Reason ]`: Rejects invalid transactions with reason logging.
   5. Cryptographic transaction validation with **HMAC-SHA256** tamper-proof digital signatures.
 
-### 5. 👥 Developer Communities Hub
-- **Access Gating**: Community creation is exclusively reserved for **`PRO`**, **`ENTERPRISE`**, **`ADMIN`**, **`SUPERADMIN`**, and **`DEV`** members.
-- **Free User Guard**: Non-upgraded users attempting community creation receive `HTTP 403 Forbidden` and are guided to the VietQR upgrade modal.
-- **Public & Private Communities**: Private communities feature join requests and approval controls by community owners.
+---
+
+### 5. 👥 Developer Communities & Discussion Forum
+- **Developer Communities**: Private and public clubs with join requests and membership controls.
+- **Forum Discussions**: Multi-category discussion threads, pinned & locked topics.
+- **Threaded Comments**: Multi-level nested replies on both Forum posts and Problem Bank challenges.
+- **Vote Reactions**: Upvote / Downvote system with live counter updates.
+
+---
 
 ### 6. 🛡️ Military-Grade Cybersecurity & Web Armor
 - **Client-Side Web Armor (`web-armor.js`)**:
@@ -58,15 +91,7 @@
   - Dangerous HTTP method blocker (`TRACE`, `TRACK`, `DEBUG`, `CONNECT` -> 405 Method Not Allowed).
   - Null-byte and path traversal filter (`%00`, `\x00`, `..%2f`, `..%5c` -> 400 Bad Request).
   - Threat scoring, honeypot traps, and automated scanner detection.
-- **Googlebot & Search Engine De-indexing**:
-  - Comprehensive `robots.txt` disallowing all administrative routes and APIs.
-  - `<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">` in all console files.
-  - `X-Robots-Tag: noindex, nofollow` HTTP response header for all admin endpoints.
-
-### 7. 🔐 Cryptographic Integrity Suite (`security/crypto.py`)
-- **Streaming SHA-256 Checksums**: High-speed chunked checksum computation for database backups, storage archives, and `ETag` headers.
-- **HMAC-SHA256 Signature Verification**: Constant-time signature comparison for payment webhooks and telemetry reports.
-- **Signed JWT Tokens**: HS256-signed session tokens for secure authentication.
+  - **Dev Immunity Rule**: The `dev` role holds absolute immunity from automated bans.
 
 ---
 
@@ -105,108 +130,83 @@ python run.py
 
 ### 3. Run Automated Verification Test Suite
 ```bash
-# Run comprehensive system test suite
-python -m unittest discover -s tests
-
-# Run payment approval & security verification tests
-python scratch/test_payment_approval_flow.py
-python scratch/test_community_roles.py
-```
-
----
-
-## 📐 System Architecture
-
-```
-                                ┌──────────────────────────────────────────────┐
-                                │           Monaco Web IDE Studio              │
-                                │  (Playground, Agent, Chat, RAG, Vault, Admin) │
-                                └──────────────────────┬───────────────────────┘
-                                                       │ HTTP / SSE Stream
-                                                       ▼
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                        FastAPI Application Server                                      │
-│                                                                                                        │
-│  ┌───────────────────────┐   ┌────────────────────────┐   ┌─────────────────────────────────────────┐  │
-│  │   Auth & RBAC Layer   │   │  AI Agent Pipeline     │   │     Security & Sentinel Radar           │  │
-│  │  (Token Auth, Dev/    │   │  (Planner, Evaluator,  │   │  (Anti-Cheat AST, Threat Scoring,       │  │
-│  │   Admin Guards)       │   │   Self-Debugging Loop) │   │   Web Armor, WAF, Honeypots)            │  │
-│  └──────────┬────────────┘   └───────────┬────────────┘   └────────────────────┬────────────────────┘  │
-│             │                            │                                     │                       │
-│  ┌──────────▼────────────┐   ┌───────────▼────────────┐   ┌────────────────────▼────────────────────┐  │
-│  │   SQLite Memory DB    │   │   Local / Cloud LLM    │   │    Multi-Language Sandbox & Judges      │  │
-│  │  (Users, Quota, Contests, │  (Ollama, DeepSeek,    │   │  (g++, gcc, python, java, go            │  │
-│  │   Payments, Approvals)│   │   Qwen, Gemma, LLaMA)  │   │   5-Worker Isolated Execution Pool)     │  │
-│  └───────────────────────┘   └────────────────────────┘   └─────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+# Run comprehensive system & DMOJ test suite (33 tests)
+python -m unittest discover tests
 ```
 
 ---
 
 ## 📂 Project Structure
 
-```
+```text
 Local-Ai/
-├── CHAY_DU_AN.bat             # 1-Click automated server & browser launcher
-├── start.bat                  # Fast batch launcher
-├── run.bat                    # Shortcut launcher
-├── run.py                     # Python server launcher & browser opener
-├── config.yaml                # Core config (LLM model, g++ paths, timeouts, RAG)
-├── requirements.txt           # Python dependencies
+├── CHAY_DU_AN.bat                 # 1-Click automated server & browser launcher
+├── start.bat                      # Fast batch launcher
+├── run.py                         # Python server launcher & browser opener
+├── config.yaml                    # Core config (LLM model, g++ paths, timeouts, RAG)
+├── requirements.txt               # Python dependencies
 ├── data/
-│   ├── memory.db              # SQLite database (Users, contests, submissions, payments)
-│   ├── knowledge_base/        # RAG algorithm templates (DSU, Segment Tree, Dijkstra, etc.)
-│   ├── media/                 # Problem images & user avatars
-│   └── sandbox/               # Ephemeral compile & execution binaries
+│   ├── memory.db                  # SQLite database (Users, contests, submissions, payments)
+│   ├── knowledge_base/            # RAG algorithm templates (DSU, Segment Tree, Dijkstra, etc.)
+│   ├── media/                     # Problem images & user avatars
+│   └── sandbox/                   # Ephemeral compile & execution binaries
 ├── security/
-│   ├── crypto.py              # SHA-256 streaming, HMAC-SHA256 signatures, JWT helpers
-│   └── middleware.py          # WAF, HTTP method filtering, X-Robots-Tag headers
+│   ├── crypto.py                  # SHA-256 streaming, HMAC-SHA256 signatures, JWT helpers
+│   ├── middleware.py              # WAF, HTTP method filtering, X-Robots-Tag headers
+│   └── sentinel_bot.py            # Threat analysis, honeypot traps & AST anti-cheat
 ├── backend/
-│   ├── main.py                # Main FastAPI backend & REST / SSE endpoints
+│   ├── main.py                    # Modular FastAPI master entrypoint
 │   ├── core/
-│   │   ├── config.py          # Configuration manager
-│   │   └── auth_helper.py     # Role levels & token helpers
-│   ├── ai/
-│   │   ├── agent.py           # Multi-step Agent & Auto-Fixing Pipeline
-│   │   ├── planner.py         # Algorithm design & complexity estimator
-│   │   ├── prompt_engine.py   # Competitive Programming system prompts
-│   │   ├── evaluator.py       # Static analysis & error diagnostics
-│   │   ├── llm_client.py      # Ollama & LLM streaming client
-│   │   └── vision_client.py   # OCR image extraction client
+│   │   ├── dependencies.py        # Centralized dependency injection & singletons
+│   │   ├── config.py              # Configuration manager
+│   │   ├── auth_helper.py         # Role levels & token helpers
+│   │   └── storage.py             # File storage service
+│   ├── routers/                   # 10 Decoupled Domain Routers
+│   │   ├── auth.py                # Auth, registration, OTP, profiles, submissions
+│   │   ├── admin.py               # Node judges, members, storage backup, GitHub sync
+│   │   ├── problems.py            # Problem Bank, custom checkers, zip import, rejudge
+│   │   ├── contests.py            # Contests arena, scoreboard, clarifications, freeze
+│   │   ├── community.py           # Communities, forum posts, comments, reactions
+│   │   ├── ai.py                  # AI Chat, solver pipeline, OCR vision, code convert
+│   │   ├── rag.py                 # RAG search & knowledge indexing
+│   │   ├── payments.py            # VietQR checkout & admin package approvals
+│   │   ├── security.py            # IP block, Sentinel radar, anti-cheat logs
+│   │   └── upload.py              # Avatars, problem images, AI attachments
+│   ├── judge/                     # DMOJ / OJ-Master Judge Subsystem
+│   │   ├── engine.py              # Master DMOJ Judge Engine (Short-circuit, subtasks)
+│   │   ├── verdicts.py            # Standard Verdicts (AC, WA, TLE, MLE, RTE, CE, SC)
+│   │   ├── pool.py                # Multi-worker execution pool
+│   │   ├── balancer/              # Least-load balancing & health monitoring
+│   │   ├── bridge/                # Real-time packet event dispatcher
+│   │   ├── contest_format/        # ICPC, IOI Subtasks, VNOJ, AtCoder
+│   │   └── graders/               # Standard, Exact, Float (1e-6), Custom Python
 │   ├── tools/
-│   │   ├── sandbox.py         # Resource-monitored execution environment
-│   │   ├── compiler.py        # Compiler wrapper (g++, gcc, javac, rustc, go)
-│   │   ├── tester.py          # Output validator & test evaluator
-│   │   └── generator.py       # Boundary testcase synthesizer
-│   ├── judge/
-│   │   └── pool.py            # 5-Worker Judge Pool manager
-│   ├── security/
-│   │   └── sentinel.py        # Threat analysis, honeypot traps & AST anti-cheat
+│   │   ├── sandbox.py             # Process sandbox (timeout & memory limit)
+│   │   ├── compiler.py            # Multi-language compiler wrapper
+│   │   ├── tester.py              # Testrunner and batch execution
+│   │   └── generator.py           # Boundary testcase synthesizer
+│   ├── ai/
+│   │   ├── agent.py               # Autonomous Solve Pipeline with self-debugging
+│   │   ├── planner.py             # Algorithm design & complexity estimator
+│   │   ├── prompt_engine.py       # Competitive Programming system prompts
+│   │   ├── evaluator.py           # Static analysis & error diagnostics
+│   │   ├── llm_client.py          # Ollama & LLM streaming client
+│   │   └── vision_client.py       # OCR image extraction client
 │   ├── rag/
-│   │   ├── store.py           # Vector search & document retrieval
-│   │   ├── embedding.py       # Hybrid BM25 & vector embeddings
-│   │   └── loader.py          # Markdown & source code chunker
+│   │   ├── store.py               # Vector search & document retrieval
+│   │   └── embedding.py           # Hybrid BM25 & vector embeddings
 │   └── database/
-│       └── db.py              # SQLite storage, payment approvals & migrations
+│       └── db.py                  # SQLite storage, migrations & transactions
 └── frontend/
-    ├── landing.html           # SaaS Landing & Pricing Page (Served at /)
-    ├── index.html             # Monaco Web IDE & Client Application
-    ├── admin-console.html     # Dedicated Dev & SuperAdmin Master Console
-    ├── admin-problems.html    # Problem Studio & AI Authoring Studio
-    ├── contest.html           # Contest Arena & Leaderboard
-    ├── community.html         # Developer Communities Hub
-    ├── css/
-    │   ├── style.css          # Cyberpunk IDE dark theme & animations
-    │   ├── admin.css          # Admin Console styles
-    │   └── glassmorphism.css  # Glassmorphism UI effects
-    └── js/
-        ├── app.js             # Client IDE, AI Agent, Monaco & Quota logic
-        ├── admin.js           # Admin Dashboard, Judge monitoring & Payment Approvals
-        ├── admin-problems.js  # Problem authoring & test generator logic
-        ├── competition.js     # Contest timers, scoreboard & submissions
-        ├── community.js       # Communities management & permission gating
-        ├── landing.js         # Landing page interactivity & VietQR modal
-        └── web-armor.js       # Client-side anti-tampering & debugger traps
+    ├── landing.html               # SaaS Landing & Pricing Page (Served at /)
+    ├── workspace.html             # Monaco Web IDE & Client Studio
+    ├── admin-console.html         # Dedicated Dev & SuperAdmin Master Console
+    ├── admin-problems.html        # Problem Studio & AI Authoring Studio
+    ├── contest.html               # Contest Arena & Leaderboard
+    ├── community.html             # Developer Communities & Forum Hub
+    ├── problems.html              # Problem Bank explorer
+    ├── css/                       # Cyberpunk IDE dark theme & glassmorphism
+    └── js/                        # Modular frontend client scripts & Web Armor
 ```
 
 ---
