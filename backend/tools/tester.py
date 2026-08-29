@@ -15,35 +15,75 @@ class TestRunner:
         lines = [line.rstrip() for line in text.strip().splitlines()]
         return "\n".join(lines)
 
-    def compare_outputs(self, actual: str, expected: str) -> bool:
-        """Compares actual vs expected output with tolerance for floating point numbers or whitespace differences."""
+    def compare_outputs(
+        self,
+        actual: str,
+        expected: str,
+        checker_type: str = "token",
+        checker_code: Optional[str] = None,
+        test_input: str = ""
+    ) -> bool:
+        """
+        Compares actual vs expected output based on checker_type:
+        - 'exact': exact byte/character match
+        - 'token': whitespace/newline insensitive token-by-token comparison (default)
+        - 'float_tol': float comparison with 1e-6 relative and absolute tolerance
+        - 'custom_script': executes custom Python checker script
+        """
+        if checker_type == "exact":
+            return actual == expected
+
         norm_act = self.normalize_output(actual)
         norm_exp = self.normalize_output(expected)
         if norm_act == norm_exp:
             return True
 
-        # Try token by token comparison
+        if checker_type == "custom_script" and checker_code:
+            try:
+                local_scope: Dict[str, Any] = {}
+                global_scope = {
+                    "test_input": test_input,
+                    "expected_output": expected,
+                    "user_output": actual,
+                }
+                exec(checker_code, global_scope, local_scope)
+                check_fn = local_scope.get("check") or global_scope.get("check")
+                if callable(check_fn):
+                    return bool(check_fn(test_input, expected, actual))
+            except Exception:
+                return False
+
+        # Token by token comparison
         act_tokens = norm_act.split()
         exp_tokens = norm_exp.split()
         if len(act_tokens) != len(exp_tokens):
             return False
 
+        tolerance = 1e-6
         for a, e in zip(act_tokens, exp_tokens):
             if a == e:
                 continue
-            # Try float comparison with 1e-6 precision
+            # Try float comparison
             try:
                 fa = float(a)
                 fe = float(e)
-                if abs(fa - fe) > 1e-6 and abs(fa - fe) / (abs(fe) + 1e-9) > 1e-6:
+                if abs(fa - fe) > tolerance and abs(fa - fe) / (abs(fe) + 1e-9) > tolerance:
                     return False
             except ValueError:
                 return False
         return True
 
-    def run_tests(self, source_code: str, testcases: List[Dict[str, str]], language: str = "cpp", timeout: Optional[float] = None) -> Dict[str, Any]:
+    def run_tests(
+        self,
+        source_code: str,
+        testcases: List[Dict[str, str]],
+        language: str = "cpp",
+        timeout: Optional[float] = None,
+        checker_type: str = "token",
+        checker_code: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
-        Compiles/prepares code for the specified language (C++, Python 3, Java, Rust, Go, C) and runs tests in parallel.
+        Compiles/prepares code for the specified language and runs tests in parallel with custom checker support.
         """
         # Step 1: Prepare/Compile
         comp_res = self.compiler.prepare_and_compile(source_code, language=language)
@@ -74,7 +114,7 @@ class TestRunner:
 
             if verdict == "OK":
                 if exp:
-                    if self.compare_outputs(actual_out, exp):
+                    if self.compare_outputs(actual_out, exp, checker_type=checker_type, checker_code=checker_code, test_input=inp):
                         verdict = "AC"
                     else:
                         verdict = "WA"

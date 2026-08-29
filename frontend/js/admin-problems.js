@@ -270,6 +270,7 @@ function renderProblems() {
                 <td style="text-align:right; white-space:nowrap;">
                     <button class="btn-action-pill" style="${toggleBtnStyle}" onclick="toggleProblemVisibility(${p.id})" title="${toggleBtnTitle}"><i class="${toggleBtnIcon}"></i> ${isHidden ? 'Hiện' : 'Ẩn'}</button>
                     <button class="btn-action-pill" style="color:#38bdf8; border-color:rgba(56,189,248,0.35); background:rgba(56,189,248,0.08);" onclick="openViewTestCasesModal('${p.code || p.id}')" title="Xem chi tiết bộ Test Cases"><i class="fa-solid fa-vial-circle-check"></i> Tests (${p.test_count ?? 0})</button>
+                    <button class="btn-action-pill" style="color:#38bdf8; border-color:rgba(56,189,248,0.35);" onclick="openAdvancedModal(${p.id})" title="Cấu hình Checker / Editorial / Subtasks chuẩn VNOJ"><i class="fa-solid fa-sliders"></i> Nâng cao</button>
                     <button class="btn-action-pill" style="color:#cbd5e1;" onclick="openEditProblemModal(${p.id})" title="Chỉnh sửa Đề bài"><i class="fa-solid fa-pen"></i> Sửa</button>
                     <button class="btn-action-pill" style="color:#c084fc; border-color:rgba(168,85,247,0.35); background:rgba(168,85,247,0.08);" onclick="openTestModal(${p.id})" title="Quản lý / AI sinh Testcases"><i class="fa-solid fa-wand-magic-sparkles"></i> Sửa Tests</button>
                     <button class="btn-action-pill" style="color:#fb7185; border-color:rgba(251,113,133,0.35); background:rgba(251,113,133,0.08);" onclick="deleteProblem(${p.id})" title="Xóa Bài tập"><i class="fa-solid fa-trash"></i></button>
@@ -861,8 +862,102 @@ window.copySingleTestExpected = function(encodedExp) {
     });
 };
 
+// ── ADVANCED MODAL & VNOJ / DMOJ EXTENSIONS ──────────────────────────────
+window.openAdvancedModal = async function(probId) {
+    const prob = allProblems.find(p => p.id === probId);
+    if (!prob) {
+        showAlert("Không tìm thấy thông tin bài tập.", "danger");
+        return;
+    }
+    document.getElementById("adv-prob-id").value = prob.id;
+    document.getElementById("adv-checker-type").value = prob.checker_type || "token";
+    document.getElementById("adv-checker-code").value = prob.checker_code || "";
+    document.getElementById("adv-tags").value = prob.tags || "";
+    document.getElementById("adv-difficulty").value = prob.difficulty || "Easy";
+    document.getElementById("adv-editorial").value = prob.editorial || "";
+    document.getElementById("adv-subtasks-json").value = prob.subtasks_json || "";
+
+    const codeGrp = document.getElementById("adv-checker-code-group");
+    if (codeGrp) {
+        codeGrp.style.display = (prob.checker_type === "custom_script") ? "block" : "none";
+    }
+
+    document.getElementById("advanced-modal-title").innerHTML = `
+        <i class="fa-solid fa-sliders"></i> Cấu hình Nâng cao: [${escapeHtml(prob.code || prob.id)}] ${escapeHtml(prob.title)}
+    `;
+    document.getElementById("advanced-problem-modal-overlay")?.classList.add("open");
+};
+
+window.closeAdvancedModal = function() {
+    document.getElementById("advanced-problem-modal-overlay")?.classList.remove("open");
+};
+
+document.getElementById("adv-checker-type")?.addEventListener("change", function() {
+    const codeGrp = document.getElementById("adv-checker-code-group");
+    if (codeGrp) {
+        codeGrp.style.display = (this.value === "custom_script") ? "block" : "none";
+    }
+});
+
+document.getElementById("advanced-problem-form")?.addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const probId = parseInt(document.getElementById("adv-prob-id").value);
+    const payload = {
+        checker_type: document.getElementById("adv-checker-type").value,
+        checker_code: document.getElementById("adv-checker-code").value,
+        tags: document.getElementById("adv-tags").value.trim(),
+        difficulty: document.getElementById("adv-difficulty").value,
+        editorial: document.getElementById("adv-editorial").value,
+        subtasks_json: document.getElementById("adv-subtasks-json").value.trim()
+    };
+
+    try {
+        const res = await request(`/api/admin/problems/${probId}/advanced`, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || "Không thể lưu cấu hình nâng cao.");
+        }
+        showAlert("✓ Đã lưu cấu hình nâng cao & Checker thành công!", "success");
+        closeAdvancedModal();
+        loadProblems();
+    } catch (err) {
+        showAlert(err.message, "danger");
+    }
+});
+
+document.getElementById("btn-adv-export-zip")?.addEventListener("click", async function() {
+    const probId = document.getElementById("adv-prob-id").value;
+    if (!probId) return;
+    const token = getAuthToken();
+    window.open(`${API_BASE}/api/admin/problems/${probId}/export-tests-zip?token=${encodeURIComponent(token)}`, "_blank");
+});
+
+document.getElementById("btn-adv-rejudge")?.addEventListener("click", async function() {
+    const probId = document.getElementById("adv-prob-id").value;
+    if (!probId) return;
+    if (!confirm("Bạn có chắc chắn muốn chấm lại toàn bộ các bài nộp của bài tập này không?")) return;
+
+    this.disabled = true;
+    this.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang chấm lại...`;
+    try {
+        const res = await request(`/api/admin/problems/${probId}/rejudge`, { method: "POST" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Chấm lại thất bại.");
+        showAlert(`✓ ${data.message}`, "success");
+    } catch (err) {
+        showAlert(err.message, "danger");
+    } finally {
+        this.disabled = false;
+        this.innerHTML = `<i class="fa-solid fa-rotate"></i> Chấm lại toàn bộ (Rejudge)`;
+    }
+});
+
 document.getElementById("tc-inspector-search")?.addEventListener("input", renderInspectorTestCards);
 document.getElementById("tc-inspector-filter")?.addEventListener("change", renderInspectorTestCards);
 
 // BOOT
 checkAuthAndLoad();
+

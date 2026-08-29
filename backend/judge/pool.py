@@ -66,14 +66,43 @@ class JudgePool:
                 return best_index
         raise RuntimeError("Không còn máy chấm nào đang bật.")
 
-    def judge(self, source_code: str, language: str, tests: List[Dict[str, Any]], timeout: float = 2) -> Dict[str, Any]:
+    def judge(
+        self,
+        source_code: str,
+        language: str,
+        tests: List[Dict[str, Any]],
+        timeout: float = 2,
+        checker_type: str = "token",
+        checker_code: Optional[str] = None,
+        subtasks: Optional[List[Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
         worker_index = self._select_worker()
-        future = self._executor.submit(self._run, worker_index, source_code, language, tests, timeout)
+        future = self._executor.submit(
+            self._run,
+            worker_index,
+            source_code,
+            language,
+            tests,
+            timeout,
+            checker_type,
+            checker_code,
+            subtasks
+        )
         result = future.result()
         result["judge_id"] = f"local-judge-{worker_index + 1:02d}"
         return result
 
-    def _run(self, worker_index: int, source_code: str, language: str, tests: List[Dict[str, Any]], timeout: float) -> Dict[str, Any]:
+    def _run(
+        self,
+        worker_index: int,
+        source_code: str,
+        language: str,
+        tests: List[Dict[str, Any]],
+        timeout: float,
+        checker_type: str = "token",
+        checker_code: Optional[str] = None,
+        subtasks: Optional[List[Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
         base_worker = self._workers[worker_index]
         base_comp = base_worker.compiler
         
@@ -92,7 +121,14 @@ class JudgePool:
         job_runner = TestRunner(compiler=job_compiler, sandbox=base_worker.sandbox)
 
         try:
-            result = job_runner.run_tests(source_code, tests, language=language, timeout=timeout)
+            result = job_runner.run_tests(
+                source_code,
+                tests,
+                language=language,
+                timeout=timeout,
+                checker_type=checker_type,
+                checker_code=checker_code
+            )
         finally:
             # Clean up job sandbox dir
             try:
@@ -106,7 +142,7 @@ class JudgePool:
                 self._completed_jobs[worker_index] += 1
             else:
                 self._failed_jobs[worker_index] += 1
-        return score_result(result, tests)
+        return score_result(result, tests, subtasks=subtasks)
 
     def status(self) -> List[Dict[str, Any]]:
         return [{

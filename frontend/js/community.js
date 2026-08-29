@@ -562,15 +562,333 @@ function bindUI() {
     document.getElementById('refresh-btn').addEventListener('click', loadCommunities);
 
     // Close modals on backdrop click
-    ['create-community-modal', 'payment-modal', 'auth-modal'].forEach(id => {
-        document.getElementById(id).addEventListener('click', function(e) {
-            if (e.target === this) this.classList.add('hidden');
-        });
+    ['create-community-modal', 'payment-modal', 'auth-modal', 'create-post-modal', 'post-detail-modal'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('click', function(e) {
+                if (e.target === this) this.classList.add('hidden');
+            });
+        }
     });
-    document.getElementById('community-detail-modal').addEventListener('click', function(e) {
+    document.getElementById('community-detail-modal')?.addEventListener('click', function(e) {
         if (e.target === this) this.classList.add('hidden');
     });
+
+    // Tab switcher between Groups and Forum
+    document.getElementById('tab-groups-btn')?.addEventListener('click', () => switchTab('groups'));
+    document.getElementById('tab-forum-btn')?.addEventListener('click', () => switchTab('forum'));
+
+    // Forum event listeners
+    document.getElementById('forum-search')?.addEventListener('input', () => {
+        const q = document.getElementById('forum-search').value.trim();
+        const cat = document.getElementById('forum-category-filter').value;
+        loadForumPosts(cat, q);
+    });
+    document.getElementById('forum-category-filter')?.addEventListener('change', () => {
+        const q = document.getElementById('forum-search').value.trim();
+        const cat = document.getElementById('forum-category-filter').value;
+        loadForumPosts(cat, q);
+    });
+    document.getElementById('forum-refresh-btn')?.addEventListener('click', () => {
+        const q = document.getElementById('forum-search').value.trim();
+        const cat = document.getElementById('forum-category-filter').value;
+        loadForumPosts(cat, q);
+    });
+    document.getElementById('btn-create-post')?.addEventListener('click', () => {
+        if (!currentUser) {
+            document.getElementById('auth-modal')?.classList.remove('hidden');
+            return;
+        }
+        document.getElementById('create-post-modal')?.classList.remove('hidden');
+    });
+    document.getElementById('close-post-modal')?.addEventListener('click', () => {
+        document.getElementById('create-post-modal')?.classList.add('hidden');
+    });
+    document.getElementById('close-post-detail-modal')?.addEventListener('click', () => {
+        document.getElementById('post-detail-modal')?.classList.add('hidden');
+    });
+    document.getElementById('create-post-form')?.addEventListener('submit', handleCreatePost);
+    document.getElementById('btn-submit-comment')?.addEventListener('click', handleSubmitComment);
 }
+
+function switchTab(tab) {
+    const groupsBtn = document.getElementById('tab-groups-btn');
+    const forumBtn = document.getElementById('tab-forum-btn');
+    const secGroups = document.getElementById('section-groups');
+    const secForum = document.getElementById('section-forum');
+
+    if (tab === 'forum') {
+        groupsBtn?.classList.remove('btn-ide-run', 'active');
+        groupsBtn?.classList.add('btn-ide-ghost');
+        forumBtn?.classList.remove('btn-ide-ghost');
+        forumBtn?.classList.add('btn-ide-run', 'active');
+        if (secGroups) secGroups.style.display = 'none';
+        if (secForum) secForum.style.display = 'block';
+        loadForumPosts();
+    } else {
+        forumBtn?.classList.remove('btn-ide-run', 'active');
+        forumBtn?.classList.add('btn-ide-ghost');
+        groupsBtn?.classList.remove('btn-ide-ghost');
+        groupsBtn?.classList.add('btn-ide-run', 'active');
+        if (secGroups) secGroups.style.display = 'block';
+        if (secForum) secForum.style.display = 'none';
+        loadCommunities();
+    }
+}
+
+// ============================================================
+// FORUM & DISCUSSIONS LOGIC
+// ============================================================
+let allForumPosts = [];
+let activePostId = null;
+
+async function loadForumPosts(category = 'all', q = '') {
+    const container = document.getElementById('forum-posts-container');
+    if (!container) return;
+    try {
+        let url = `${API}/api/forum/posts?page=1&limit=30`;
+        if (category && category !== 'all') url += `&category=${encodeURIComponent(category)}`;
+        if (q) url += `&q=${encodeURIComponent(q)}`;
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Không tải được danh sách bài viết.');
+        const data = await res.json();
+        allForumPosts = data.posts || [];
+        renderForumPosts(allForumPosts);
+    } catch (err) {
+        container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);">${err.message}</div>`;
+    }
+}
+
+function renderForumPosts(posts) {
+    const container = document.getElementById('forum-posts-container');
+    if (!container) return;
+    if (posts.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 50px 20px; background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;">
+                <i class="fa-solid fa-comments" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 12px;"></i>
+                <h4 style="color: var(--text-secondary); margin-bottom: 6px;">Chưa có bài viết nào trong chủ đề này</h4>
+                <p style="color: var(--text-muted); font-size: 0.82rem;">Hãy là người đầu tiên chia sẻ kiến thức hoặc đặt câu hỏi!</p>
+                <button class="btn-ide btn-ide-run btn-sm" onclick="document.getElementById('btn-create-post').click()" style="margin-top: 10px;">
+                    <i class="fa-solid fa-pen-nib"></i> Viết bài mới ngay
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    const catBadge = {
+        general: '<span style="color:#38bdf8;background:rgba(56,189,248,0.12);padding:3px 9px;border-radius:6px;font-size:0.75rem;font-weight:700;"><i class="fa-solid fa-comments"></i> Thảo luận</span>',
+        tutorial: '<span style="color:#34d399;background:rgba(52,211,153,0.12);padding:3px 9px;border-radius:6px;font-size:0.75rem;font-weight:700;"><i class="fa-solid fa-lightbulb"></i> Hướng dẫn</span>',
+        editorial: '<span style="color:#c084fc;background:rgba(168,85,247,0.12);padding:3px 9px;border-radius:6px;font-size:0.75rem;font-weight:700;"><i class="fa-solid fa-book-open"></i> Lời giải</span>',
+        announcement: '<span style="color:#fbbf24;background:rgba(245,158,11,0.12);padding:3px 9px;border-radius:6px;font-size:0.75rem;font-weight:700;"><i class="fa-solid fa-bullhorn"></i> Thông báo</span>'
+    };
+
+    container.innerHTML = posts.map(p => {
+        const isPinned = p.is_pinned ? '<span style="color:#fbbf24;margin-right:6px;" title="Bài viết được ghim"><i class="fa-solid fa-thumbtack"></i></span>' : '';
+        const isLocked = p.is_locked ? '<span style="color:#f87171;margin-right:6px;" title="Đã khóa bình luận"><i class="fa-solid fa-lock"></i></span>' : '';
+        const tags = (p.tags || '').split(',').filter(Boolean).map(t => `<span style="font-size:0.72rem;color:var(--text-muted);background:rgba(255,255,255,0.05);padding:2px 7px;border-radius:4px;">#${escHtml(t.trim())}</span>`).join(' ');
+
+        return `
+            <div class="community-card" style="cursor: pointer; transition: transform 0.2s, border-color 0.2s;" onclick="openPostDetail(${p.id})">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                            ${catBadge[p.category] || catBadge.general}
+                            ${isPinned}
+                            ${isLocked}
+                            <span style="color: var(--text-muted); font-size: 0.78rem;">Đăng bởi <strong style="color: var(--accent-cyan);">@${escHtml(p.username)}</strong> · ${formatDate(p.created_at)}</span>
+                        </div>
+                        <h3 style="color: var(--text-bright); font-size: 1.1rem; font-weight: 700; margin: 0 0 8px; line-height: 1.4;">
+                            ${escHtml(p.title)}
+                        </h3>
+                        <p style="color: var(--text-secondary); font-size: 0.84rem; margin: 0 0 12px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                            ${escHtml(p.content.substring(0, 200))}...
+                        </p>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                            ${tags}
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end; flex-shrink: 0;">
+                        <span style="font-size: 0.8rem; color: var(--accent-cyan); background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.2); padding: 4px 10px; border-radius: 8px; font-weight: 600;">
+                            <i class="fa-solid fa-arrow-up"></i> ${p.upvotes || 0}
+                        </span>
+                        <span style="font-size: 0.76rem; color: var(--text-muted);">
+                            <i class="fa-solid fa-comment"></i> ${p.comment_count || 0}
+                        </span>
+                        <span style="font-size: 0.74rem; color: var(--text-dim);">
+                            <i class="fa-solid fa-eye"></i> ${p.view_count || 0}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function handleCreatePost(e) {
+    e.preventDefault();
+    const title = document.getElementById('post-title').value.trim();
+    const category = document.getElementById('post-category').value;
+    const tags = document.getElementById('post-tags').value.trim();
+    const content = document.getElementById('post-content').value.trim();
+
+    if (!title || !content) {
+        showToast('Vui lòng điền tiêu đề và nội dung bài viết.', 'error');
+        return;
+    }
+
+    const token = localStorage.getItem('auth_token');
+    try {
+        const res = await fetch(`${API}/api/forum/posts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ title, category, tags, content })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Không thể đăng bài viết.');
+        showToast('✓ Đã đăng bài viết thảo luận thành công!');
+        document.getElementById('create-post-modal')?.classList.add('hidden');
+        document.getElementById('create-post-form').reset();
+        loadForumPosts();
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+window.openPostDetail = async function(postId) {
+    activePostId = postId;
+    const token = localStorage.getItem('auth_token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    try {
+        const res = await fetch(`${API}/api/forum/posts/${postId}`, { headers });
+        if (!res.ok) throw new Error('Không thể tải bài viết.');
+        const { post } = await res.json();
+
+        const contentEl = document.getElementById('post-detail-content');
+        if (contentEl) {
+            contentEl.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+                            <span style="color: var(--accent-cyan); font-weight: 700; font-size: 0.85rem;"><i class="fa-solid fa-user"></i> @${escHtml(post.username)}</span>
+                            <span style="color: var(--text-dim); font-size: 0.78rem;">· ${formatDate(post.created_at)}</span>
+                        </div>
+                        <h2 style="color: var(--text-bright); font-size: 1.35rem; font-weight: 800; margin: 0; line-height: 1.35;">
+                            ${escHtml(post.title)}
+                        </h2>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn-action-pill" onclick="handlePostReact(${post.id}, 'up')" style="color: var(--accent-cyan); border-color: rgba(56,189,248,0.3);">
+                            <i class="fa-solid fa-arrow-up"></i> Upvote (${post.upvotes || 0})
+                        </button>
+                        <button class="btn-action-pill" onclick="handlePostReact(${post.id}, 'down')" style="color: var(--text-muted);">
+                            <i class="fa-solid fa-arrow-down"></i> (${post.downvotes || 0})
+                        </button>
+                    </div>
+                </div>
+                <div style="background: rgba(2,6,23,0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 20px; color: var(--text-bright); font-size: 0.9rem; line-height: 1.65; white-space: pre-wrap; word-break: break-word;">
+                    ${escHtml(post.content)}
+                </div>
+            `;
+        }
+        document.getElementById('post-detail-modal')?.classList.remove('hidden');
+        loadPostComments(postId);
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+};
+
+async function loadPostComments(postId) {
+    const container = document.getElementById('post-comments-container');
+    const countEl = document.getElementById('post-detail-comment-count');
+    if (!container) return;
+
+    try {
+        const res = await fetch(`${API}/api/forum/posts/${postId}/comments`);
+        if (!res.ok) throw new Error('Không thể tải bình luận.');
+        const { comments } = await res.json();
+        if (countEl) countEl.textContent = comments.length;
+
+        if (comments.length === 0) {
+            container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.82rem; text-align: center; padding: 12px 0;">Chưa có bình luận nào. Hãy chia sẻ ý kiến của bạn!</p>`;
+            return;
+        }
+
+        container.innerHTML = comments.map(c => `
+            <div style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-weight: 700; color: var(--accent-cyan); font-size: 0.82rem;">@${escHtml(c.username)}</span>
+                    <span style="color: var(--text-dim); font-size: 0.74rem;">${formatDate(c.created_at)}</span>
+                </div>
+                <div style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap;">
+                    ${escHtml(c.content)}
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.8rem;">${err.message}</p>`;
+    }
+}
+
+async function handleSubmitComment() {
+    const input = document.getElementById('new-comment-input');
+    const content = input?.value.trim();
+    if (!content || !activePostId) {
+        showToast('Vui lòng nhập nội dung bình luận.', 'error');
+        return;
+    }
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        showToast('Vui lòng đăng nhập để bình luận.', 'error');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API}/api/forum/posts/${activePostId}/comments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ content })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Gửi bình luận thất bại.');
+        input.value = '';
+        showToast('✓ Đã gửi bình luận!');
+        loadPostComments(activePostId);
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+window.handlePostReact = async function(postId, reactionType) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        showToast('Vui lòng đăng nhập để bình chọn.', 'error');
+        return;
+    }
+    try {
+        const res = await fetch(`${API}/api/forum/react`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ target_type: 'post', target_id: postId, reaction_type: reactionType })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Bình chọn thất bại.');
+        openPostDetail(postId);
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+};
 
 // ============================================================
 // Helpers
@@ -602,3 +920,4 @@ function showToast(message, type = 'success') {
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
 }
+

@@ -72,33 +72,150 @@
             </div>
         </div>
 
-        <!-- FILTER BAR -->
-        <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;">
-            <div class="rag-search-box" style="flex:1;min-width:200px;">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="search" id="community-search" placeholder="Tìm kiếm community..." autocomplete="off">
-            </div>
-            <select id="community-filter" class="header-select">
-                <option value="all">Tất cả</option>
-                <option value="public">Công khai</option>
-                <option value="private">Riêng tư</option>
-            </select>
-            <button class="btn-ide btn-ide-ghost btn-xs" id="refresh-btn" title="Tải lại"><i class="fa-solid fa-rotate-right"></i></button>
+        <!-- VIEW MODE SWITCHER TABS -->
+        <div style="display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <button class="btn-ide btn-ide-run btn-sm tab-switch-btn active" id="tab-groups-btn" style="padding: 8px 18px;">
+                <i class="fa-solid fa-people-group"></i> Nhóm &amp; Câu lạc bộ
+            </button>
+            <button class="btn-ide btn-ide-ghost btn-sm tab-switch-btn" id="tab-forum-btn" style="padding: 8px 18px;">
+                <i class="fa-solid fa-comments"></i> Diễn đàn Thảo luận &amp; Lời giải
+            </button>
         </div>
 
-        <!-- COMMUNITY GRID -->
-        <div class="community-grid" id="community-grid">
-            <div class="community-empty-state" id="community-empty">
-                <i class="fa-solid fa-people-group" style="font-size:3rem;color:var(--text-muted);margin-bottom:16px;"></i>
-                <h3 style="color:var(--text-secondary);">Chưa có community nào</h3>
-                <p style="color:var(--text-muted);font-size:0.85rem;">Hãy là người đầu tiên tạo cộng đồng lập trình thi đấu!</p>
-                <button class="btn-ide btn-ide-run btn-sm" onclick="document.getElementById('create-community-btn').click()" style="margin-top:14px;">
-                    <i class="fa-solid fa-plus"></i> Tạo Community đầu tiên
-                </button>
+        <!-- SECTION 1: COMMUNITY GROUPS -->
+        <div id="section-groups">
+            <!-- FILTER BAR -->
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;">
+                <div class="rag-search-box" style="flex:1;min-width:200px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="search" id="community-search" placeholder="Tìm kiếm community..." autocomplete="off">
+                </div>
+                <select id="community-filter" class="header-select">
+                    <option value="all">Tất cả</option>
+                    <option value="public">Công khai</option>
+                    <option value="private">Riêng tư</option>
+                </select>
+                <button class="btn-ide btn-ide-ghost btn-xs" id="refresh-btn" title="Tải lại"><i class="fa-solid fa-rotate-right"></i></button>
+            </div>
+
+            <!-- COMMUNITY GRID -->
+            <div class="community-grid" id="community-grid">
+                <div class="community-empty-state" id="community-empty">
+                    <i class="fa-solid fa-people-group" style="font-size:3rem;color:var(--text-muted);margin-bottom:16px;"></i>
+                    <h3 style="color:var(--text-secondary);">Chưa có community nào</h3>
+                    <p style="color:var(--text-muted);font-size:0.85rem;">Hãy là người đầu tiên tạo cộng đồng lập trình thi đấu!</p>
+                    <button class="btn-ide btn-ide-run btn-sm" onclick="document.getElementById('create-community-btn').click()" style="margin-top:14px;">
+                        <i class="fa-solid fa-plus"></i> Tạo Community đầu tiên
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: FORUM DISCUSSIONS -->
+        <div id="section-forum" style="display: none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:1;">
+                    <div class="rag-search-box" style="flex:1;min-width:220px;max-width:360px;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="search" id="forum-search" placeholder="Tìm kiếm bài viết, chủ đề, lời giải..." autocomplete="off">
+                    </div>
+                    <select id="forum-category-filter" class="header-select">
+                        <option value="all">⚡ Tất cả Chủ đề</option>
+                        <option value="announcement">📢 Thông báo (Announcements)</option>
+                        <option value="tutorial">💡 Hướng dẫn &amp; Thuật toán</option>
+                        <option value="editorial">📖 Lời giải &amp; Phân tích</option>
+                        <option value="general">💬 Thảo luận chung</option>
+                    </select>
+                    <button class="btn-ide btn-ide-ghost btn-xs" id="forum-refresh-btn" title="Tải lại"><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+                <div>
+                    <button class="btn-ide btn-ide-run btn-sm" id="btn-create-post">
+                        <i class="fa-solid fa-pen-nib"></i> Viết bài mới
+                    </button>
+                </div>
+            </div>
+
+            <!-- POSTS LIST -->
+            <div id="forum-posts-container" style="display:flex;flex-direction:column;gap:14px;">
+                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--accent-cyan); margin-bottom: 8px;"></i>
+                    <p>Đang nạp bài viết diễn đàn...</p>
+                </div>
             </div>
         </div>
 
     </main>
+
+    <!-- CREATE FORUM POST MODAL -->
+    <div class="auth-modal hidden" id="create-post-modal" role="dialog">
+        <div class="auth-card" style="width: min(840px, 95vw); max-width: 840px;">
+            <div class="auth-form-area" style="padding: 28px 32px; width: 100%;">
+                <button class="auth-close" id="close-post-modal" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
+                <div style="margin-bottom: 18px;">
+                    <h3 style="color: var(--accent-cyan); margin: 0 0 4px; font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-pen-nib"></i> Đăng Bài Viết Thảo Luận Mới
+                    </h3>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0;">Chia sẻ kiến thức, kinh nghiệm thuật toán, hoặc đặt câu hỏi cho cộng đồng.</p>
+                </div>
+                <form id="create-post-form" style="display:grid;gap:14px;">
+                    <div>
+                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Tiêu đề bài viết</label>
+                        <input type="text" id="post-title" class="auth-input" placeholder="VD: Chia sẻ kỹ thuật Tối ưu Quy hoạch Động trên Cây (DP on Trees)..." required>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Chuyên mục</label>
+                            <select id="post-category" class="header-select" style="width: 100%;">
+                                <option value="general">💬 Thảo luận chung</option>
+                                <option value="tutorial">💡 Hướng dẫn &amp; Thuật toán</option>
+                                <option value="editorial">📖 Lời giải &amp; Phân tích</option>
+                                <option value="announcement">📢 Thông báo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Tags (phân cách bởi dấu phẩy)</label>
+                            <input type="text" id="post-tags" class="auth-input" placeholder="dp, tree, graph, icpc">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Nội dung bài viết (Markdown / Code / LaTeX)</label>
+                        <textarea id="post-content" style="width: 100%; min-height: 200px; background: rgba(10,18,35,0.85); border: 1px solid rgba(56,189,248,0.3); border-radius: 8px; padding: 12px; color: var(--text-bright); font-family: var(--font-mono, monospace); font-size: 0.86rem; resize: vertical;" placeholder="Nhập nội dung bài viết chi tiết tại đây..." required></textarea>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+                        <button type="button" class="btn-ide btn-ide-ghost btn-sm" onclick="document.getElementById('create-post-modal').classList.add('hidden')">Hủy</button>
+                        <button type="submit" class="btn-ide btn-ide-run btn-sm"><i class="fa-solid fa-paper-plane"></i> Đăng bài ngay</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- POST DETAIL & COMMENTS MODAL -->
+    <div class="auth-modal hidden" id="post-detail-modal" role="dialog">
+        <div class="auth-card" style="width: min(940px, 95vw); max-width: 940px; max-height: 90vh; overflow-y: auto;">
+            <div class="auth-form-area" style="padding: 28px 34px; width: 100%;">
+                <button class="auth-close" id="close-post-detail-modal" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
+                <div id="post-detail-content">
+                    <!-- Dynamic Post Details & Markdown -->
+                </div>
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 24px 0 20px;">
+                <div id="post-comments-section">
+                    <h4 style="color: var(--accent-cyan); font-size: 1rem; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-comments"></i> Bình luận &amp; Thảo luận (<span id="post-detail-comment-count">0</span>)
+                    </h4>
+                    <!-- Comment Input -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 18px;">
+                        <textarea id="new-comment-input" placeholder="Viết bình luận của bạn..." style="flex: 1; min-height: 70px; background: rgba(10,18,35,0.85); border: 1px solid rgba(56,189,248,0.3); border-radius: 8px; padding: 10px; color: var(--text-bright); font-size: 0.85rem; resize: vertical;"></textarea>
+                        <button class="btn-ide btn-ide-run btn-sm" id="btn-submit-comment" style="align-self: flex-end; height: 42px;">
+                            <i class="fa-solid fa-reply"></i> Gửi
+                        </button>
+                    </div>
+                    <!-- Comments Container -->
+                    <div id="post-comments-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ======================================================================
          CREATE COMMUNITY MODAL

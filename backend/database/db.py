@@ -23,7 +23,9 @@ class DatabaseManager:
     def __init__(self, db_path: str = "data/memory.db"):
         self.db_path = db_path
         self._track_changes = False
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        dir_name = os.path.dirname(db_path)
+        if dir_name:
+            os.makedirs(dir_name, exist_ok=True)
         self._init_db()
         self._track_changes = True
 
@@ -329,14 +331,86 @@ class DatabaseManager:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS forum_posts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    author_id INTEGER NOT NULL,
+                    category TEXT NOT NULL DEFAULT 'general',
+                    tags TEXT DEFAULT '',
+                    community_id INTEGER,
+                    view_count INTEGER DEFAULT 0,
+                    is_pinned INTEGER DEFAULT 0,
+                    is_locked INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS forum_comments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    post_id INTEGER,
+                    problem_code TEXT,
+                    author_id INTEGER NOT NULL,
+                    parent_id INTEGER,
+                    content TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS forum_reactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    target_type TEXT NOT NULL,
+                    target_id INTEGER NOT NULL,
+                    reaction_type TEXT NOT NULL DEFAULT 'up',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(user_id, target_type, target_id)
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS contest_clarifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    competition_id INTEGER NOT NULL,
+                    problem_code TEXT DEFAULT 'GENERAL',
+                    user_id INTEGER NOT NULL,
+                    question TEXT NOT NULL,
+                    answer TEXT DEFAULT '',
+                    answered_by INTEGER,
+                    is_public INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    answered_at TIMESTAMP,
+                    FOREIGN KEY (competition_id) REFERENCES competitions(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS problem_subtasks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    problem_id INTEGER NOT NULL,
+                    subtask_num INTEGER NOT NULL,
+                    points REAL NOT NULL DEFAULT 0,
+                    description TEXT DEFAULT '',
+                    test_indices_json TEXT DEFAULT '[]',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (problem_id) REFERENCES competition_problems(id) ON DELETE CASCADE
+                )
+            """)
             self._add_column_if_missing(cursor, "sessions", "user_id", "INTEGER")
             self._add_column_if_missing(cursor, "solved_problems", "user_id", "INTEGER")
             self._add_column_if_missing(cursor, "submissions", "user_id", "INTEGER")
             self._add_column_if_missing(cursor, "submissions", "competition_id", "INTEGER")
+            self._add_column_if_missing(cursor, "submissions", "problem_code", "TEXT")
             self._add_column_if_missing(cursor, "submissions", "language", "TEXT")
             self._add_column_if_missing(cursor, "submissions", "score", "REAL DEFAULT 0")
             self._add_column_if_missing(cursor, "submissions", "passed_tests", "INTEGER DEFAULT 0")
             self._add_column_if_missing(cursor, "submissions", "total_tests", "INTEGER DEFAULT 0")
+            self._add_column_if_missing(cursor, "submissions", "subtask_results_json", "TEXT DEFAULT '[]'")
+            self._add_column_if_missing(cursor, "submissions", "rejudged_count", "INTEGER DEFAULT 0")
             self._add_column_if_missing(cursor, "auth_tokens", "expires_at", "TIMESTAMP")
             self._add_column_if_missing(cursor, "users", "role", "TEXT NOT NULL DEFAULT 'user'")
             self._add_column_if_missing(cursor, "users", "is_admin", "INTEGER NOT NULL DEFAULT 0")
@@ -353,6 +427,14 @@ class DatabaseManager:
             self._add_column_if_missing(cursor, "competitions", "format", "TEXT DEFAULT 'icpc'")
             self._add_column_if_missing(cursor, "competitions", "is_rated", "INTEGER DEFAULT 1")
             self._add_column_if_missing(cursor, "competitions", "access_code", "TEXT DEFAULT ''")
+            self._add_column_if_missing(cursor, "competitions", "freeze_minutes", "INTEGER DEFAULT 0")
+            self._add_column_if_missing(cursor, "competitions", "is_frozen", "INTEGER DEFAULT 0")
+            self._add_column_if_missing(cursor, "competition_problems", "checker_type", "TEXT DEFAULT 'token'")
+            self._add_column_if_missing(cursor, "competition_problems", "checker_code", "TEXT DEFAULT ''")
+            self._add_column_if_missing(cursor, "competition_problems", "tags", "TEXT DEFAULT ''")
+            self._add_column_if_missing(cursor, "competition_problems", "difficulty", "TEXT DEFAULT 'Easy'")
+            self._add_column_if_missing(cursor, "competition_problems", "editorial", "TEXT DEFAULT ''")
+            self._add_column_if_missing(cursor, "competition_problems", "subtasks_json", "TEXT DEFAULT '[]'")
             self._add_column_if_missing(cursor, "payments", "sender_name", "TEXT DEFAULT ''")
             self._add_column_if_missing(cursor, "payments", "approved_by", "INTEGER")
             self._add_column_if_missing(cursor, "payments", "approved_at", "TIMESTAMP")
@@ -374,6 +456,11 @@ class DatabaseManager:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_admin_notifs_read ON admin_notifications(is_read, action_status)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_comm_members_uid ON community_members(user_id, community_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_comp_prob_cid ON competition_problems(competition_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_forum_posts_cat ON forum_posts(category, created_at)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_forum_comments_post ON forum_comments(post_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_forum_comments_prob ON forum_comments(problem_code)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_clarifications_comp ON contest_clarifications(competition_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_forum_reactions_target ON forum_reactions(target_type, target_id)")
 
             conn.commit()
             self._ensure_default_admin()
@@ -2053,4 +2140,461 @@ class MemoryStore:
             conn.execute("DELETE FROM communities WHERE id = ?", (community_id,))
             conn.commit()
             return True
+
+    # =========================================================================
+    # FORUM / COMMUNITY DISCUSSIONS & POSTS
+    # =========================================================================
+    def create_forum_post(
+        self,
+        title: str,
+        content: str,
+        author_id: int,
+        category: str = "general",
+        tags: str = "",
+        community_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        with self.db.get_connection() as conn:
+            cursor = conn.execute("""
+                INSERT INTO forum_posts (title, content, author_id, category, tags, community_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (title.strip(), content.strip(), author_id, category.lower(), tags.strip(), community_id))
+            post_id = cursor.lastrowid
+            conn.commit()
+            return self.get_forum_post(post_id, increment_view=False)
+
+    def list_forum_posts(
+        self,
+        category: Optional[str] = None,
+        q: Optional[str] = None,
+        community_id: Optional[int] = None,
+        page: int = 1,
+        limit: int = 20
+    ) -> Dict[str, Any]:
+        with self.db.get_connection() as conn:
+            query = """
+                SELECT p.*, u.username, u.avatar_path, u.role as author_role,
+                       (SELECT COUNT(*) FROM forum_comments c WHERE c.post_id = p.id) as comment_count,
+                       (SELECT COUNT(*) FROM forum_reactions r WHERE r.target_type = 'post' AND r.target_id = p.id AND r.reaction_type = 'up') as upvotes,
+                       (SELECT COUNT(*) FROM forum_reactions r WHERE r.target_type = 'post' AND r.target_id = p.id AND r.reaction_type = 'down') as downvotes
+                FROM forum_posts p
+                JOIN users u ON u.id = p.author_id
+                WHERE 1=1
+            """
+            params: List[Any] = []
+            if category and category != "all":
+                query += " AND p.category = ?"
+                params.append(category.lower())
+            if community_id:
+                query += " AND p.community_id = ?"
+                params.append(community_id)
+            if q:
+                query += " AND (p.title LIKE ? OR p.content LIKE ? OR p.tags LIKE ?)"
+                kw = f"%{q.strip()}%"
+                params.extend([kw, kw, kw])
+
+            query += " ORDER BY p.is_pinned DESC, p.created_at DESC"
+            
+            # Count total
+            count_query = f"SELECT COUNT(*) as total FROM ({query})"
+            total = conn.execute(count_query, params).fetchone()["total"]
+
+            # Pagination
+            offset = max(0, (page - 1) * limit)
+            query += f" LIMIT {limit} OFFSET {offset}"
+            rows = conn.execute(query, params).fetchall()
+
+            return {
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "total_pages": (total + limit - 1) // limit if total > 0 else 1,
+                "posts": [dict(r) for r in rows]
+            }
+
+    def get_forum_post(self, post_id: int, increment_view: bool = True, viewer_user_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            if increment_view:
+                conn.execute("UPDATE forum_posts SET view_count = view_count + 1 WHERE id = ?", (post_id,))
+                conn.commit()
+
+            row = conn.execute("""
+                SELECT p.*, u.username, u.avatar_path, u.role as author_role,
+                       (SELECT COUNT(*) FROM forum_comments c WHERE c.post_id = p.id) as comment_count,
+                       (SELECT COUNT(*) FROM forum_reactions r WHERE r.target_type = 'post' AND r.target_id = p.id AND r.reaction_type = 'up') as upvotes,
+                       (SELECT COUNT(*) FROM forum_reactions r WHERE r.target_type = 'post' AND r.target_id = p.id AND r.reaction_type = 'down') as downvotes
+                FROM forum_posts p
+                JOIN users u ON u.id = p.author_id
+                WHERE p.id = ?
+            """, (post_id,)).fetchone()
+            if not row:
+                return None
+            data = dict(row)
+            data["user_reaction"] = self.get_user_reaction("post", post_id, viewer_user_id) if viewer_user_id else None
+            return data
+
+    def update_forum_post(self, post_id: int, requester_user_id: int, user_role: str, title: str, content: str, category: Optional[str] = None, tags: Optional[str] = None) -> bool:
+        with self.db.get_connection() as conn:
+            post = conn.execute("SELECT author_id FROM forum_posts WHERE id = ?", (post_id,)).fetchone()
+            if not post:
+                return False
+            if post["author_id"] != requester_user_id and user_role not in self.PRIVILEGED_ROLES:
+                raise PermissionError("Bạn không có quyền chỉnh sửa bài viết này.")
+            conn.execute("""
+                UPDATE forum_posts
+                SET title = ?, content = ?, category = COALESCE(?, category), tags = COALESCE(?, tags), updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (title.strip(), content.strip(), category, tags, post_id))
+            conn.commit()
+            return True
+
+    def delete_forum_post(self, post_id: int, requester_user_id: int, user_role: str) -> bool:
+        with self.db.get_connection() as conn:
+            post = conn.execute("SELECT author_id FROM forum_posts WHERE id = ?", (post_id,)).fetchone()
+            if not post:
+                return False
+            if post["author_id"] != requester_user_id and user_role not in self.PRIVILEGED_ROLES:
+                raise PermissionError("Bạn không có quyền xóa bài viết này.")
+            conn.execute("DELETE FROM forum_posts WHERE id = ?", (post_id,))
+            conn.execute("DELETE FROM forum_comments WHERE post_id = ?", (post_id,))
+            conn.execute("DELETE FROM forum_reactions WHERE target_type = 'post' AND target_id = ?", (post_id,))
+            conn.commit()
+            return True
+
+    def toggle_post_pin(self, post_id: int, is_pinned: Optional[int] = None) -> bool:
+        with self.db.get_connection() as conn:
+            if is_pinned is None:
+                conn.execute("UPDATE forum_posts SET is_pinned = 1 - is_pinned WHERE id = ?", (post_id,))
+            else:
+                conn.execute("UPDATE forum_posts SET is_pinned = ? WHERE id = ?", (1 if is_pinned else 0, post_id))
+            conn.commit()
+            return True
+
+    def toggle_post_lock(self, post_id: int, is_locked: Optional[int] = None) -> bool:
+        with self.db.get_connection() as conn:
+            if is_locked is None:
+                conn.execute("UPDATE forum_posts SET is_locked = 1 - is_locked WHERE id = ?", (post_id,))
+            else:
+                conn.execute("UPDATE forum_posts SET is_locked = ? WHERE id = ?", (1 if is_locked else 0, post_id))
+            conn.commit()
+            return True
+
+    # =========================================================================
+    # COMMENTS (FOR POSTS & PROBLEMS)
+    # =========================================================================
+    def create_comment(
+        self,
+        author_id: int,
+        content: str,
+        post_id: Optional[int] = None,
+        problem_code: Optional[str] = None,
+        parent_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        if not content.strip():
+            raise ValueError("Nội dung bình luận không được để trống.")
+        if not post_id and not problem_code:
+            raise ValueError("Bình luận phải gắn với một bài viết hoặc bài tập.")
+
+        with self.db.get_connection() as conn:
+            if post_id:
+                post = conn.execute("SELECT is_locked FROM forum_posts WHERE id = ?", (post_id,)).fetchone()
+                if post and post["is_locked"]:
+                    raise PermissionError("Bài viết này đã bị khóa bình luận.")
+
+            cursor = conn.execute("""
+                INSERT INTO forum_comments (post_id, problem_code, author_id, parent_id, content)
+                VALUES (?, ?, ?, ?, ?)
+            """, (post_id, problem_code.upper() if problem_code else None, author_id, parent_id, content.strip()))
+            comment_id = cursor.lastrowid
+            conn.commit()
+
+            row = conn.execute("""
+                SELECT c.*, u.username, u.avatar_path, u.role as author_role
+                FROM forum_comments c
+                JOIN users u ON u.id = c.author_id
+                WHERE c.id = ?
+            """, (comment_id,)).fetchone()
+            data = dict(row)
+            data["upvotes"] = 0
+            data["downvotes"] = 0
+            data["user_reaction"] = None
+            return data
+
+    def list_post_comments(self, post_id: int, viewer_user_id: Optional[int] = None) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute("""
+                SELECT c.*, u.username, u.avatar_path, u.role as author_role,
+                       (SELECT COUNT(*) FROM forum_reactions r WHERE r.target_type = 'comment' AND r.target_id = c.id AND r.reaction_type = 'up') as upvotes,
+                       (SELECT COUNT(*) FROM forum_reactions r WHERE r.target_type = 'comment' AND r.target_id = c.id AND r.reaction_type = 'down') as downvotes
+                FROM forum_comments c
+                JOIN users u ON u.id = c.author_id
+                WHERE c.post_id = ?
+                ORDER BY c.created_at ASC
+            """, (post_id,)).fetchall()
+            comments = [dict(r) for r in rows]
+            if viewer_user_id:
+                for c in comments:
+                    c["user_reaction"] = self.get_user_reaction("comment", c["id"], viewer_user_id)
+            return comments
+
+    def list_problem_comments(self, problem_code: str, viewer_user_id: Optional[int] = None) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            rows = conn.execute("""
+                SELECT c.*, u.username, u.avatar_path, u.role as author_role,
+                       (SELECT COUNT(*) FROM forum_reactions r WHERE r.target_type = 'comment' AND r.target_id = c.id AND r.reaction_type = 'up') as upvotes,
+                       (SELECT COUNT(*) FROM forum_reactions r WHERE r.target_type = 'comment' AND r.target_id = c.id AND r.reaction_type = 'down') as downvotes
+                FROM forum_comments c
+                JOIN users u ON u.id = c.author_id
+                WHERE UPPER(c.problem_code) = ?
+                ORDER BY c.created_at ASC
+            """, (problem_code.upper().strip(),)).fetchall()
+            comments = [dict(r) for r in rows]
+            if viewer_user_id:
+                for c in comments:
+                    c["user_reaction"] = self.get_user_reaction("comment", c["id"], viewer_user_id)
+            return comments
+
+    def delete_comment(self, comment_id: int, requester_user_id: int, user_role: str) -> bool:
+        with self.db.get_connection() as conn:
+            c = conn.execute("SELECT author_id FROM forum_comments WHERE id = ?", (comment_id,)).fetchone()
+            if not c:
+                return False
+            if c["author_id"] != requester_user_id and user_role not in self.PRIVILEGED_ROLES:
+                raise PermissionError("Bạn không có quyền xóa bình luận này.")
+            conn.execute("DELETE FROM forum_comments WHERE id = ?", (comment_id,))
+            conn.execute("DELETE FROM forum_reactions WHERE target_type = 'comment' AND target_id = ?", (comment_id,))
+            conn.commit()
+            return True
+
+    # =========================================================================
+    # REACTIONS (UPVOTE / DOWNVOTE)
+    # =========================================================================
+    def toggle_reaction(self, user_id: int, target_type: str, target_id: int, reaction_type: str = "up") -> Dict[str, Any]:
+        target_type = target_type.lower()
+        reaction_type = reaction_type.lower()
+        if target_type not in ("post", "comment"):
+            raise ValueError("target_type phải là 'post' hoặc 'comment'.")
+        if reaction_type not in ("up", "down"):
+            raise ValueError("reaction_type phải là 'up' hoặc 'down'.")
+
+        with self.db.get_connection() as conn:
+            existing = conn.execute(
+                "SELECT id, reaction_type FROM forum_reactions WHERE user_id = ? AND target_type = ? AND target_id = ?",
+                (user_id, target_type, target_id)
+            ).fetchone()
+
+            if existing:
+                if existing["reaction_type"] == reaction_type:
+                    # User clicked same reaction -> undo / toggle off
+                    conn.execute("DELETE FROM forum_reactions WHERE id = ?", (existing["id"],))
+                    current_reaction = None
+                else:
+                    # Switch reaction from up to down or vice versa
+                    conn.execute("UPDATE forum_reactions SET reaction_type = ? WHERE id = ?", (reaction_type, existing["id"]))
+                    current_reaction = reaction_type
+            else:
+                conn.execute("""
+                    INSERT INTO forum_reactions (user_id, target_type, target_id, reaction_type)
+                    VALUES (?, ?, ?, ?)
+                """, (user_id, target_type, target_id, reaction_type))
+                current_reaction = reaction_type
+
+            conn.commit()
+
+            # Get updated counts
+            upvotes = conn.execute("SELECT COUNT(*) as cnt FROM forum_reactions WHERE target_type = ? AND target_id = ? AND reaction_type = 'up'", (target_type, target_id)).fetchone()["cnt"]
+            downvotes = conn.execute("SELECT COUNT(*) as cnt FROM forum_reactions WHERE target_type = ? AND target_id = ? AND reaction_type = 'down'", (target_type, target_id)).fetchone()["cnt"]
+
+            return {
+                "target_type": target_type,
+                "target_id": target_id,
+                "user_reaction": current_reaction,
+                "upvotes": upvotes,
+                "downvotes": downvotes
+            }
+
+    def get_user_reaction(self, target_type: str, target_id: int, user_id: Optional[int]) -> Optional[str]:
+        if not user_id:
+            return None
+        with self.db.get_connection() as conn:
+            row = conn.execute(
+                "SELECT reaction_type FROM forum_reactions WHERE user_id = ? AND target_type = ? AND target_id = ?",
+                (user_id, target_type, target_id)
+            ).fetchone()
+            return row["reaction_type"] if row else None
+
+    # =========================================================================
+    # CONTEST CLARIFICATIONS (HỎI ĐÁP ĐỀ THI)
+    # =========================================================================
+    def create_clarification(
+        self,
+        competition_id: int,
+        user_id: int,
+        question: str,
+        problem_code: str = "GENERAL"
+    ) -> Dict[str, Any]:
+        if not question.strip():
+            raise ValueError("Câu hỏi không được để trống.")
+        with self.db.get_connection() as conn:
+            cursor = conn.execute("""
+                INSERT INTO contest_clarifications (competition_id, problem_code, user_id, question)
+                VALUES (?, ?, ?, ?)
+            """, (competition_id, problem_code.upper().strip(), user_id, question.strip()))
+            clar_id = cursor.lastrowid
+            conn.commit()
+            
+            row = conn.execute("""
+                SELECT c.*, u.username
+                FROM contest_clarifications c
+                JOIN users u ON u.id = c.user_id
+                WHERE c.id = ?
+            """, (clar_id,)).fetchone()
+            return dict(row)
+
+    def list_clarifications(self, competition_id: int, viewer_user_id: Optional[int] = None, is_admin: bool = False) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            if is_admin:
+                query = """
+                    SELECT c.*, u.username, au.username as answered_by_name
+                    FROM contest_clarifications c
+                    JOIN users u ON u.id = c.user_id
+                    LEFT JOIN users au ON au.id = c.answered_by
+                    WHERE c.competition_id = ?
+                    ORDER BY c.created_at DESC
+                """
+                rows = conn.execute(query, (competition_id,)).fetchall()
+            else:
+                query = """
+                    SELECT c.*, u.username, au.username as answered_by_name
+                    FROM contest_clarifications c
+                    JOIN users u ON u.id = c.user_id
+                    LEFT JOIN users au ON au.id = c.answered_by
+                    WHERE c.competition_id = ? AND (c.is_public = 1 OR c.user_id = ?)
+                    ORDER BY c.created_at DESC
+                """
+                rows = conn.execute(query, (competition_id, viewer_user_id or 0)).fetchall()
+            return [dict(r) for r in rows]
+
+    def reply_clarification(
+        self,
+        clarification_id: int,
+        answer: str,
+        answered_by: int,
+        is_public: bool = False
+    ) -> Dict[str, Any]:
+        with self.db.get_connection() as conn:
+            conn.execute("""
+                UPDATE contest_clarifications
+                SET answer = ?, answered_by = ?, is_public = ?, answered_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (answer.strip(), answered_by, 1 if is_public else 0, clarification_id))
+            conn.commit()
+
+            row = conn.execute("""
+                SELECT c.*, u.username, au.username as answered_by_name
+                FROM contest_clarifications c
+                JOIN users u ON u.id = c.user_id
+                LEFT JOIN users au ON au.id = c.answered_by
+                WHERE c.id = ?
+            """, (clarification_id,)).fetchone()
+            return dict(row) if row else {}
+
+    def delete_clarification(self, clarification_id: int) -> bool:
+        with self.db.get_connection() as conn:
+            conn.execute("DELETE FROM contest_clarifications WHERE id = ?", (clarification_id,))
+            conn.commit()
+            return True
+
+    # =========================================================================
+    # CONTEST SCOREBOARD FREEZE / UNFREEZE
+    # =========================================================================
+    def freeze_contest(self, competition_id: int, is_frozen: int = 1) -> bool:
+        with self.db.get_connection() as conn:
+            conn.execute("UPDATE competitions SET is_frozen = ? WHERE id = ?", (1 if is_frozen else 0, competition_id))
+            conn.commit()
+            return True
+
+    # =========================================================================
+    # PROBLEM EXTENSIONS: CHECKERS, EDITORIAL, SUBTASKS, REJUDGE
+    # =========================================================================
+    def update_problem_advanced(
+        self,
+        problem_id: int,
+        checker_type: Optional[str] = None,
+        checker_code: Optional[str] = None,
+        tags: Optional[str] = None,
+        difficulty: Optional[str] = None,
+        editorial: Optional[str] = None,
+        subtasks_json: Optional[str] = None
+    ) -> bool:
+        with self.db.get_connection() as conn:
+            fields = []
+            params = []
+            if checker_type is not None:
+                fields.append("checker_type = ?")
+                params.append(checker_type.lower())
+            if checker_code is not None:
+                fields.append("checker_code = ?")
+                params.append(checker_code)
+            if tags is not None:
+                fields.append("tags = ?")
+                params.append(tags)
+            if difficulty is not None:
+                fields.append("difficulty = ?")
+                params.append(difficulty)
+            if editorial is not None:
+                fields.append("editorial = ?")
+                params.append(editorial)
+            if subtasks_json is not None:
+                fields.append("subtasks_json = ?")
+                params.append(subtasks_json)
+
+            if not fields:
+                return True
+            params.append(problem_id)
+            sql = f"UPDATE competition_problems SET {', '.join(fields)} WHERE id = ?"
+            cursor = conn.execute(sql, params)
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def get_submissions_for_rejudge(self, problem_id: Optional[int] = None, competition_id: Optional[int] = None) -> List[Dict[str, Any]]:
+        with self.db.get_connection() as conn:
+            query = "SELECT s.*, u.username FROM submissions s JOIN users u ON u.id = s.user_id WHERE 1=1"
+            params: List[Any] = []
+            if competition_id:
+                query += " AND s.competition_id = ?"
+                params.append(competition_id)
+            if problem_id:
+                p_row = conn.execute("SELECT code FROM competition_problems WHERE id = ?", (problem_id,)).fetchone()
+                if p_row and p_row["code"]:
+                    query += " AND UPPER(s.problem_code) = ?"
+                    params.append(p_row["code"].upper())
+
+            query += " ORDER BY s.id ASC"
+            rows = conn.execute(query, params).fetchall()
+            return [dict(r) for r in rows]
+
+    def update_rejudged_submission(
+        self,
+        submission_id: int,
+        verdict: str,
+        score: float,
+        passed_tests: int,
+        total_tests: int,
+        exec_time: int,
+        mem_kb: int,
+        compiler_output: str,
+        subtask_results: Optional[List[Dict[str, Any]]] = None
+    ) -> bool:
+        with self.db.get_connection() as conn:
+            subtask_json = json.dumps(subtask_results or [])
+            conn.execute("""
+                UPDATE submissions
+                SET verdict = ?, score = ?, passed_tests = ?, total_tests = ?,
+                    execution_time_ms = ?, memory_used_kb = ?, compiler_output = ?,
+                    subtask_results_json = ?, rejudged_count = rejudged_count + 1
+                WHERE id = ?
+            """, (verdict, score, passed_tests, total_tests, exec_time, mem_kb, compiler_output, subtask_json, submission_id))
+            conn.commit()
+            return True
+
 

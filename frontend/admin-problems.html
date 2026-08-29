@@ -337,6 +337,69 @@
         </div>
     </div>
 
+    <!-- MODAL ADVANCED PROBLEM & CHECKERS (DMOJ/VNOJ STANDARDS) -->
+    <div id="advanced-problem-modal-overlay" class="modal-overlay">
+        <div class="modal-panel" style="width: min(900px, 95vw); border-color: rgba(56,189,248,0.3);">
+            <button class="modal-close" onclick="closeAdvancedModal()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h3 id="advanced-modal-title" style="color: var(--accent-cyan); margin: 0; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-sliders"></i> Cấu hình Nâng cao &amp; Checker (Chuẩn VNOJ)
+                </h3>
+            </div>
+            <div class="modal-body">
+                <form id="advanced-problem-form">
+                    <input type="hidden" id="adv-prob-id">
+                    <div class="form-grid-2">
+                        <div class="form-field">
+                            <label><i class="fa-solid fa-scale-balanced"></i> Loại Checker (Bộ so sánh kết quả)</label>
+                            <select id="adv-checker-type">
+                                <option value="token">Token-by-Token (Mặc định - Bỏ qua khoảng trắng/xuống dòng)</option>
+                                <option value="exact">Exact Match (Chính xác từng ký tự / byte)</option>
+                                <option value="float_tol">Float Tolerance (Sai số thực 1e-6 tuyệt đối &amp; tương đối)</option>
+                                <option value="custom_script">Custom Python Script Checker</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label><i class="fa-solid fa-gauge-high"></i> Độ khó (Difficulty)</label>
+                            <select id="adv-difficulty">
+                                <option value="Easy">Dễ (Easy - Basic)</option>
+                                <option value="Medium">Trung bình (Medium - Classic)</option>
+                                <option value="Hard">Khó (Hard - Advanced)</option>
+                                <option value="Master">Master (ICPC / VNOI / IOI)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-field" style="margin-bottom: 14px;">
+                        <label><i class="fa-solid fa-tags"></i> Thẻ thuật toán (Tags - phân cách bởi dấu phẩy)</label>
+                        <input id="adv-tags" placeholder="VD: Dynamic Programming, Graph, Math, Greedy, Data Structures">
+                    </div>
+                    <div class="form-field" id="adv-checker-code-group" style="margin-bottom: 14px; display: none;">
+                        <label><i class="fa-solid fa-code"></i> Mã nguồn Python Custom Checker (hàm <code>check(test_input, expected_output, user_output) -> bool</code>)</label>
+                        <textarea id="adv-checker-code" class="code-area" placeholder="def check(test_input, expected_output, user_output):&#10;    # Trả về True nếu đúng, False nếu sai&#10;    return user_output.strip() == expected_output.strip()" style="min-height: 120px;"></textarea>
+                    </div>
+                    <div class="form-field" style="margin-bottom: 14px;">
+                        <label><i class="fa-solid fa-book-open"></i> Lời giải &amp; Hướng dẫn giải (Editorial - Markdown / KaTeX)</label>
+                        <textarea id="adv-editorial" class="code-area" placeholder="Trình bày ý tưởng thuật toán, phân tích độ phức tạp thời gian O(N) và không gian O(1)..." style="min-height: 140px;"></textarea>
+                    </div>
+                    <div class="form-field" style="margin-bottom: 16px;">
+                        <label><i class="fa-solid fa-layer-group"></i> Cấu hình Subtasks (IOI Scoring JSON)</label>
+                        <textarea id="adv-subtasks-json" class="code-area" placeholder='[{"subtask": 1, "points": 30, "description": "N <= 100", "test_indices": [1, 2, 3]}, {"subtask": 2, "points": 70, "description": "N <= 10^5", "test_indices": [4, 5, 6, 7]}]' style="min-height: 90px;"></textarea>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" class="btn-action-pill" id="btn-adv-rejudge" style="color: var(--accent-amber); border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.08);"><i class="fa-solid fa-rotate"></i> Chấm lại toàn bộ (Rejudge)</button>
+                            <button type="button" class="btn-action-pill" id="btn-adv-export-zip" style="color: var(--accent-cyan); border-color: rgba(56,189,248,0.3);"><i class="fa-solid fa-file-zipper"></i> Tải về ZIP Test</button>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" class="btn-outline-ghost" onclick="closeAdvancedModal()">Đóng</button>
+                            <button type="submit" class="btn-primary-glow"><i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div id="test-modal-overlay" class="modal-overlay">
         <div class="modal-panel" style="width: min(940px, 96vw); border-color: rgba(168,85,247,0.25);">
             <button class="modal-close" onclick="closeTestModal()"><i class="fa-solid fa-xmark"></i></button>

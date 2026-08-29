@@ -73,6 +73,36 @@
             </div>
         </div>
 
+        <!-- Contest Clarifications Section (DMOJ/VNOJ Standard) -->
+        <div class="ws-card" style="margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div>
+                    <div class="ws-card-subtitle" style="margin: 0; color: var(--ws-primary, #38bdf8);"><i class="fa-solid fa-circle-question"></i> Hỏi đáp Đề thi (Clarifications)</div>
+                    <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">Gửi thắc mắc về đề bài trực tiếp tới Ban tổ chức và xem câu trả lời.</div>
+                </div>
+                <button class="ws-btn-primary" onclick="toggleClarificationForm()" style="padding: 6px 14px; font-size: 0.8rem;">
+                    <i class="fa-solid fa-plus"></i> Đặt câu hỏi
+                </button>
+            </div>
+
+            <!-- Form New Clarification -->
+            <div id="clarification-form-box" style="display: none; background: rgba(15,23,42,0.6); border: 1px solid rgba(56,189,248,0.25); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" id="clar-prob-code" placeholder="Mã bài (VD: A, B, PY001 hoặc GENERAL)" style="width: 200px; background: rgba(2,6,23,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 0.82rem;">
+                </div>
+                <textarea id="clar-question-input" placeholder="Nhập câu hỏi thắc mắc về đề bài..." style="width: 100%; min-height: 70px; background: rgba(2,6,23,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 10px; color: #fff; font-size: 0.84rem; resize: vertical; box-sizing: border-box;"></textarea>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+                    <button type="button" class="ws-btn-leave" onclick="toggleClarificationForm()" style="padding: 6px 14px; font-size: 0.8rem;">Hủy</button>
+                    <button type="button" class="ws-btn-primary" onclick="submitClarification()" style="padding: 6px 16px; font-size: 0.8rem;"><i class="fa-solid fa-paper-plane"></i> Gửi câu hỏi</button>
+                </div>
+            </div>
+
+            <!-- Clarifications List -->
+            <div id="clarifications-list" style="display: flex; flex-direction: column; gap: 10px;">
+                <p style="text-align: center; color: #94a3b8; font-size: 0.84rem; padding: 14px 0;">Đang nạp các giải đáp đề thi...</p>
+            </div>
+        </div>
+
         <!-- Comments Section -->
         <div class="ws-comments-card">
             <div class="ws-comments-header">
